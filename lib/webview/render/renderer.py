@@ -22,15 +22,21 @@ from lib.data.measured_environment import MeasuredEnvironment
 def render_html(me: MeasuredEnvironment):
     mytemplate = Template(filename='resources/report.template.html')
     buf = StringIO()
+    
+    #TODO make accuracy an argument
+
+    sd_embeddings = (me.embedding_lines * 10).astype(int)
+    dd_embeddings = (me.embedding_differences / 10).astype(int)
+
     ctx = Context(buf, 
                   sd=str("%.2f" % me.sd), 
                   dd=str("%.2f" % me.dd), 
                   branch_array=me.branches, 
                   number_branches=len(me.branches),
-                  sd_embeddings=json.dumps(me.embedding_conflicts.tolist()),
-                  dd_embeddings=json.dumps(me.embedding_differences.tolist()),
+                  sd_embeddings=json.dumps(sd_embeddings.tolist()),
+                  dd_embeddings=json.dumps(dd_embeddings.tolist()),
                   full_json_dump=me.serialize())
     mytemplate.render_context(ctx)
     result = buf.getvalue()
-    print(result)
+    #print(result)
     return result

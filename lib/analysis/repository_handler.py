@@ -14,11 +14,10 @@
 
 from shutil import copytree, rmtree
 import uuid
-import git
 import subprocess
 import gc
-import math
 import os
+import re
 import stat
 
 from lib.data.pairwise_distance import PairwiseDistance
@@ -33,6 +32,7 @@ class RepositoryHandler:
     _file_ignores: list[str]
     
     branches: list[str]
+    head: str | None = None
 
 
     def __init__(self, input_dir, fetch_updates: bool, ignore_files: list[str], ignore_branches: list[str]):
@@ -60,44 +60,47 @@ class RepositoryHandler:
         self._working_tmp_path = "./tmp/" + str(uuid.uuid4())
         copytree(self._reference_tmp_path, self._working_tmp_path)
 
+    def reset_working_tmp(self):
+        cancel_merge = subprocess.run(["git", "merge", "--abort"], capture_output=True, cwd=self._working_tmp_path)
+        if self.head is not None:
+            reset = subprocess.run(["git", "reset", "--hard", self.head], capture_output=True, cwd=self._working_tmp_path)
+            #print(reset.stdout)
+        stash_clutter = subprocess.run(["git", "stash"], capture_output=True, cwd=self._working_tmp_path)
+
 
     def clear_working_tmp(self):
-        gc.collect()
-        self.repository.git.clear_cache()
         os.access(self._working_tmp_path, stat.S_IWUSR)
         rmtree(self._working_tmp_path)
         self._working_tmp_path = None
+        self.head = None
 
 
     def materialize_all_branches_in_reference(self) -> list[str]:
         #get the git repository in reference tmp
         path = self._reference_tmp_path
-        self.repository = git.Repo(path)
 
         # checkout each origin branch
-        remote_branches = self.repository.remote().refs
-        for remote in remote_branches:
-            print(remote.name)
-            current_branch = remote.name.replace("origin/", "")
-            self.repository.git.checkout(current_branch)
-            self.repository.git.stash()
-            if self._fetch_updates:
-                self.repository.remotes.origin.pull()
+        remote_branches_raw = subprocess.run(["git", "branch", "--all"], capture_output=True, cwd=path).stdout.decode("utf-8")
+        all_branches: list[str] = list()
+        for line in remote_branches_raw.split("\n"):
+            line = line.replace("remotes/origin/", "").replace("*", "").replace(" ", "")
+            if not line in all_branches and not "HEAD->" in line and not line.isspace() and not line is "":
+                all_branches.append(line)
 
-        available_branches = [h.name for h in self.repository.branches]
+        for branch in all_branches:
+            print(branch)
+            subprocess.run(["git", "checkout", branch], capture_output=True, cwd=path)
+            subprocess.run(["git", "stash"], capture_output=True, cwd=path)
+            
+            if self._fetch_updates:
+                pull = subprocess.run(["git", "pull", "origin", branch], capture_output=True, cwd=path).stdout
+                #print(pull.decode("utf-8"))
         
         self.branches = list()
-        for branch in available_branches:
-            add = True
-            for exception in self._branch_ignores:
-                if exception in branch:
-                    add = False
-                    break
-            if add:
-                self.branches.append(branch)
-
-        gc.collect()
-        self.repository.git.clear_cache()
+        for branch in all_branches:
+            #TODO regex check for branch ignore specs
+            self.branches.append(branch)
+        self.branches.sort()
 
         return self.branches
     
@@ -106,8 +109,13 @@ class RepositoryHandler:
         
         distance = PairwiseDistance()
 
-        self.repository = git.Repo(self._reference_tmp_path)
-        self.repository.git.checkout(base_branch)
+        subprocess.run(["git", "checkout", base_branch], capture_output=True, cwd=self._working_tmp_path)
+        
+       
+        m = re.compile("(?<=commit\\s)(.*?)(?=\\\n)")
+        commit_log = subprocess.run(["git", "log", "-n 1"], capture_output=True, cwd=self._working_tmp_path).stdout
+        commit_hash = m.search(commit_log.decode("utf-8")).group()
+        self.head = commit_hash
 
         stdout_diff = subprocess.run(["git", "diff", base_branch + ".." + incoming_branch], capture_output=True, cwd=self._working_tmp_path).stdout.splitlines()
         diff_size = 0

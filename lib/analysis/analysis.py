@@ -16,6 +16,7 @@ import itertools
 import numpy as np
 from sklearn.manifold import MDS
 import math
+import sys
 
 from lib.data.pairwise_distance import PairwiseDistance
 from lib.analysis.repository_handler import RepositoryHandler
@@ -52,14 +53,20 @@ def calculate_distances(repository_handler: RepositoryHandler) -> list[tuple[str
 
     progress = 0
     total = len(branch_pairs)
+    repository_handler.create_working_tmp()
+    
     for pair in branch_pairs:
         print(str(progress) + " out of " + str(total), end='\r')
+        #print("merge " + pair[1] + " into " + pair[0])
         progress += 1
-        repository_handler.create_working_tmp()
+        
         distance = repository_handler.merge_and_count_conflicts(pair[0], pair[1])
+        #print("----> " + str(distance.conflicting_lines))
         distance_relation.append([pair[0], pair[1], distance])
         distance_relation.append([pair[1], pair[0], distance])
-        repository_handler.clear_working_tmp()
+        repository_handler.reset_working_tmp()
+        
+    repository_handler.clear_working_tmp()
 
     return distance_relation
 

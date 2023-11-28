@@ -21,26 +21,69 @@
     <title>Driftool Analysis</title>
 	<script src='https://cdn.plot.ly/plotly-2.27.0.min.js'></script>
 	<script src='https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js'></script>
+
+    <style>
+        .bordered{
+            border-style: solid;
+            border-color: black;
+            border-width: 0.5pt;
+        }
+        .hidden{
+            visibility: hidden;
+        }
+        .container {
+            display: flex;
+            width: 100%;
+        }
+        .horizontal{
+            flex-direction: row;
+        }
+        .vertical{
+            flex-direction: column;
+        }
+        .grow{
+            flex-grow: 2;
+        }
+        .half-vp{
+            height: 45vh;
+        }
+        .blue-font{
+            color: blue;
+        }
+        .red-font{
+            color: red;
+        }
+    
+        tr:nth-child(even) {background-color: #f2f2f2;}
+    
+    </style>
+
 </head>
 
 <body>
     <h1>Drift Analysis: <span class="red-font">sd = ${sd}</span> & <span class="blue-font">dd = ${dd}</span> </h1>
     <div class="container horizontal">
         <div class="bordered">
-            <table id="branch-table">
-                <tr>
-                    <th>Branch</th>
-                    <th>cd</th>
-                    <th>dd</th>
-                </tr>
-                    % for a in branch_array:
+            <div class="container vertical">
+                <table id="branch-table">
                     <tr>
-                        <td>${a}</td>
-                        <td><span id="marker-sd-${loop.index}" class="red-font hidden">&#x25A0;</span></td>
-                        <td><span id="marker-dd-${loop.index}" class="blue-font hidden">&#x25A0;</span></td>
+                        <th>Branch</th>
+                        <th>cd</th>
+                        <th>dd</th>
                     </tr>
-                    % endfor
-            </table>
+                        % for a in branch_array:
+                        <tr>
+                            <td>${a}</td>
+                            <td><span id="marker-sd-${loop.index}" class="red-font hidden">&#x25A0;</span></td>
+                            <td><span id="marker-dd-${loop.index}" class="blue-font hidden">&#x25A0;</span></td>
+                        </tr>
+                        % endfor
+                </table>
+                <div>
+                    Distances:
+                    
+                </div>
+            </div>
         </div>
        
             <div class="container grow vertical bordered">
@@ -51,42 +94,6 @@
     </div>
 	
 </body>
-
-<style>
-    .bordered{
-        border-style: solid;
-        border-color: black;
-        border-width: 0.5pt;
-    }
-    .hidden{
-        visibility: hidden;
-    }
-    .container {
-        display: flex;
-        width: 100%;
-    }
-    .horizontal{
-        flex-direction: row;
-    }
-    .vertical{
-        flex-direction: column;
-    }
-    .grow{
-        flex-grow: 2;
-    }
-    .half-vp{
-        height: 45vh;
-    }
-    .blue-font{
-        color: blue;
-    }
-    .red-font{
-        color: red;
-    }
-
-    tr:nth-child(even) {background-color: #f2f2f2;}
-
-</style>
 
 <script>
         const number_branches = ${number_branches}
@@ -113,8 +120,8 @@
             hoverinfo:'none',
             marker: {
                 size: 12,
-                color: 'rgb(255,0,0)',
-                opacity: 0.8},
+                color: 'rgb(255,0,50)',
+                opacity: 0.4},
             type: 'scatter3d'
         };
 
@@ -125,7 +132,7 @@
             marker: {
                 size: 12,
                 color: 'rgb(0,0,255)',
-                opacity: 0.8},
+                opacity: 0.4},
             type: 'scatter3d'
         };
 
