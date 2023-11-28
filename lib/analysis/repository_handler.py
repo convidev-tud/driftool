@@ -51,9 +51,12 @@ class RepositoryHandler:
 
 
     def clear_reference_tmp(self):
-        os.access(self._reference_tmp_path, stat.S_IWUSR)
-        rmtree(self._reference_tmp_path)
-        self._reference_tmp_path = None
+        try:
+            os.access(self._reference_tmp_path, stat.S_IWUSR)
+            rmtree(self._reference_tmp_path)
+            self._reference_tmp_path = None
+        except:
+            print("DELETE TMP/ FILE MANUALLY!")
 
 
     def create_working_tmp(self):
@@ -69,10 +72,14 @@ class RepositoryHandler:
 
 
     def clear_working_tmp(self):
-        os.access(self._working_tmp_path, stat.S_IWUSR)
-        rmtree(self._working_tmp_path)
-        self._working_tmp_path = None
-        self.head = None
+        try:
+            os.access(self._working_tmp_path, stat.S_IWUSR)
+            rmtree(self._working_tmp_path)
+            self._working_tmp_path = None
+            self.head = None
+        except:
+            print("DELETE TMP/ FILE MANUALLY!")
+
 
 
     def materialize_all_branches_in_reference(self) -> list[str]:

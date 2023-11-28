@@ -18,6 +18,29 @@ from io import StringIO
 import json
 
 from lib.data.measured_environment import MeasuredEnvironment
+from lib.data.distance import BranchDistance, BranchEnvironment
+
+
+def generate_branch_distance_map(me: MeasuredEnvironment) -> list[BranchEnvironment]:
+    
+    res: list[BranchEnvironment] = list()
+
+    for base in range(len(me.branches)):
+        
+        base_branch = me.branches[base]
+        distances: list[BranchDistance] = list()
+
+        for peer in range(len(me.branches)):
+            peer_branch = me.branches[peer]
+            sd = me.line_matrix[base, peer]
+            dd = me.diff_matrix[base, peer]
+            distances.append(BranchDistance(peer_branch, sd, dd))
+
+        res.append(BranchEnvironment(base_branch, distances))
+
+    return res
+
+
 
 def render_html(me: MeasuredEnvironment):
     mytemplate = Template(filename='resources/report.template.html')
@@ -28,6 +51,8 @@ def render_html(me: MeasuredEnvironment):
     sd_embeddings = (me.embedding_lines * 10).astype(int)
     dd_embeddings = (me.embedding_differences / 10).astype(int)
 
+    branch_wise_distances = generate_branch_distance_map(me)
+
     ctx = Context(buf, 
                   sd=str("%.2f" % me.sd), 
                   dd=str("%.2f" % me.dd), 
@@ -35,6 +60,7 @@ def render_html(me: MeasuredEnvironment):
                   number_branches=len(me.branches),
                   sd_embeddings=json.dumps(sd_embeddings.tolist()),
                   dd_embeddings=json.dumps(dd_embeddings.tolist()),
+                  branch_distances=branch_wise_distances,
                   full_json_dump=me.serialize())
     mytemplate.render_context(ctx)
     result = buf.getvalue()

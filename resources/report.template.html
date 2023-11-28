@@ -27,9 +27,13 @@
             border-style: solid;
             border-color: black;
             border-width: 0.5pt;
+            margin: 5px;
         }
         .hidden{
             visibility: hidden;
+        }
+        .gone{
+            display: none;
         }
         .container {
             display: flex;
@@ -45,13 +49,16 @@
             flex-grow: 2;
         }
         .half-vp{
-            height: 45vh;
+            height: 43vh;
         }
         .blue-font{
             color: blue;
         }
         .red-font{
             color: red;
+        }
+        .w30{
+            width: 30%;
         }
     
         tr:nth-child(even) {background-color: #f2f2f2;}
@@ -60,32 +67,61 @@
 
 </head>
 
+<script>
+    var active_elem = undefined
+
+    function show_env(branch_name){
+        if(active_elem){
+            active_elem.style.display = 'none';
+            active_elem = undefined;
+        }
+        active_elem = document.getElementById('env-'+branch_name)
+        active_elem.style.display = 'block'
+    }
+</script>
+
 <body>
     <h1>Drift Analysis: <span class="red-font">sd = ${sd}</span> & <span class="blue-font">dd = ${dd}</span> </h1>
     <div class="container horizontal">
-        <div class="bordered">
-            <div class="container vertical">
+            <div class="container vertical bordered w30">
                 <table id="branch-table">
                     <tr>
                         <th>Branch</th>
-                        <th>cd</th>
+                        <th>sd</th>
                         <th>dd</th>
                     </tr>
                         % for a in branch_array:
                         <tr>
-                            <td>${a}</td>
+                            <td><span onclick="show_env('${a}')">${a}</span></td>
                             <td><span id="marker-sd-${loop.index}" class="red-font hidden">&#x25A0;</span></td>
                             <td><span id="marker-dd-${loop.index}" class="blue-font hidden">&#x25A0;</span></td>
                         </tr>
                         % endfor
                 </table>
+                <h3>Analysis</h3>
+                Click branch in above list to see results!
                 <div>
-                    Distances:
-                    
+                    % for branch_env in branch_distances:
+                    <div id="env-${branch_env.branch}" class="gone bordered">
+                        <strong>${branch_env.branch}</strong>
+                        <table>
+                            <tr>
+                                <th>Peer</th>
+                                <th>sd</th>
+                                <th>dd</th>
+                            </tr>
+                            % for peer in branch_env.distances:
+                                <tr>
+                                    <td>${peer.peer_branch}</td>
+                                    <td>${peer.sd}</td>
+                                    <td>${peer.dd}</td>
+                                </tr>
+                            % endfor
+                        </table>
+                    </div>
+                    % endfor
                 </div>
             </div>
-        </div>
-       
             <div class="container grow vertical bordered">
                 <div id='conflict-div' class='bordered half-vp'><!-- Plotly chart will be drawn inside this DIV --></div>
                 <div id='difference-div' class='bordered half-vp'><!-- Plotly chart will be drawn inside this DIV --></div>
