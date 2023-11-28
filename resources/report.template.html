@@ -1,0 +1,198 @@
+<!--
+#  Copyright 2023 Karl Kegel
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driftool Analysis</title>
+	<script src='https://cdn.plot.ly/plotly-2.27.0.min.js'></script>
+	<script src='https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js'></script>
+</head>
+
+<body>
+    <h1>Drift Analysis: <span class="red-font">sd = ${sd}</span> & <span class="blue-font">dd = ${dd}</span> </h1>
+    <div class="container horizontal">
+        <div class="bordered">
+            <table id="branch-table">
+                <tr>
+                    <th>Branch</th>
+                    <th>cd</th>
+                    <th>dd</th>
+                </tr>
+                    % for a in branch_array:
+                    <tr>
+                        <td>${a}</td>
+                        <td><span id="marker-sd-${loop.index}" class="red-font hidden">&#x25A0;</span></td>
+                        <td><span id="marker-dd-${loop.index}" class="blue-font hidden">&#x25A0;</span></td>
+                    </tr>
+                    % endfor
+            </table>
+        </div>
+       
+            <div class="container grow vertical bordered">
+                <div id='conflict-div' class='bordered half-vp'><!-- Plotly chart will be drawn inside this DIV --></div>
+                <div id='difference-div' class='bordered half-vp'><!-- Plotly chart will be drawn inside this DIV --></div>
+            </div>
+        
+    </div>
+	
+</body>
+
+<style>
+    .bordered{
+        border-style: solid;
+        border-color: black;
+        border-width: 0.5pt;
+    }
+    .hidden{
+        visibility: hidden;
+    }
+    .container {
+        display: flex;
+        width: 100%;
+    }
+    .horizontal{
+        flex-direction: row;
+    }
+    .vertical{
+        flex-direction: column;
+    }
+    .grow{
+        flex-grow: 2;
+    }
+    .half-vp{
+        height: 45vh;
+    }
+    .blue-font{
+        color: blue;
+    }
+    .red-font{
+        color: red;
+    }
+
+    tr:nth-child(even) {background-color: #f2f2f2;}
+
+</style>
+
+<script>
+        const number_branches = ${number_branches}
+
+        const embedding_conflicts_3d = JSON.parse("${sd_embeddings}")
+        const embedding_differences_3d = JSON.parse("${dd_embeddings}")
+
+        function highlight_branch(index, mode){
+            console.log(index, mode)
+            for(var i = 0; i < number_branches; i++){
+                const id = "marker-" + mode + "-" + i
+                const elem = document.getElementById(id)
+                if(index.includes(i)){
+                    elem.style.visibility = 'visible';
+                }else{
+                    elem.style.visibility = 'hidden'
+                }
+            }
+        }
+
+        var trace_conflicts = {
+            x: embedding_conflicts_3d.map(d => d[0]), y: embedding_conflicts_3d.map(d => d[1]), z: embedding_conflicts_3d.map(d => d[2]),
+            mode: 'markers',
+            hoverinfo:'none',
+            marker: {
+                size: 12,
+                color: 'rgb(255,0,0)',
+                opacity: 0.8},
+            type: 'scatter3d'
+        };
+
+        var trace_differences = {
+            x: embedding_differences_3d.map(d => d[0]), y: embedding_differences_3d.map(d => d[1]), z: embedding_differences_3d.map(d => d[2]),
+            mode: 'markers',
+            hoverinfo:'none',
+            marker: {
+                size: 12,
+                color: 'rgb(0,0,255)',
+                opacity: 0.8},
+            type: 'scatter3d'
+        };
+
+        console.log(trace_conflicts)
+        console.log(trace_differences)
+
+        var data_conflicts = [trace_conflicts];
+        var data_differences = [trace_differences];
+
+        var layout = {margin: {
+            l: 0,
+            r: 0,
+            b: 0,
+            t: 0
+        }};
+
+        Plotly.newPlot('conflict-div', data_conflicts, layout);
+        Plotly.newPlot('difference-div', data_differences, layout);
+
+        document.getElementById('conflict-div').on('plotly_click', function(data){
+            var pt = [
+                undefined,
+                undefined,
+                undefined
+            ];
+            for(var i=0; i < data.points.length; i++){
+                pt[0] = data.points[i].x
+                pt[1] = data.points[i].y
+                pt[2] = data.points[i].z
+            }
+
+            var branches = []
+
+            for(var i=0; i < embedding_conflicts_3d.length; i++){
+                var e = embedding_conflicts_3d[i]
+                if(e[0] === pt[0] && e[1] === pt[1] && e[2] === pt[2]){
+                    branches.push(i)
+                }
+            }
+            console.log("on-click branch " + JSON.stringify(branches))
+            highlight_branch(branches, "sd")
+        });
+
+        document.getElementById('difference-div').on('plotly_click', function(data){
+            var pt = [
+                undefined,
+                undefined,
+                undefined
+            ];
+            for(var i=0; i < data.points.length; i++){
+                pt[0] = data.points[i].x
+                pt[1] = data.points[i].y
+                pt[2] = data.points[i].z
+            }
+
+            var branches = []
+
+            for(var i=0; i < embedding_differences_3d.length; i++){
+                var e = embedding_differences_3d[i]
+                if(e[0] === pt[0] && e[1] === pt[1] && e[2] === pt[2]){
+                    branches.push(i)
+                }
+            }
+            console.log("on-click branch " + JSON.stringify(branches))
+            highlight_branch(branches, "dd")
+        });
+
+
+</script>
+</html>
