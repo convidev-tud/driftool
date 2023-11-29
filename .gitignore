@@ -8,6 +8,8 @@ __pycache__/
 
 tmp/
 
+test-config*
+
 driftool_results*
 
 driftclon-env/

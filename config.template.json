@@ -1,0 +1,22 @@
+{
+    "input_repository": "/home/user/repository/",
+    "output_directory": "./",
+    "fetch_updates": false,
+    "print_plot": false,
+    "html": true,
+    "show_html": true,
+    "branch_ignore": [
+        "^release\\-",
+        "^v\\."
+    ],
+    "file_ignore": [
+        "build/",
+        "dist/",
+        "gen/",
+        "*.min.js",
+        "*.lib.js",
+        "node-modules/",
+        "*.pdf",
+        "javadoc/"
+    ]
+}

@@ -25,7 +25,7 @@ The scatterplots use a synthetic coordinate system resulting from multidimension
 ## Usage
 
 The driftool is a python application. To run it, it requires:
-- python 3.12.x (other versions might work, but are not tested)
+- python 3.12.0 (other versions might work but are not tested)
 - pip
 - git installation (accessible via PATH) 
 
@@ -35,6 +35,8 @@ Please see the official [virtualenv documentation](https://packaging.python.org/
 > :bulb: Note that for large repositories, the drift calculation can take some time. The number of comparison rounds grows ``fac(number of branches)``. Each comparison round is linearly dependent on the repository size.
 
 > :bulb: Driftool is not sufficiently tested on Windows. A known Windows issue is the possible inability to delete temporary files due to the git file lock. After using the driftool on Windows, please remove the ./tmp folder in the working directory manually.
+
+For large (memory instensive) repositories, we recommend running the driftool from a RAM-Disk on a Linux system. This reduced the IO load significantly!
 
 ### CLI
 
@@ -46,7 +48,7 @@ All processing steps are performed on a temporary local copy of the git reposito
 
 #### Arguments
 
-* ``-c`` | ``--config`` STRING (optional) path to a config json file (see *Config* section below). If defined, all other CLI arguments are ingored and the config values are used instead. :ambulance: Not supported yet!
+* ``-c`` | ``--config`` STRING (optional) path to a config json file (see *Config* section below). If defined, all other CLI arguments are ingored and the config values are used instead.
 * ``-i`` | ``--input_repository=`` STRING absolute path to the input repository.
 * ``-o`` | ``--output_directory=`` STRING (optional) exports the analysis to a json file to the specified directory.
 * ``-f`` | ``--fetch_updates``BOOLEAN (optional) pulls each branch of the (local tmp) repository before analysis starts.
@@ -71,7 +73,7 @@ Analyze the *foo* repository. The results are written to the working directory. 
 
 Instead of passing the arguments via the CLI, a config .json file can be specified instead. It must adhere to the following template.
 
-> :ambulance: Not supported yet, this is work in progress an will be made available as soon as possible.
+> :zap: Experimental feature, not tested in-depth.
 
 ```JSON
 {
@@ -87,7 +89,36 @@ Instead of passing the arguments via the CLI, a config .json file can be specifi
     "file_ignore": [
         "STRING"
     ],
-    "open_socket": "BOOLEAN"
+    "open_socket": "STRING"
+}
+```
+
+**Example**
+
+The following example is provided as ``config.template.json`` as part of this repository.
+
+```JSON
+{
+    "input_repository": "/home/user/repository/",
+    "output_directory": "./",
+    "fetch_updates": false,
+    "print_plot": false,
+    "html": true,
+    "show_html": true,
+    "branch_ignore": [
+        "^release\\-",
+        "^v\\."
+    ],
+    "file_ignore": [
+        "build/",
+        "dist/",
+        "gen/",
+        "*.min.js",
+        "*.lib.js",
+        "node-modules/",
+        "*.pdf",
+        "javadoc/"
+    ]
 }
 ```
 

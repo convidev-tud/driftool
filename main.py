@@ -20,6 +20,7 @@ import os
 from datetime import datetime
 
 from lib.data.measured_environment import MeasuredEnvironment
+from lib.data.config_file import ConfigFile
 from lib.analysis.analysis import analyze_with_config
 from lib.analysis.plot import visualise_embeddings
 from lib.webview.render.renderer import render_html
@@ -29,6 +30,8 @@ if __name__ == '__main__':
 
     argv = sys.argv[1:]
 
+    config_path: str | None = None
+
     input_dir: str = ""
     output_dir: str | None = None
     fetch_updates: bool = False
@@ -37,7 +40,7 @@ if __name__ == '__main__':
     show_html: bool = False
     ignore_files: list[str] = list()
     ignore_branches: list[str] = list()
-    open_socket: bool = False
+    open_socket: str | None = None
 
     try:
         opts, args = getopt.getopt(argv, "h:c:i:o:f:p:t:b:g:s:x", 
@@ -51,9 +54,9 @@ if __name__ == '__main__':
             print('see https://github.com/KKegel/driftool for further information')
             sys.exit()
         elif opt in ("-c", "--config"):
-            print("Config mode not supported yet. Terminating execution.")
-            sys.exit()
-            #break
+            config_path = arg
+            break
+            # Ingore other arguments as soon as a config is specified (they will be overwritten nonetheless)
         elif opt in ("-i", "--input_repository"):
             input_dir = arg
         elif opt in ("-o", "--output_directory"):
@@ -77,6 +80,21 @@ if __name__ == '__main__':
         elif opt in ("-x", "--open_socket"):
             open_socket = True
             print("Socket mode not supported yet. Proceeding without socket connection!")
+
+    if config_path is not None:
+        config_file = open(config_path, "r")
+        config = ConfigFile(config_file.read())
+        
+        input_dir = config.input_repository
+        output_dir = config.output_directory
+        fetch_updates = config.fetch_updates
+        print_plot = config.print_plot
+        generate_html = config.html
+        show_html = config.show_html
+        ignore_branches = config.branch_ignore
+        ignore_files = config.file_ignore
+        open_socket = config.open_socket
+
 
     print("input_dir: " + str(input_dir))
     print("output_dir: " + str(output_dir))
