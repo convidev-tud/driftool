@@ -14,7 +14,7 @@ The driftool calculates the *Drift* for two difference measures.
 
 In general, higher numbers indicate a more complex repository management.
 
-:bulb: Per default, a git merge is a symmetric operation, meaning A into B produces the same conflicts as B into A. However, through certain git operations (resets, gitignore change etc.) it happens that the merge is not symmatric. For example, A into B has 2 conflicts, although B into A has 0 conflicts.
+:bulb: Per default, a git merge is a symmetric operation, meaning A into B produces the same conflicts as B into A. However, through certain git operations (resets, gitignore change etc.) it happens that the merge is not symmatric. For example, A into B has 2 conflicts, although B into A has 0 conflicts. To cope with that, (the current version of) driftool performs each merge both ways and takes the AVG of conflicts.
 
 ## Report Generation
 
