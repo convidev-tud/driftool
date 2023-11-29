@@ -40,6 +40,8 @@ Please see the official [virtualenv documentation](https://packaging.python.org/
 
 For large (memory instensive) repositories, we recommend running the driftool from a RAM-Disk on a Linux system. This reduced the IO load significantly!
 
+⚡**Disclaimer: The driftool creates a temporary local copy of the git repository. It executes NO GIT PUSH commands. However, the tool is in active development and errors might happen. We recommend not to use the driftool on a not backed-up repository.** (Disconnecting from the remote/network while executing the analysis is an equal measure).
+
 ### CLI
 
 1. If installed, activate the venv and make sure all requirements are installed
