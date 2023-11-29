@@ -46,8 +46,16 @@ class RepositoryHandler:
     def create_reference_tmp(self):
         self._reference_tmp_path = "./tmp/" + str(uuid.uuid4())
         copytree(self._input_dir, self._reference_tmp_path)
-        
-        #TODO create file ignore .gitignore
+
+
+    def commit_gitignore_extension(self):
+        gitignore = open(self._reference_tmp_path + "/.gitignore", "a")
+        for entry in self._file_ignores:
+            gitignore.write(entry + "\n")
+            gitignore.flush()
+        gitignore.close()
+        subprocess.run(["git", "add", ".gitgnore"], capture_output=True, cwd=self._reference_tmp_path)
+        subprocess.run(["git", "commit", "-m", '"close setup (driftool)"'], capture_output=True, cwd=self._reference_tmp_path)
 
 
     def clear_reference_tmp(self):
@@ -62,6 +70,7 @@ class RepositoryHandler:
     def create_working_tmp(self):
         self._working_tmp_path = "./tmp/" + str(uuid.uuid4())
         copytree(self._reference_tmp_path, self._working_tmp_path)
+
 
     def reset_working_tmp(self):
         cancel_merge = subprocess.run(["git", "merge", "--abort"], capture_output=True, cwd=self._working_tmp_path)
@@ -91,7 +100,7 @@ class RepositoryHandler:
         all_branches: list[str] = list()
         for line in remote_branches_raw.split("\n"):
             line = line.replace("remotes/origin/", "").replace("*", "").replace(" ", "")
-            if not line in all_branches and not "HEAD->" in line and not line.isspace() and not line is "":
+            if not line in all_branches and not "HEAD->" in line and not line.isspace() and line != "":
                 all_branches.append(line)
 
         for branch in all_branches:
@@ -101,14 +110,27 @@ class RepositoryHandler:
             
             if self._fetch_updates:
                 pull = subprocess.run(["git", "pull", "origin", branch], capture_output=True, cwd=path).stdout
-                #print(pull.decode("utf-8"))
+
+            self.commit_gitignore_extension()
         
         self.branches = list()
-        for branch in all_branches:
-            #TODO regex check for branch ignore specs
-            self.branches.append(branch)
-        self.branches.sort()
+        
+        excludes = list()
 
+        for rule in self._branch_ignores:
+            excludes.append(re.compile(rule))
+
+        for branch in all_branches:
+            ignore = False
+            for expr in excludes:
+                match = expr.search(branch)
+                if match is not None:
+                    ignore = True
+                    break
+            if not ignore:
+                self.branches.append(branch)
+
+        self.branches.sort()
         return self.branches
     
 

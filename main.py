@@ -84,6 +84,7 @@ if __name__ == '__main__':
     if config_path is not None:
         config_file = open(config_path, "r")
         config = ConfigFile(config_file.read())
+        config_file.close()
         
         input_dir = config.input_repository
         output_dir = config.output_directory

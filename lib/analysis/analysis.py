@@ -18,7 +18,7 @@ from sklearn.manifold import MDS
 import math
 import sys
 
-from lib.data.pairwise_distance import PairwiseDistance
+from lib.data.pairwise_distance import PairwiseDistance, distanve_avg
 from lib.analysis.repository_handler import RepositoryHandler
 from lib.data.measured_environment import MeasuredEnvironment
 
@@ -41,10 +41,10 @@ def calculate_distances(repository_handler: RepositoryHandler) -> list[tuple[str
     branch_pairs: list[tuple[str, str]] = list()
     
     for pair in branch_product:
-        if pair not in branch_pairs and (pair[1], pair[0]) not in branch_pairs and not pair[0] == pair[1]:
+        if pair not in branch_pairs and not pair[0] == pair[1] and (pair[1], pair[0]) not in branch_pairs:
             branch_pairs.append(pair)
     
-    print("Calculation distances for " + str(len(branch_pairs)) + " branch combinations...")
+    print("Calculation distances for " + str(len(branch_pairs)*2) + " branch combinations...")
 
     distance_relation: list[tuple[str, str, PairwiseDistance]] = list()
 
@@ -56,14 +56,16 @@ def calculate_distances(repository_handler: RepositoryHandler) -> list[tuple[str
     repository_handler.create_working_tmp()
     
     for pair in branch_pairs:
-        print(str(progress) + " out of " + str(total), end='\r')
+        print(str(progress*2) + " out of " + str(total*2), end='\r')
         #print("merge " + pair[1] + " into " + pair[0])
         progress += 1
         
-        distance = repository_handler.merge_and_count_conflicts(pair[0], pair[1])
+        distanceA = repository_handler.merge_and_count_conflicts(pair[0], pair[1])
+        distanceB = repository_handler.merge_and_count_conflicts(pair[0], pair[1])
+        distanceAVG = distanve_avg(distanceA, distanceB)
         #print("----> " + str(distance.conflicting_lines))
-        distance_relation.append([pair[0], pair[1], distance])
-        distance_relation.append([pair[1], pair[0], distance])
+        distance_relation.append([pair[0], pair[1], distanceAVG])
+        distance_relation.append([pair[1], pair[0], distanceAVG])
         repository_handler.reset_working_tmp()
         
     repository_handler.clear_working_tmp()
@@ -99,6 +101,7 @@ def construct_environment(distance_relation: list[tuple[str, str, PairwiseDistan
 
 def multidimensional_scaling(distance_matrix: np.ndarray[float], dimensions: int = 3) -> np.ndarray[float]:
     mds = MDS(dissimilarity='precomputed', random_state=0, n_components=dimensions, normalized_stress=False)
+    #print(str(distance_matrix))
     embeddings = mds.fit_transform(distance_matrix) 
     return embeddings
 

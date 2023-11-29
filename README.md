@@ -14,6 +14,8 @@ The driftool calculates the *Drift* for two difference measures.
 
 In general, higher numbers indicate a more complex repository management.
 
+:bulb: Per default, a git merge is a symmetric operation, meaning A into B produces the same conflicts as B into A. However, through certain git operations (resets, gitignore change etc.) it happens that the merge is not symmatric. For example, A into B has 2 conflicts, although B into A has 0 conflicts.
+
 ## Report Generation
 
 The driftool generates HTML reports for further human analysis. The following figure shows such an analysis. The right side list displays all analysed branches. The top-right graph shows the drift based on (merge-)conflicting lines. The bottom-right graph shows the drift based on pure differences. Both graphs are interactive 3D visualizations.
@@ -32,7 +34,7 @@ The driftool is a python application. To run it, it requires:
 It is preferred to use the existing ``requirements.txt`` to create a virtualenv.
 Please see the official [virtualenv documentation](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#install-packages-in-a-virtual-environment-using-pip-and-venv).
 
-> :bulb: Note that for large repositories, the drift calculation can take some time. The number of comparison rounds grows ``fac(number of branches)``. Each comparison round is linearly dependent on the repository size.
+> :bulb: Note that for large repositories, the drift calculation can take some time. The number of comparison rounds grows ``0.5 * (number of branches)^2``. Each comparison round is linearly dependent on the repository size.
 
 > :bulb: Driftool is not sufficiently tested on Windows. A known Windows issue is the possible inability to delete temporary files due to the git file lock. After using the driftool on Windows, please remove the ./tmp folder in the working directory manually.
 
