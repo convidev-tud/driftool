@@ -67,6 +67,11 @@ async def send_coroutine(outbox: Queue, connections: set, cycle_time_ms: int):
 
 
 class IOSocket:
+    '''
+    A convenient websocekt implementation running async in the backend.
+    It takes messages and manages connections with default strategies.
+    The main thread is not blocked.
+    '''
     __is_open: bool = False
 
     __consumers: set[Callable[[dict], None]] = None

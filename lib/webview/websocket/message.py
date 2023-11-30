@@ -11,19 +11,13 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from typing import Optional
 
-from botdriver.messages.message_target import MessageTarget
-from botdriver.messages.message_type import MessageType
+from lib.webview.websocket.message import Message
+from lib.webview.websocket.message_type import MessageType
 
 
 class Message:
     message_type: MessageType = None
-    message_target: Optional[MessageTarget] = None
 
-    def __init__(self, message_type: MessageType, message_target: Optional[MessageTarget] = None):
+    def __init__(self, message_type: MessageType,):
         self.message_type = message_type
-        self.message_target = message_target
-
-    def assign_target(self, message_target) -> None:
-        self.message_target = message_target

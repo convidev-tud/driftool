@@ -29,12 +29,15 @@ def calculate_standard_deviation(embeddings: np.ndarray[float]) -> float:
 
 def calculate_distances(repository_handler: RepositoryHandler) -> list[tuple[str, str, PairwiseDistance]]:
     '''
-    What should the metric / metrics be?
+    Calculate the actual distance relation.
+    The returned distance relation of type list[tuple[str, str, PairwiseDistance]] maps a pair
+    of branches to their pairwise distance.
+    Note: This function must be symmetrical. For example (A, B) -> 7 implies that (=>) (B, A) -> 7 as well.
+    However, sometimes the actual calculation is not symmetrical because of exotic git behaviour.
+    In this cases, the AVG of both directions is calculated and stored for both directions.
 
     sd  = statement drift = variance(conflicting_lines)
-    fd  = file drift = variance(conflicting_files)
-    bd  = branch drift = variance(conflicting_branches)
-    ldd  = difference drift = variance(branch_diff_lines)
+    dd  = difference drift = variance(diff_lines)
     '''
     branches = repository_handler.materialize_all_branches_in_reference()
     branch_product: list[tuple[str, str]] = itertools.product(branches, branches)
@@ -74,40 +77,50 @@ def calculate_distances(repository_handler: RepositoryHandler) -> list[tuple[str
 
 
 def construct_environment(distance_relation: list[tuple[str, str, PairwiseDistance]], branches: list[str]) -> MeasuredEnvironment:
-    
+    '''
+    Construct the MeasuredEnvironment from the distance relation.
+    This basically transforms the distance relation into a distance matrix.
+    '''
+
     me = MeasuredEnvironment()
     me.branches = branches
     
     d = len(branches)
     me.line_matrix = np.zeros(shape=(d, d))
-    me.conflict_matrix = np.zeros(shape=(d, d))
-    me.file_matrix = np.zeros(shape=(d, d))
-    me.branch_matrix = np.zeros(shape=(d, d))
     me.diff_matrix = np.zeros(shape=(d, d))
 
     for e in distance_relation:
         xi = branches.index(e[0])
         yi = branches.index(e[1])
         me.line_matrix[xi, yi] = e[2].conflicting_lines
-        me.file_matrix[xi, yi] = e[2].conflicting_files
         me.diff_matrix[xi, yi] = e[2].diff_lines
-        me.conflict_matrix[xi, yi] = e[2].conficts
-
-        if e[2].conflicting_lines > 0:
-            me.branch_matrix[xi, yi] = 1
 
     return me
 
 
 def multidimensional_scaling(distance_matrix: np.ndarray[float], dimensions: int = 3) -> np.ndarray[float]:
+    '''
+    Executes the MDS algorithm to reduce the distance matrix to a 3D point-cloud mathcing the distances as close
+    as possible.
+    https://en.wikipedia.org/wiki/Multidimensional_scaling
+
+    Although this function supports different dimensionality, in the context of this software, exactly 3 dimensions should be used.
+    '''
     mds = MDS(dissimilarity='precomputed', random_state=0, n_components=dimensions, normalized_stress=False)
-    #print(str(distance_matrix))
     embeddings = mds.fit_transform(distance_matrix) 
     return embeddings
 
 
 def analyze_with_config(input_dir: str, fetch_updates: bool, 
                         ignore_files: list[str], ignore_branches: list[str]) -> MeasuredEnvironment:
+    '''
+    The secret main method of the driftool application.
+    Orchestrates the drift calculation step by step.
+    1. Read and prepare the repository
+    2. Calculate the distance relation
+    3. Transfrom the relation into an Environment with distance matrices
+    4. Calculate the standard deviations -> the actual dirft metric
+    '''
 
     repository_handler: RepositoryHandler = RepositoryHandler(input_dir, fetch_updates, ignore_files, ignore_branches)
     repository_handler.create_reference_tmp()
@@ -119,21 +132,12 @@ def analyze_with_config(input_dir: str, fetch_updates: bool,
     environment = construct_environment(distance_relation, repository_handler.branches)
 
     environment.embedding_lines = multidimensional_scaling(environment.line_matrix, 3)
-    environment.embedding_conflicts = multidimensional_scaling(environment.conflict_matrix, 3)
-    environment.embedding_files = multidimensional_scaling(environment.file_matrix, 3)
-    environment.embedding_branches = multidimensional_scaling(environment.branch_matrix, 3)
     environment.embedding_differences = multidimensional_scaling(environment.diff_matrix, 3)
 
     drift_lines = calculate_standard_deviation(environment.embedding_lines)
-    drift_conflicts = calculate_standard_deviation(environment.embedding_conflicts)
-    drift_files = calculate_standard_deviation(environment.embedding_files)
-    drift_branches = calculate_standard_deviation(environment.embedding_branches)
     drift_diff = calculate_standard_deviation(environment.embedding_differences)
 
     environment.sd = drift_lines
-    environment.cd = drift_conflicts
-    environment.fd = drift_files
-    environment.bd = drift_branches
     environment.dd = drift_diff
 
     print("statement drift (sd) = " + str(drift_lines))

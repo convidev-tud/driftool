@@ -23,41 +23,23 @@ class MeasuredEnvironment:
         #TODO save latest commits to environment
 
         self.line_matrix: np.ndarray[float]
-        self.conflict_matrix: np.ndarray[float]
-        self.file_matrix: np.ndarray[float]
-        self.branch_matrix: np.ndarray[float]
         self.diff_matrix: np.ndarray[float]
 
         self.embedding_lines = np.ndarray[float]
-        self.embedding_conflicts = np.ndarray[float]
-        self.embedding_files = np.ndarray[float]
-        self.embedding_branches = np.ndarray[float]
         self.embedding_differences = np.ndarray[float]
 
         self.sd = 0
-        self.cd = 0
-        self.fd = 0
-        self.bd = 0
         self.dd = 0
 
 
     def serialize(self) -> str:
         obj = {
             "sd": self.sd,
-            "cd": self.cd,
-            "fd": self.fd,
-            "bd": self.bd,
             "dd": self.dd,
             "branches": self.branches,
             "line_matrix": self.line_matrix.tolist(),
-            "conflict_matrix": self.conflict_matrix.tolist(),
-            "file_matrix": self.file_matrix.tolist(),
-            "branch_matrix": self.branch_matrix.tolist(),
             "diff_matrix": self.diff_matrix.tolist(),
             "3d_embedding_lines": self.embedding_lines.tolist(),
-            "3d_embedding_conflicts": self.embedding_conflicts.tolist(),
-            "3d_embedding_files": self.embedding_files.tolist(),
-            "3d_embedding_branches": self.embedding_branches.tolist(),
             "3d_embedding_differences": self.embedding_differences.tolist()
             }
         return json.dumps(obj, indent=4)

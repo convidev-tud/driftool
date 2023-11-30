@@ -165,13 +165,10 @@ class RepositoryHandler:
         conflict_files = list(map(lambda u: u.split("Merge conflict in ")[1], conflict_lines))
         conflict_files = list(map(lambda u: u[:len(u)-1], conflict_files))
 
-        distance.conflicting_files = len(conflict_files)
-
         if len(conflict_files) > 0:
 
             #print(">> MERGE FROM " + incoming_branch + " INTO " + base_branch, end='\r')
             sum_of_conflicts = 0
-            number_of_conflicts = 0
 
             for file in conflict_files:
                 #print("CONFLICT IN: " + file)
@@ -190,7 +187,6 @@ class RepositoryHandler:
                     if "<<<<<<<" in line and not inside_conflict:
                         # merge conflict start
                         inside_conflict = True
-                        number_of_conflicts += 1
                         conflict_start_line = line_index
 
                     if ">>>>>>>" in line and inside_conflict:
@@ -202,6 +198,5 @@ class RepositoryHandler:
 
                 #print("conflicting lines: " + str(sum_of_conflicts))
                 distance.conflicting_lines = sum_of_conflicts
-                distance.conficts = number_of_conflicts
         
         return distance

@@ -22,6 +22,10 @@ from lib.data.distance import BranchDistance, BranchEnvironment
 
 
 def generate_branch_distance_map(me: MeasuredEnvironment) -> list[BranchEnvironment]:
+    '''
+    Transform the distance matrices of the MeasuredEnvironment into an easy to interpret relation.
+    This is required to keep the template logic as small as possible.
+    '''
     
     res: list[BranchEnvironment] = list()
 
@@ -43,6 +47,12 @@ def generate_branch_distance_map(me: MeasuredEnvironment) -> list[BranchEnvironm
 
 
 def render_html(me: MeasuredEnvironment):
+    '''
+    Generate the result HTML report using the mako template engine.
+    The prepared html file is located in the resources directory. 
+    This template file contains placeholders for the data values.
+    Data objects are preprocessed and passed to the tmplate engine
+    '''
     mytemplate = Template(filename='resources/report.template.html')
     buf = StringIO()
     
