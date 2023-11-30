@@ -13,20 +13,19 @@
 #  limitations under the License.
 
 class PairwiseDistance:
+    '''
+    The PairwiseDistance class groups all distance measures taken from a the repository.
+    '''
 
     def __init__(self) -> None:
 
         self.conflicting_lines: int = 0
-        self.conficts: int = 0
-        self.conflicting_files: int = 0
         self.diff_lines: int = 0
 
 
 def distanve_avg(one: PairwiseDistance, other: PairwiseDistance):
     res = PairwiseDistance()
     res.conflicting_lines = (one.conflicting_lines + other.conflicting_lines) * 0.5
-    res.conficts =  (one.conficts + other.conficts) * 0.5
-    res.conflicting_files = (one.conflicting_files + other.conflicting_files) * 0.5
     res.diff_lines = (one.diff_lines + other.diff_lines) * 0.5
     return res
     

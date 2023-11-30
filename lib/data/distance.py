@@ -15,6 +15,9 @@
 import json
 
 class BranchDistance:
+    '''
+    Helper data class for report generation.
+    '''
 
     peer_branch: str = None
     sd: str = None
@@ -34,8 +37,10 @@ class BranchDistance:
         return json.dumps(obj, indent=4)
 
 
-
 class BranchEnvironment:
+    '''
+    Helper data class for report generation.
+    '''
 
     branch: str = None
     distances: list[BranchDistance] = None

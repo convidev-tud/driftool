@@ -13,17 +13,16 @@
 #  limitations under the License.
 import json
 
-from botdriver.messages.message import Message
-from botdriver.messages.message_target import MessageTarget
-from botdriver.messages.message_type import MessageType
+from lib.webview.websocket.message import Message
+from lib.webview.websocket.message_type import MessageType
 
 
 class JsonMessage(Message):
 
     __data: dict = None
 
-    def __init__(self, message_target: MessageTarget):
-        super().__init__(MessageType.JSON, message_target)
+    def __init__(self):
+        super().__init__(MessageType.JSON)
 
     def set_data(self, data: dict) -> None:
         self.__data = data

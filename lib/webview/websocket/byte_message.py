@@ -11,17 +11,16 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from botdriver.messages.message import Message
-from botdriver.messages.message_target import MessageTarget
-from botdriver.messages.message_type import MessageType
 
+from lib.webview.websocket.message import Message
+from lib.webview.websocket.message_type import MessageType
 
 class ByteMessage(Message):
 
     __data: bytes = None
 
-    def __init__(self, message_target: MessageTarget):
-        super().__init__(MessageType.BYTES, message_target)
+    def __init__(self):
+        super().__init__(MessageType.BYTES)
 
     def set_data(self, data: bytes) -> None:
         self.__data = data

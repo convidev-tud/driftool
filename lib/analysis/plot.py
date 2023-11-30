@@ -16,33 +16,26 @@ from matplotlib import pyplot as plt
 from lib.data.measured_environment import MeasuredEnvironment
 
 def visualise_embeddings(me: MeasuredEnvironment):
+    '''
+    Uses matplotlib to create a (debug) visualization of the drift.
+    '''
 
-    #data = [("sd", me.embedding_lines), ("fd", me.embedding_files), ("bd", me.embedding_branches), ("dd", me.embedding_differences)]
     fig = plt.figure()
 
     x_sd = list(map(lambda t: t[0], me.embedding_lines))
     y_sd = list(map(lambda t: t[1], me.embedding_lines))
     z_sd = list(map(lambda t: t[2], me.embedding_lines))
 
-    x_cd = list(map(lambda t: t[0], me.embedding_conflicts))
-    y_cd = list(map(lambda t: t[1], me.embedding_conflicts))
-    z_cd = list(map(lambda t: t[2], me.embedding_conflicts))
-
     x_dd = list(map(lambda t: t[0], me.embedding_differences))
     y_dd = list(map(lambda t: t[1], me.embedding_differences))
     z_dd = list(map(lambda t: t[2], me.embedding_differences))
 
-    axsd = fig.add_subplot(1, 3, 1 , projection='3d')
+    axsd = fig.add_subplot(1, 2, 1 , projection='3d')
 
     axsd.scatter(x_sd, y_sd, z_sd)
     axsd.set_title('sd = ' + str("%.2f" % me.sd))
 
-    axsd = fig.add_subplot(1, 3, 2 , projection='3d')
-
-    axsd.scatter(x_cd, y_cd, z_cd)
-    axsd.set_title('cd = ' + str("%.2f" % me.cd))
-
-    axdd = fig.add_subplot(1, 3, 3, projection='3d')
+    axdd = fig.add_subplot(1, 2, 2, projection='3d')
 
     axdd.scatter(x_dd, y_dd, z_dd)
     axdd.set_title('ldd = ' + str("%.2f" % me.dd))
