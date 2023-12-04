@@ -41,11 +41,12 @@ if __name__ == '__main__':
     ignore_files: list[str] = list()
     ignore_branches: list[str] = list()
     open_socket: str | None = None
+    report_title: str | None = None
 
     try:
-        opts, args = getopt.getopt(argv, "h:c:i:o:f:p:t:b:g:s:x", 
+        opts, args = getopt.getopt(argv, "h:c:i:o:f:p:t:b:g:s:x:r", 
                                    ["config=", "input_repository=", "output_directory=", "fetch_updates=", 
-                                    "print_plot", "html", "branch_ignore=", "file_ignore", "show_html", "open_socket="])
+                                    "print_plot", "html", "branch_ignore=", "file_ignore", "show_html", "open_socket=", "report_title="])
     except getopt.GetoptError:
         print('see https://github.com/KKegel/driftool for further information')
         sys.exit(2)
@@ -80,6 +81,8 @@ if __name__ == '__main__':
         elif opt in ("-x", "--open_socket"):
             open_socket = True
             print("Socket mode not supported yet. Proceeding without socket connection!")
+        elif opt in ("-r", "--report_title"):
+            report_title = arg
 
     if config_path is not None:
         config_file = open(config_path, "r")
@@ -95,7 +98,11 @@ if __name__ == '__main__':
         ignore_branches = config.branch_ignore
         ignore_files = config.file_ignore
         open_socket = config.open_socket
+        report_title = config.report_title
 
+
+    if report_title is None:
+        report_title = ""
 
     print("input_dir: " + str(input_dir))
     print("output_dir: " + str(output_dir))
@@ -122,7 +129,7 @@ if __name__ == '__main__':
         output.close()
 
     if generate_html and output_dir:
-        html_content = render_html(measured_envrionment)
+        html_content = render_html(measured_envrionment, report_title, ignore_branches, ignore_files)
         html_file = output_dir + identifier + ".html"
         html_output = open(html_file, "x")
         html_output.write(html_content)

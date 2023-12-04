@@ -1,5 +1,6 @@
 {
     "input_repository": "/home/user/repository/",
+    "report_title": "My Repository Report",
     "output_directory": "./",
     "fetch_updates": false,
     "print_plot": false,
