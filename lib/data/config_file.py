@@ -25,6 +25,7 @@ class ConfigFile:
     branch_ignore: list[str]
     file_ignore: list[str]
     open_socket: str | None = None
+    report_title: str | None = None
 
     def __init__(self, config_json_string: str) -> None:
 
@@ -34,6 +35,8 @@ class ConfigFile:
             self.output_directory = conf["output_directory"]
         if "open_socket" in conf:
             self.open_socket = conf["open_socket"]
+        if "report_title" in conf:
+            self.report_title = conf["report_title"]
 
         self.input_repository = conf["input_repository"]
         self.fetch_updates = conf["fetch_updates"]

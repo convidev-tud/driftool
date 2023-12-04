@@ -46,7 +46,7 @@ def generate_branch_distance_map(me: MeasuredEnvironment) -> list[BranchEnvironm
 
 
 
-def render_html(me: MeasuredEnvironment):
+def render_html(me: MeasuredEnvironment, report_title: str, branch_ignore: list[str], file_ignore: list[str]):
     '''
     Generate the result HTML report using the mako template engine.
     The prepared html file is located in the resources directory. 
@@ -63,9 +63,12 @@ def render_html(me: MeasuredEnvironment):
 
     branch_wise_distances = generate_branch_distance_map(me)
 
-    ctx = Context(buf, 
+    ctx = Context(buf,
+                  title=report_title,
                   sd=str("%.2f" % me.sd), 
                   dd=str("%.2f" % me.dd), 
+                  branch_ignore=branch_ignore,
+                  file_ignore=file_ignore,
                   branch_array=me.branches, 
                   number_branches=len(me.branches),
                   sd_embeddings=json.dumps(sd_embeddings.tolist()),

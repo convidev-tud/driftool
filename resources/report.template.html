@@ -74,71 +74,63 @@
             width: 60vw !important;
         }
 
+        .branch-btn{
+            margin-bottom: 10px;
+        }
+
         tr:nth-child(even) {background-color: #f2f2f2;}
     
-    
+        #nav{
+            margin-bottom: 20px;
+        }
+
+        .content-div{
+            margin-top: 20px;
+        }
+
     </style>
 
 </head>
 
 <script>
+    
     var active_elem = undefined
 
     function show_env(branch_name){
+        /*
         if(active_elem){
             active_elem.style.display = 'none';
             active_elem = undefined;
         }
         active_elem = document.getElementById('env-'+branch_name)
         active_elem.style.display = 'block'
+        */
     }
+    
 </script>
 
 <body>
-    <nav class="navbar bg-body-tertiary">
+    <nav class="navbar bg-primary" data-bs-theme="dark">
         <div class="container-fluid">
-          <span class="navbar-brand mb-0 h1">Drift Analysis: <span class="red-font">sd = ${sd}</span> & <span class="blue-font">dd = ${dd}</span></span>
+          <a class="navbar-brand">DRIFTOOL Analysis Dashboard :: <b>${title}</b></a>
+            <a href="http://driftool.io" target="_blank"><button class="btn btn-light" type="submit">Driftool Documentation</button></a>
         </div>
-      </nav>
-    <div class="container horizontal">
+    </nav>
+    
+    <div class="container horizontal content-div">
             <div class="container vertical bordered w30">
-                <table id="branch-table">
-                    <tr>
-                        <th>Branch</th>
-                        <th>sd</th>
-                        <th>dd</th>
-                    </tr>
-                        % for a in branch_array:
-                        <tr>
-                            <td><span onclick="show_env('${a}')">${a}</span></td>
-                            <td><span id="marker-sd-${loop.index}" class="red-font hidden">&#x25A0;</span></td>
-                            <td><span id="marker-dd-${loop.index}" class="blue-font hidden">&#x25A0;</span></td>
-                        </tr>
-                        % endfor
-                </table>
-                <h3>Analysis</h3>
-                Click branch in above list to see results!
-                <div>
-                    % for branch_env in branch_distances:
-                    <div id="env-${branch_env.branch}" class="gone bordered">
-                        <strong>${branch_env.branch}</strong>
-                        <table>
-                            <tr>
-                                <th>Peer</th>
-                                <th>sd</th>
-                                <th>dd</th>
-                            </tr>
-                            % for peer in branch_env.distances:
-                                <tr>
-                                    <td>${peer.peer_branch}</td>
-                                    <td>${peer.sd}</td>
-                                    <td>${peer.dd}</td>
-                                </tr>
-                            % endfor
-                        </table>
-                    </div>
-                    % endfor
-                </div>
+                <span class="red-font"><h3>sd = ${sd}</h3></span>
+                <span class="blue-font"><h3>dd = ${dd}</h3></span>
+                <hr>
+
+                % for a in branch_array:
+                    <button id="btn-marker-${loop.index}" onclick="show_env('${a}')" type="button" data-bs-toggle="modal" data-bs-target="#modal-${loop.index}" class="branch-btn btn btn-light">${a}</button>
+                % endfor
+
+                <hr>
+
+                <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modal-conf">Show Config</button>
+
             </div>
             <div class="container grow vertical bordered">
                 <ul class="nav nav-pills mb-3 justify-content-end" id="pills-tab" role="tablist">
@@ -158,7 +150,67 @@
                     </div>
                   </div>
             </div>
-        
+    </div>
+
+    % for branch_env in branch_distances:
+        <div class="modal fade modal-dialog-scrollabl modal-lg" id="modal-${loop.index}" tabindex="-1">
+            <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h1 class="modal-title fs-5" id="staticBackdropLabel">Analysis: ${branch_env.branch}</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table>
+                        <tr>
+                            <th>Peer</th>
+                            <th>sd</th>
+                            <th>dd</th>
+                        </tr>
+                        % for peer in branch_env.distances:
+                            <tr>
+                                <td>${peer.peer_branch}</td>
+                                <td>${peer.sd}</td>
+                                <td>${peer.dd}</td>
+                            </tr>
+                        % endfor
+                    </table>
+                </div>
+                <div class="modal-footer">
+                <button type="button" class="btn btn-outline-success" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+            </div>
+        </div>
+    % endfor
+   
+    <div class="modal fade modal-dialog-scrollable modal-lg" id="modal-conf" tabindex="-1">
+        <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h1 class="modal-title fs-5" id="staticBackdropLabel">Deployed Analysis Configuration</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h4>Branch Ignore Patterns (Regex)</h4>
+                <p class="font-monospace">
+                    % for i in branch_ignore:
+                        ${i} <br />
+                    % endfor
+                </p>
+                <hr>
+                <h4>File Ingore Patterns (Git Style)</h4>
+                <p class="font-monospace">
+                    % for i in file_ignore:
+                        ${i} <br />
+                    % endfor
+                </p>
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-outline-success" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+        </div>
     </div>
 	
 </body>
@@ -172,12 +224,14 @@
         function highlight_branch(index, mode){
             console.log(index, mode)
             for(var i = 0; i < number_branches; i++){
-                const id = "marker-" + mode + "-" + i
+                const id = "btn-marker-" + i
                 const elem = document.getElementById(id)
+                elem.classList.remove("btn-primary")
+                elem.classList.remove("btn-light")
                 if(index.includes(i)){
-                    elem.style.visibility = 'visible';
+                    elem.classList.add("btn-primary")
                 }else{
-                    elem.style.visibility = 'hidden'
+                    elem.classList.add("btn-light")
                 }
             }
         }
