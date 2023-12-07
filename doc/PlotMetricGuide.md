@@ -17,6 +17,25 @@ Using the above distance measures, the unit of drift is *Lines of Code (LoC)*. B
 2. The pairwise distances are used to perform a multidimensional scaling of the set of branches to a 3D pointcloud.
 3. We calculate the standard deviation of euclidean distances from the mean point.
 
+For better understanding and transparency, we use the following standard deviation calculation method:
+```python
+def calculate_standard_deviation(embeddings: np.ndarray[float]) -> float:
+    '''
+    Input embeddings in the form [[x0, y0, z0], ..., [xi, yi, zi]]
+    '''
+    m = embeddings.mean(axis=0)
+    l = len(embeddings)
+    omega_squared = 0
+
+    for p in embeddings:
+        omega_squared += (((m[0] - p[0]) ** 2) + ((m[1] - p[1]) ** 2) + ((m[2] - p[2]) ** 2))
+    
+    omega_squared = omega_squared / l
+    omega = math.sqrt(omega_squared)
+    
+    return omega
+```
+
 ## Scatter Plot
 
 As explained above in *Calculation Details*, we perform a multidimensional scaling (MDS) into 3D space.
