@@ -70,6 +70,7 @@ def render_html(me: MeasuredEnvironment, report_title: str, branch_ignore: list[
                   branch_ignore=branch_ignore,
                   file_ignore=file_ignore,
                   branch_array=me.branches, 
+                  branch_array_json=json.dumps(me.branches),
                   number_branches=len(me.branches),
                   sd_embeddings=json.dumps(sd_embeddings.tolist()),
                   dd_embeddings=json.dumps(dd_embeddings.tolist()),

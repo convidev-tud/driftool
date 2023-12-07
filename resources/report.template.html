@@ -53,8 +53,8 @@
         .red-font{
             color: red;
         }
-        .w30{
-            width: 30%;
+        .w40{
+            width: 40vw;
         }
 
         .fullw{
@@ -67,7 +67,7 @@
     
         .visualplot{
             width: 60vw !important;
-            height: 85vh !important;
+            height: 80vh !important;
         }
 
         .w60{
@@ -86,6 +86,14 @@
 
         .content-div{
             margin-top: 20px;
+        }
+
+        .right-space-small{
+            margin-right: 20px;
+        }
+
+        .small-padding-top{
+            padding-top: 8px;
         }
 
     </style>
@@ -112,19 +120,21 @@
 <body>
     <nav class="navbar bg-primary" data-bs-theme="dark">
         <div class="container-fluid">
-          <a class="navbar-brand">DRIFTOOL Analysis Dashboard :: <b>${title}</b></a>
-            <a href="http://driftool.io" target="_blank"><button class="btn btn-light" type="submit">Driftool Documentation</button></a>
+          <span class="navbar-brand">DRIFTOOL Analysis Dashboard :: <b>${title}</b></span>
+          <div class="grow"></div>
+          <a href="http://doc.driftool.io" target="_blank" class="right-space-small"><button class="btn btn-light" type="submit">Understanding Metric & Plot</button></a>
+          <a href="http://driftool.io" target="_blank"><button class="btn btn-light" type="submit">Driftool Documentation</button></a>
         </div>
     </nav>
     
     <div class="container horizontal content-div">
-            <div class="container vertical bordered w30">
+            <div class="container vertical bordered w40">
                 <span class="red-font"><h3>sd = ${sd}</h3></span>
                 <span class="blue-font"><h3>dd = ${dd}</h3></span>
                 <hr>
 
                 % for a in branch_array:
-                    <button id="btn-marker-${loop.index}" onclick="show_env('${a}')" type="button" data-bs-toggle="modal" data-bs-target="#modal-${loop.index}" class="branch-btn btn btn-light">${a}</button>
+                    <button id="btn-marker-${loop.index}" onclick="show_env('${a}')" type="button" data-bs-toggle="modal" data-bs-target="#modal-${loop.index}" class="branch-btn btn btn-light btn-sm">${a}</button>
                 % endfor
 
                 <hr>
@@ -134,11 +144,16 @@
             </div>
             <div class="container grow vertical bordered">
                 <ul class="nav nav-pills mb-3 justify-content-end" id="pills-tab" role="tablist">
-                    <li class="nav-item" role="presentation">
-                      <button class="nav-link" id="pills-sd-tab" data-bs-toggle="pill" data-bs-target="#pills-sd" type="button" role="tab" aria-controls="pills-sd" aria-selected="true">SD (Statement Conflicts)</button>
+                    <li class="right-space-small small-padding-top"><span class="fw-lighter">Reload page to adjust after resizing.</span></li>
+                    <li class="nav-item right-space-small small-padding-top" role="presentation">
+                        <input type="checkbox" class="form-check-input" role="switch" id="btn-label-check" autocomplete="off" onclick="render()">
+                        <label class="form-check-label" for="btn-label-check">Show Branch Labels</label>                           
                     </li>
                     <li class="nav-item" role="presentation">
-                      <button class="nav-link active" id="pills-dd-tab" data-bs-toggle="pill" data-bs-target="#pills-dd" type="button" role="tab" aria-controls="pills-dd" aria-selected="false">DD (Line Diff)</button>
+                      <button class="nav-link btn-sm" id="pills-sd-tab" data-bs-toggle="pill" data-bs-target="#pills-sd" type="button" role="tab" aria-controls="pills-sd" aria-selected="true">SD (Statement Conflicts)</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                      <button class="nav-link active btn-sm" id="pills-dd-tab" data-bs-toggle="pill" data-bs-target="#pills-dd" type="button" role="tab" aria-controls="pills-dd" aria-selected="false">DD (Line Diff)</button>
                     </li>
                   </ul>
                   <div class="tab-content" id="nav-tabContent">
@@ -160,8 +175,8 @@
                 <h1 class="modal-title fs-5" id="staticBackdropLabel">Analysis: ${branch_env.branch}</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <table>
+                <div class="modal-body fullw">
+                    <table class="fullw">
                         <tr>
                             <th>Peer</th>
                             <th>sd</th>
@@ -237,7 +252,27 @@
         }
 
         var trace_conflicts = {
-            x: embedding_conflicts_3d.map(d => d[0]), y: embedding_conflicts_3d.map(d => d[1]), z: embedding_conflicts_3d.map(d => d[2]),
+            x: embedding_conflicts_3d.map(d => d[0]), 
+            y: embedding_conflicts_3d.map(d => d[1]), 
+            z: embedding_conflicts_3d.map(d => d[2]),
+            mode: 'markers+text',
+            text: JSON.parse('${branch_array_json}'),
+            textfont : {
+                family:'Times New Roman'
+            },
+            textposition: 'bottom center',
+            hoverinfo:'none',
+            marker: {
+                size: 12,
+                color: 'rgb(255,0,50)',
+                opacity: 0.4},
+            type: 'scatter3d'
+        };
+
+        var trace_conflicts_unlabeled = {
+            x: embedding_conflicts_3d.map(d => d[0]), 
+            y: embedding_conflicts_3d.map(d => d[1]), 
+            z: embedding_conflicts_3d.map(d => d[2]),
             mode: 'markers',
             hoverinfo:'none',
             marker: {
@@ -248,7 +283,27 @@
         };
 
         var trace_differences = {
-            x: embedding_differences_3d.map(d => d[0]), y: embedding_differences_3d.map(d => d[1]), z: embedding_differences_3d.map(d => d[2]),
+            x: embedding_differences_3d.map(d => d[0]), 
+            y: embedding_differences_3d.map(d => d[1]), 
+            z: embedding_differences_3d.map(d => d[2]),
+            mode: 'markers+text',
+            text: JSON.parse('${branch_array_json}'),
+            textfont : {
+                family:'Times New Roman'
+            },
+            textposition: 'bottom center',
+            hoverinfo:'none',
+            marker: {
+                size: 12,
+                color: 'rgb(0,0,255)',
+                opacity: 0.4},
+            type: 'scatter3d'
+        };
+
+        var trace_differences_unlabeled = {
+            x: embedding_differences_3d.map(d => d[0]), 
+            y: embedding_differences_3d.map(d => d[1]), 
+            z: embedding_differences_3d.map(d => d[2]),
             mode: 'markers',
             hoverinfo:'none',
             marker: {
@@ -261,67 +316,78 @@
         console.log(trace_conflicts)
         console.log(trace_differences)
 
-        var data_conflicts = [trace_conflicts];
-        var data_differences = [trace_differences];
+        function render(){
 
-        var layout = {margin: {
-            l: 0,
-            r: 0,
-            b: 0,
-            t: 0
-        }};
+            const withLabels = document.getElementById('btn-label-check').checked;
 
-        Plotly.newPlot('conflict-div', data_conflicts, layout);
-        Plotly.newPlot('difference-div', data_differences, layout);
+            var data_conflicts = [trace_conflicts_unlabeled];
+            var data_differences = [trace_differences_unlabeled];
 
-        document.getElementById('conflict-div').on('plotly_click', function(data){
-            var pt = [
-                undefined,
-                undefined,
-                undefined
-            ];
-            for(var i=0; i < data.points.length; i++){
-                pt[0] = data.points[i].x
-                pt[1] = data.points[i].y
-                pt[2] = data.points[i].z
+            if(withLabels){
+                data_conflicts = [trace_conflicts];
+                data_differences = [trace_differences];
             }
 
-            var branches = []
+            var layout = {margin: {
+                l: 0,
+                r: 0,
+                b: 0,
+                t: 0
+            }};
 
-            for(var i=0; i < embedding_conflicts_3d.length; i++){
-                var e = embedding_conflicts_3d[i]
-                if(e[0] === pt[0] && e[1] === pt[1] && e[2] === pt[2]){
-                    branches.push(i)
+            Plotly.newPlot('conflict-div', data_conflicts, layout);
+            Plotly.newPlot('difference-div', data_differences, layout);
+
+            document.getElementById('conflict-div').on('plotly_click', function(data){
+                var pt = [
+                    undefined,
+                    undefined,
+                    undefined
+                ];
+                for(var i=0; i < data.points.length; i++){
+                    pt[0] = data.points[i].x
+                    pt[1] = data.points[i].y
+                    pt[2] = data.points[i].z
                 }
-            }
-            console.log("on-click branch " + JSON.stringify(branches))
-            highlight_branch(branches, "sd")
-        });
 
-        document.getElementById('difference-div').on('plotly_click', function(data){
-            var pt = [
-                undefined,
-                undefined,
-                undefined
-            ];
-            for(var i=0; i < data.points.length; i++){
-                pt[0] = data.points[i].x
-                pt[1] = data.points[i].y
-                pt[2] = data.points[i].z
-            }
+                var branches = []
 
-            var branches = []
-
-            for(var i=0; i < embedding_differences_3d.length; i++){
-                var e = embedding_differences_3d[i]
-                if(e[0] === pt[0] && e[1] === pt[1] && e[2] === pt[2]){
-                    branches.push(i)
+                for(var i=0; i < embedding_conflicts_3d.length; i++){
+                    var e = embedding_conflicts_3d[i]
+                    if(e[0] === pt[0] && e[1] === pt[1] && e[2] === pt[2]){
+                        branches.push(i)
+                    }
                 }
-            }
-            console.log("on-click branch " + JSON.stringify(branches))
-            highlight_branch(branches, "dd")
-        });
+                console.log("on-click branch " + JSON.stringify(branches))
+                highlight_branch(branches, "sd")
+            });
 
+            document.getElementById('difference-div').on('plotly_click', function(data){
+                var pt = [
+                    undefined,
+                    undefined,
+                    undefined
+                ];
+                for(var i=0; i < data.points.length; i++){
+                    pt[0] = data.points[i].x
+                    pt[1] = data.points[i].y
+                    pt[2] = data.points[i].z
+                }
 
+                var branches = []
+
+                for(var i=0; i < embedding_differences_3d.length; i++){
+                    var e = embedding_differences_3d[i]
+                    if(e[0] === pt[0] && e[1] === pt[1] && e[2] === pt[2]){
+                        branches.push(i)
+                    }
+                }
+                console.log("on-click branch " + JSON.stringify(branches))
+                highlight_branch(branches, "dd")
+            });
+
+        }
+
+        render()
 </script>
 </html>
