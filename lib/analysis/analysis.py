@@ -24,7 +24,20 @@ from lib.data.measured_environment import MeasuredEnvironment
 
 
 def calculate_standard_deviation(embeddings: np.ndarray[float]) -> float:
-    return math.sqrt(np.var(embeddings, [1, 0, 0]) + np.var(embeddings, [0, 1, 0]) + np.var(embeddings, [0, 0, 1]))
+    '''
+    Input embeddings in the form [[x0, y0, z0], ..., [xi, yi, zi]]
+    '''
+    m = embeddings.mean(axis=0)
+    l = len(embeddings)
+    omega_squared = 0
+
+    for p in embeddings:
+        omega_squared += (((m[0] - p[0]) ** 2) + ((m[1] - p[1]) ** 2) + ((m[2] - p[2]) ** 2))
+    
+    omega_squared = omega_squared / l
+    omega = math.sqrt(omega_squared)
+    
+    return omega
 
 
 def calculate_distances(repository_handler: RepositoryHandler) -> list[tuple[str, str, PairwiseDistance]]:
