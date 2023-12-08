@@ -10,6 +10,7 @@
         "^release\\-",
         "^v\\."
     ],
+    "whitelist": [],
     "file_ignore": [
         "build/",
         "dist/",

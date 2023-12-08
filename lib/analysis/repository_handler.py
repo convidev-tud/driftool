@@ -17,11 +17,12 @@ from pathlib import Path
 
 import uuid
 import subprocess
-import os
+import os, os.path
 import re
 import stat
 
 from lib.data.pairwise_distance import PairwiseDistance
+from lib.analysis.directory import purge_blacklist, keep_whitelist
 
 class RepositoryHandler:
 
@@ -52,46 +53,20 @@ class RepositoryHandler:
         copytree(self._input_dir, self._reference_tmp_path)
 
 
-    def commit_gitignore_extension(self):
+    def commit_file_selectors(self):
 
-        if len(self._file_ignores) > 0:
-            # clear all gitignores in the project
-            p = Path(self._reference_tmp_path)
-            all_gitignores = list(p.glob('tmp/**/*.gitignore'))
-            print(all_gitignores)
-            for path in all_gitignores:
-                f = open(str(path), "w")
-                f.write("")
-                f.flush()
-                f.close()
-
-        gitignore = open(self._reference_tmp_path + "/.gitignore", "a")
-
-        if len(self._file_whitelist) == 0:
-            for entry in self._file_ignores:
-                gitignore.write(entry + "\n")
-                gitignore.flush()
+        if len(self._file_whitelist) > 0:
+            # delete everything EXCEPT the whitelist
+            keep_whitelist(self._file_whitelist, self._working_tmp_path + "/")
+            
         else:
-            '''
-            https://stackoverflow.com/questions/8024924/gitignore-ignore-all-files-then-recursively-allow-foo
-            ---
-            # Ignore everything
-            *
-            # Don't ignore directories, so we can recurse into them
-            !*/
-            # Don't ignore .gitignore and *.foo files
-            !.gitignore
-            !*.foo
-            '''
-            gitignore.write("*\n!*/\n\!.gitignore\n")
-            gitignore.flush()
-            for entry in self._file_whitelist:
-                gitignore.write(entry + "\n")
-                gitignore.flush()
-
-        gitignore.close()
-        subprocess.run(["git", "add", "."], capture_output=True, cwd=self._reference_tmp_path)
-        subprocess.run(["git", "commit", "-m", '"close setup (driftool)"'], capture_output=True, cwd=self._reference_tmp_path)
+            # delete everything from the blacklist
+            purge_blacklist(self._file_ignores, self._working_tmp_path + "/")
+            
+        out1 = subprocess.run(["git", "add", "--all"], capture_output=True, cwd=self._reference_tmp_path).stdout
+        out2 = subprocess.run(["git", "commit", "-m", '"close setup (driftool)"'], capture_output=True, cwd=self._reference_tmp_path).stdout
+        print(out1)
+        print(out2)
 
 
     def clear_reference_tmp(self):
@@ -147,7 +122,7 @@ class RepositoryHandler:
             if self._fetch_updates:
                 pull = subprocess.run(["git", "pull", "origin", branch], capture_output=True, cwd=path).stdout
 
-            self.commit_gitignore_extension()
+            self.commit_file_selectors()
         
         self.branches = list()
         
