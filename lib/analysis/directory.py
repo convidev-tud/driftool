@@ -14,10 +14,14 @@
 
 import os, os.path
 import re
+import shutil
 
 def purge_blacklist(regex_list: list[str], root_path: str):
 
     git_pattern = re.compile(".git")
+
+    # TODO directory deletion
+    # shutil.rmtree() 
 
     for regex in regex_list:
         pattern = re.compile(regex)
@@ -33,6 +37,9 @@ def keep_whitelist(regex_list: list[str], root_path: str):
 
     git_pattern = re.compile(".git")
     patterns = list()
+
+    # TODO directory deletion
+    # shutil.rmtree()
 
     for regex in regex_list:
         pattern = re.compile(regex)
