@@ -17,7 +17,7 @@ import re
 
 def purge_blacklist(regex_list: list[str], root_path: str):
 
-    git_pattern = re.compile("/.git/")
+    git_pattern = re.compile(".git")
 
     for regex in regex_list:
         pattern = re.compile(regex)
@@ -31,12 +31,12 @@ def purge_blacklist(regex_list: list[str], root_path: str):
 
 def keep_whitelist(regex_list: list[str], root_path: str):
 
-    git_pattern = re.compile("/.git/")
+    git_pattern = re.compile(".git")
     patterns = list()
 
     for regex in regex_list:
         pattern = re.compile(regex)
-        patterns.append()
+        patterns.append(pattern)
 
     for root, dirs, files in os.walk(root_path):
         print(str(root) + " " + str(dirs) + " " + str(files))
