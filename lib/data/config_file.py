@@ -24,6 +24,7 @@ class ConfigFile:
     show_html: bool
     branch_ignore: list[str]
     file_ignore: list[str]
+    file_whitelist: list[str]
     open_socket: str | None = None
     report_title: str | None = None
 
@@ -45,4 +46,5 @@ class ConfigFile:
         self.show_html = conf["show_html"]
         self.branch_ignore = conf["branch_ignore"]
         self.file_ignore = conf["file_ignore"]
+        self.file_whitelist = conf["whitelist"]
        

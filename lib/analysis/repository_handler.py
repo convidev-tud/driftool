@@ -13,9 +13,10 @@
 #  limitations under the License.
 
 from shutil import copytree, rmtree
+from pathlib import Path
+
 import uuid
 import subprocess
-import gc
 import os
 import re
 import stat
@@ -30,16 +31,19 @@ class RepositoryHandler:
     _working_tmp_path: str | None
     _branch_ignores: list[str]
     _file_ignores: list[str]
+    _file_whitelist: list[str]
     
     branches: list[str]
     head: str | None = None
 
 
-    def __init__(self, input_dir, fetch_updates: bool, ignore_files: list[str], ignore_branches: list[str]):
+    def __init__(self, input_dir, fetch_updates: bool, ignore_files: list[str], 
+                 whitelist_files: list[str], ignore_branches: list[str]):
         self._input_dir = input_dir
         self._fetch_updates = fetch_updates
         self._branch_ignores = ignore_branches
         self._file_ignores = ignore_files
+        self._file_whitelist = whitelist_files
         self.branches = list()
 
 
@@ -49,12 +53,44 @@ class RepositoryHandler:
 
 
     def commit_gitignore_extension(self):
+
+        if len(self._file_ignores) > 0:
+            # clear all gitignores in the project
+            p = Path(self._reference_tmp_path)
+            all_gitignores = list(p.glob('tmp/**/*.gitignore'))
+            print(all_gitignores)
+            for path in all_gitignores:
+                f = open(str(path), "w")
+                f.write("")
+                f.flush()
+                f.close()
+
         gitignore = open(self._reference_tmp_path + "/.gitignore", "a")
-        for entry in self._file_ignores:
-            gitignore.write(entry + "\n")
+
+        if len(self._file_whitelist) == 0:
+            for entry in self._file_ignores:
+                gitignore.write(entry + "\n")
+                gitignore.flush()
+        else:
+            '''
+            https://stackoverflow.com/questions/8024924/gitignore-ignore-all-files-then-recursively-allow-foo
+            ---
+            # Ignore everything
+            *
+            # Don't ignore directories, so we can recurse into them
+            !*/
+            # Don't ignore .gitignore and *.foo files
+            !.gitignore
+            !*.foo
+            '''
+            gitignore.write("*\n!*/\n\!.gitignore\n")
             gitignore.flush()
+            for entry in self._file_whitelist:
+                gitignore.write(entry + "\n")
+                gitignore.flush()
+
         gitignore.close()
-        subprocess.run(["git", "add", ".gitgnore"], capture_output=True, cwd=self._reference_tmp_path)
+        subprocess.run(["git", "add", "."], capture_output=True, cwd=self._reference_tmp_path)
         subprocess.run(["git", "commit", "-m", '"close setup (driftool)"'], capture_output=True, cwd=self._reference_tmp_path)
 
 

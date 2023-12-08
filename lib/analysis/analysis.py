@@ -125,7 +125,7 @@ def multidimensional_scaling(distance_matrix: np.ndarray[float], dimensions: int
 
 
 def analyze_with_config(input_dir: str, fetch_updates: bool, 
-                        ignore_files: list[str], ignore_branches: list[str]) -> MeasuredEnvironment:
+                        ignore_files: list[str], whitelist_files: list[str], ignore_branches: list[str]) -> MeasuredEnvironment:
     '''
     The secret main method of the driftool application.
     Orchestrates the drift calculation step by step.
@@ -135,7 +135,7 @@ def analyze_with_config(input_dir: str, fetch_updates: bool,
     4. Calculate the standard deviations -> the actual dirft metric
     '''
 
-    repository_handler: RepositoryHandler = RepositoryHandler(input_dir, fetch_updates, ignore_files, ignore_branches)
+    repository_handler: RepositoryHandler = RepositoryHandler(input_dir, fetch_updates, ignore_files, whitelist_files, ignore_branches)
     repository_handler.create_reference_tmp()
     
     distance_relation = calculate_distances(repository_handler)

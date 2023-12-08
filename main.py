@@ -39,14 +39,16 @@ if __name__ == '__main__':
     generate_html: bool = False
     show_html: bool = False
     ignore_files: list[str] = list()
+    whitelist_files: list[str] = list()
     ignore_branches: list[str] = list()
     open_socket: str | None = None
     report_title: str | None = None
 
     try:
-        opts, args = getopt.getopt(argv, "h:c:i:o:f:p:t:b:g:s:x:r", 
+        opts, args = getopt.getopt(argv, "h:c:i:o:f:p:t:b:g:w:s:x:r", 
                                    ["config=", "input_repository=", "output_directory=", "fetch_updates=", 
-                                    "print_plot", "html", "branch_ignore=", "file_ignore", "show_html", "open_socket=", "report_title="])
+                                    "print_plot", "html", "branch_ignore=", "file_ignore=", "whitelist=", 
+                                    "show_html", "open_socket=", "report_title="])
     except getopt.GetoptError:
         print('see https://github.com/KKegel/driftool for further information')
         sys.exit(2)
@@ -78,6 +80,10 @@ if __name__ == '__main__':
             values = arg.split("::")
             for val in values:
                 ignore_files.append(val)
+        elif opt in ("-w", "--whitelist"):
+            values = arg.split("::")
+            for val in values:
+                whitelist_files.append(val)
         elif opt in ("-x", "--open_socket"):
             open_socket = True
             print("Socket mode not supported yet. Proceeding without socket connection!")
@@ -97,6 +103,7 @@ if __name__ == '__main__':
         show_html = config.show_html
         ignore_branches = config.branch_ignore
         ignore_files = config.file_ignore
+        whitelist_files = config.file_whitelist
         open_socket = config.open_socket
         report_title = config.report_title
 
@@ -112,13 +119,14 @@ if __name__ == '__main__':
     print("show_html: " + str(show_html))
     print("ignore_branches: " + str(ignore_branches))
     print("ignore_files: " + str(ignore_files))
+    print("file_whitelist: " + str(whitelist_files))
     print("open_socket: " + str(open_socket))
 
     if input_dir is None:
         print("Missing requirement: input directory")
         sys.exit(2)
 
-    measured_envrionment: MeasuredEnvironment = analyze_with_config(input_dir, fetch_updates, ignore_files, ignore_branches)
+    measured_envrionment: MeasuredEnvironment = analyze_with_config(input_dir, fetch_updates, ignore_files, whitelist_files, ignore_branches)
 
     identifier = ("driftool_results_" + str(datetime.now())).replace(":", "_").replace(".", "_").replace(" ", "_")
 
