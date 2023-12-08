@@ -1,5 +1,9 @@
 # driftool :: Git Branch-Variance Analysis
 
+**🚑 The blacklist functionality has known bugs and does not work reliable as of right now.**
+
+---
+
 The driftool calculates the drift analysis for git repositories. It automatically compares all branches, simulates merges and generates both a scalar drift metric, as well as a 3D view of the repository drift.
 The base measure is the standard deviation of diffs and merge conflicts in between branches.
 
