@@ -14,22 +14,20 @@
 
 import os, os.path
 import re
-import shutil
 
 def purge_blacklist(regex_list: list[str], root_path: str):
 
     git_pattern = re.compile(".git")
 
-    # TODO directory deletion
-    # shutil.rmtree() 
-
     for regex in regex_list:
         pattern = re.compile(regex)
         for root, dirs, files in os.walk(root_path):
-            print(str(root) + " " + str(dirs) + " " + str(files))
+
             if git_pattern.search(str(root)) is None:
+                print("TRAVERSE: " + str(root) + " " + str(dirs) + " " + str(files))
+
                 for file in files:
-                    if pattern.search(file) is not None:
+                    if pattern.search(root + file) is not None:
                         os.remove(os.path.join(root, file))
 
 
@@ -38,21 +36,19 @@ def keep_whitelist(regex_list: list[str], root_path: str):
     git_pattern = re.compile(".git")
     patterns = list()
 
-    # TODO directory deletion
-    # shutil.rmtree()
-
     for regex in regex_list:
         pattern = re.compile(regex)
         patterns.append(pattern)
 
     for root, dirs, files in os.walk(root_path):
-        print(str(root) + " " + str(dirs) + " " + str(files))
+
         if git_pattern.search(str(root)) is None:
+            print("TRAVERSE: " + str(root) + " " + str(dirs) + " " + str(files))
 
             for file in files:
                 do_purge = True
                 for pattern in patterns:
-                    if pattern.search(file) is not None:
+                    if pattern.search(root + file) is not None:
                         do_purge = False
                         break;
                 if do_purge:

@@ -11,7 +11,7 @@
         "^v\\."
     ],
     "whitelist": [],
-    "file_ignore": [
+    "blacklist": [
         "build/",
         "dist/",
         "gen/",

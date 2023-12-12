@@ -55,18 +55,19 @@ class RepositoryHandler:
 
     def commit_file_selectors(self):
 
-        if len(self._file_whitelist) > 0:
-            # delete everything EXCEPT the whitelist
-            keep_whitelist(self._file_whitelist, self._working_tmp_path + "/")
-            
-        else:
-            # delete everything from the blacklist
-            purge_blacklist(self._file_ignores, self._working_tmp_path + "/")
-            
-        out1 = subprocess.run(["git", "add", "--all"], capture_output=True, cwd=self._reference_tmp_path).stdout
-        out2 = subprocess.run(["git", "commit", "-m", '"close setup (driftool)"'], capture_output=True, cwd=self._reference_tmp_path).stdout
-        print(out1)
-        print(out2)
+        if len(self._file_whitelist) > 0 or len(self._file_ignores) > 0:
+
+            if len(self._file_whitelist) > 0:
+                # delete everything EXCEPT the whitelist
+                keep_whitelist(self._file_whitelist, self._reference_tmp_path + "/")
+            if len(self._file_ignores) > 0:
+                # delete everything from the blacklist
+                purge_blacklist(self._file_ignores, self._reference_tmp_path + "/")
+                
+            out1 = subprocess.run(["git", "add", "--all"], capture_output=True, cwd=self._reference_tmp_path).stdout
+            out2 = subprocess.run(["git", "commit", "-m", '"close setup (driftool)"'], capture_output=True, cwd=self._reference_tmp_path).stdout
+            print(out1)
+            print(out2)
 
 
     def clear_reference_tmp(self):
@@ -88,7 +89,7 @@ class RepositoryHandler:
         if self.head is not None:
             reset = subprocess.run(["git", "reset", "--hard", self.head], capture_output=True, cwd=self._working_tmp_path)
             #print(reset.stdout)
-        stash_clutter = subprocess.run(["git", "stash"], capture_output=True, cwd=self._working_tmp_path)
+        stash_clutter = subprocess.run(["git", "clean"], capture_output=True, cwd=self._working_tmp_path)
 
 
     def clear_working_tmp(self):
@@ -117,7 +118,7 @@ class RepositoryHandler:
         for branch in all_branches:
             print(branch)
             subprocess.run(["git", "checkout", branch], capture_output=True, cwd=path)
-            subprocess.run(["git", "stash"], capture_output=True, cwd=path)
+            subprocess.run(["git", "clean"], capture_output=True, cwd=path)
             
             if self._fetch_updates:
                 pull = subprocess.run(["git", "pull", "origin", branch], capture_output=True, cwd=path).stdout

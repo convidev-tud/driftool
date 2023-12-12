@@ -16,7 +16,6 @@ import itertools
 import numpy as np
 from sklearn.manifold import MDS
 import math
-import sys
 
 from lib.data.pairwise_distance import PairwiseDistance, distanve_avg
 from lib.analysis.repository_handler import RepositoryHandler
@@ -140,7 +139,7 @@ def analyze_with_config(input_dir: str, fetch_updates: bool,
     
     distance_relation = calculate_distances(repository_handler)
 
-    repository_handler.clear_reference_tmp()
+    #repository_handler.clear_reference_tmp()
 
     environment = construct_environment(distance_relation, repository_handler.branches)
 
