@@ -7,6 +7,8 @@ __pycache__/
 *.so
 
 tmp/
+env/
+*env/
 
 test-config*
 

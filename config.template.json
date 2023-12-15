@@ -10,7 +10,8 @@
         "^release\\-",
         "^v\\."
     ],
-    "file_ignore": [
+    "whitelist": [],
+    "blacklist": [
         "build/",
         "dist/",
         "gen/",
