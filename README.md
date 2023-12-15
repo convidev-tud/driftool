@@ -132,7 +132,7 @@ The following example is provided as ``config.template.json`` as part of this re
         "gen\\/",
         "\\.min\\.js",
         "\\.lib\\.js",
-        "node\-modules\\/",
+        "node\\-modules\\/",
         "\\.pdf",
         "javadoc\\/"
     ],
