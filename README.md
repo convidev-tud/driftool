@@ -1,6 +1,6 @@
 # driftool :: Git Branch-Variance Analysis
 
-**🚑 The blacklist functionality has known bugs and does not work reliable as of right now.**
+**🚑 Under development, do not use in production yet!**
 
 ---
 
