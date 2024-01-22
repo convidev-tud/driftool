@@ -75,6 +75,7 @@ class RepositoryHandler:
             os.access(self._reference_tmp_path, stat.S_IWUSR)
             rmtree(self._reference_tmp_path)
             self._reference_tmp_path = None
+            print("TMP files cleaned")
         except:
             print("DELETE TMP/ FILE MANUALLY!")
 

@@ -12,13 +12,14 @@
     ],
     "whitelist": [],
     "blacklist": [
-        "build/",
-        "dist/",
-        "gen/",
-        "*.min.js",
-        "*.lib.js",
-        "node-modules/",
-        "*.pdf",
-        "javadoc/"
+        "build\\/",
+        "dist\\/",
+        "gen\\/",
+        "\\.min\\.js",
+        "\\.lib\\.js",
+        "node\\-modules\\/",
+        "\\.pdf",
+        "javadoc\\/",
+        "\\.png"
     ]
 }

@@ -45,6 +45,6 @@ class ConfigFile:
         self.html = conf["html"]
         self.show_html = conf["show_html"]
         self.branch_ignore = conf["branch_ignore"]
-        self.file_ignore = conf["file_ignore"]
+        self.file_ignore = conf["blacklist"]
         self.file_whitelist = conf["whitelist"]
        

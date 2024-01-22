@@ -84,6 +84,7 @@ def calculate_distances(repository_handler: RepositoryHandler) -> list[tuple[str
         repository_handler.reset_working_tmp()
         
     repository_handler.clear_working_tmp()
+    repository_handler.clear_reference_tmp()
 
     return distance_relation
 
