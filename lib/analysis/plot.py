@@ -26,18 +26,18 @@ def visualise_embeddings(me: MeasuredEnvironment):
     y_sd = list(map(lambda t: t[1], me.embedding_lines))
     z_sd = list(map(lambda t: t[2], me.embedding_lines))
 
-    x_dd = list(map(lambda t: t[0], me.embedding_differences))
-    y_dd = list(map(lambda t: t[1], me.embedding_differences))
-    z_dd = list(map(lambda t: t[2], me.embedding_differences))
+    #x_dd = list(map(lambda t: t[0], me.embedding_differences))
+    #y_dd = list(map(lambda t: t[1], me.embedding_differences))
+    #z_dd = list(map(lambda t: t[2], me.embedding_differences))
 
-    axsd = fig.add_subplot(1, 2, 1 , projection='3d')
+    axsd = fig.add_subplot(1, 1, 1 , projection='3d')
 
     axsd.scatter(x_sd, y_sd, z_sd)
-    axsd.set_title('sd = ' + str("%.2f" % me.sd))
+    axsd.set_title('drift = ' + str("%.2f" % me.sd))
 
-    axdd = fig.add_subplot(1, 2, 2, projection='3d')
+    #axdd = fig.add_subplot(1, 2, 2, projection='3d')
 
-    axdd.scatter(x_dd, y_dd, z_dd)
-    axdd.set_title('ldd = ' + str("%.2f" % me.dd))
+    #axdd.scatter(x_dd, y_dd, z_dd)
+    #axdd.set_title('ldd = ' + str("%.2f" % me.dd))
 
     plt.show()

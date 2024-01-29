@@ -153,12 +153,12 @@ class RepositoryHandler:
 
         subprocess.run(["git", "checkout", base_branch], capture_output=True, cwd=self._working_tmp_path)
         
-       
         m = re.compile("(?<=commit\\s)(.*?)(?=\\\n)")
         commit_log = subprocess.run(["git", "log", "-n 1"], capture_output=True, cwd=self._working_tmp_path).stdout
         commit_hash = m.search(commit_log.decode("utf-8")).group()
         self.head = commit_hash
 
+        '''
         stdout_diff = subprocess.run(["git", "diff", base_branch + ".." + incoming_branch], capture_output=True, cwd=self._working_tmp_path).stdout.splitlines()
         diff_size = 0
         for line in stdout_diff:
@@ -170,6 +170,8 @@ class RepositoryHandler:
             distance.diff_lines = diff_size
         else:
             distance.diff_lines = 0
+        '''
+        distance.diff_lines = 0
 
         stdout_merge = subprocess.run(["git", "merge", incoming_branch], capture_output=True, cwd=self._working_tmp_path).stdout
 
