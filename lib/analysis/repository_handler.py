@@ -66,8 +66,8 @@ class RepositoryHandler:
                 
             out1 = subprocess.run(["git", "add", "--all"], capture_output=True, cwd=self._reference_tmp_path).stdout
             out2 = subprocess.run(["git", "commit", "-m", '"close setup (driftool)"'], capture_output=True, cwd=self._reference_tmp_path).stdout
-            print(out1)
-            print(out2)
+            #print(out1)
+            #print(out2)
 
 
     def clear_reference_tmp(self):

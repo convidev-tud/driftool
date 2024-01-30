@@ -69,16 +69,18 @@ def calculate_distances(repository_handler: RepositoryHandler) -> list[tuple[str
     
     for pair in branch_pairs:
         print(str(progress*2) + " out of " + str(total*2), end='\r')
-        #print("merge " + pair[1] + " into " + pair[0])
+     
         progress += 1
-        
+    
         distanceA = repository_handler.merge_and_count_conflicts(pair[0], pair[1])
+        repository_handler.reset_working_tmp()
         distanceB = repository_handler.merge_and_count_conflicts(pair[1], pair[0])
+        repository_handler.reset_working_tmp()
+        
         distanceAVG = distance_avg(distanceA, distanceB)
-        #print("----> " + str(distance.conflicting_lines))
+        
         distance_relation.append([pair[0], pair[1], distanceAVG])
         distance_relation.append([pair[1], pair[0], distanceAVG])
-        repository_handler.reset_working_tmp()
         
     repository_handler.clear_working_tmp()
     repository_handler.clear_reference_tmp()

@@ -18,6 +18,8 @@ driftclon-env/
 driftool-env/
 denv/
 
+*-config.json
+
 # Distribution / packaging
 .Python
 build/
