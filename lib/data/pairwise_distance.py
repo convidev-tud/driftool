@@ -18,15 +18,12 @@ class PairwiseDistance:
     '''
 
     def __init__(self) -> None:
-
         self.conflicting_lines: int = 0
-        self.diff_lines: int = 0
 
 
 def distance_avg(one: PairwiseDistance, other: PairwiseDistance):
     res = PairwiseDistance()
     res.conflicting_lines = (one.conflicting_lines + other.conflicting_lines) * 0.5
-    #res.diff_lines = (one.diff_lines + other.diff_lines) * 0.5
     return res
     
     

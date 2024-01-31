@@ -66,8 +66,6 @@ class RepositoryHandler:
                 
             out1 = subprocess.run(["git", "add", "--all"], capture_output=True, cwd=self._reference_tmp_path).stdout
             out2 = subprocess.run(["git", "commit", "-m", '"close setup (driftool)"'], capture_output=True, cwd=self._reference_tmp_path).stdout
-            #print(out1)
-            #print(out2)
 
 
     def clear_reference_tmp(self):
@@ -89,7 +87,6 @@ class RepositoryHandler:
         cancel_merge = subprocess.run(["git", "merge", "--abort"], capture_output=True, cwd=self._working_tmp_path)
         if self.head is not None:
             reset = subprocess.run(["git", "reset", "--hard", self.head], capture_output=True, cwd=self._working_tmp_path)
-            #print(reset.stdout)
         stash_clutter = subprocess.run(["git", "clean"], capture_output=True, cwd=self._working_tmp_path)
 
 
@@ -157,21 +154,6 @@ class RepositoryHandler:
         commit_log = subprocess.run(["git", "log", "-n 1"], capture_output=True, cwd=self._working_tmp_path).stdout
         commit_hash = m.search(commit_log.decode("utf-8")).group()
         self.head = commit_hash
-
-        '''
-        stdout_diff = subprocess.run(["git", "diff", base_branch + ".." + incoming_branch], capture_output=True, cwd=self._working_tmp_path).stdout.splitlines()
-        diff_size = 0
-        for line in stdout_diff:
-            line_str = str(line)
-            if line_str.startswith("b'+") or line_str.startswith("b'-"):
-                diff_size += 1
-
-        if diff_size > 0:
-            distance.diff_lines = diff_size
-        else:
-            distance.diff_lines = 0
-        '''
-        distance.diff_lines = 0
 
         stdout_merge = subprocess.run(["git", "merge", incoming_branch], capture_output=True, cwd=self._working_tmp_path).stdout
 
