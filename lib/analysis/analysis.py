@@ -17,26 +17,23 @@ import numpy as np
 from sklearn.manifold import MDS
 import math
 
-from lib.data.pairwise_distance import PairwiseDistance, distanve_avg
+from lib.data.pairwise_distance import PairwiseDistance, distance_avg
 from lib.analysis.repository_handler import RepositoryHandler
 from lib.data.measured_environment import MeasuredEnvironment
 
 
-def calculate_standard_deviation(embeddings: np.ndarray[float]) -> float:
+def calculate_median_distance_avg(embeddings: np.ndarray[float]) -> float:
     '''
     Input embeddings in the form [[x0, y0, z0], ..., [xi, yi, zi]]
     '''
-    m = embeddings.mean(axis=0)
+    m = np.median(embeddings, axis=0)
     l = len(embeddings)
-    omega_squared = 0
+    d = 0
 
     for p in embeddings:
-        omega_squared += (((m[0] - p[0]) ** 2) + ((m[1] - p[1]) ** 2) + ((m[2] - p[2]) ** 2))
+        d += math.sqrt((p[0] - m[0])**2 + (p[1] - m[1])**2 + (p[2] - m[2])**2)
     
-    omega_squared = omega_squared / l
-    omega = math.sqrt(omega_squared)
-    
-    return omega
+    return d / l
 
 
 def calculate_distances(repository_handler: RepositoryHandler) -> list[tuple[str, str, PairwiseDistance]]:
@@ -49,7 +46,6 @@ def calculate_distances(repository_handler: RepositoryHandler) -> list[tuple[str
     In this cases, the AVG of both directions is calculated and stored for both directions.
 
     sd  = statement drift = variance(conflicting_lines)
-    dd  = difference drift = variance(diff_lines)
     '''
     branches = repository_handler.materialize_all_branches_in_reference()
     branch_product: list[tuple[str, str]] = itertools.product(branches, branches)
@@ -72,16 +68,18 @@ def calculate_distances(repository_handler: RepositoryHandler) -> list[tuple[str
     
     for pair in branch_pairs:
         print(str(progress*2) + " out of " + str(total*2), end='\r')
-        #print("merge " + pair[1] + " into " + pair[0])
+     
         progress += 1
-        
+    
         distanceA = repository_handler.merge_and_count_conflicts(pair[0], pair[1])
-        distanceB = repository_handler.merge_and_count_conflicts(pair[0], pair[1])
-        distanceAVG = distanve_avg(distanceA, distanceB)
-        #print("----> " + str(distance.conflicting_lines))
+        repository_handler.reset_working_tmp()
+        distanceB = repository_handler.merge_and_count_conflicts(pair[1], pair[0])
+        repository_handler.reset_working_tmp()
+        
+        distanceAVG = distance_avg(distanceA, distanceB)
+        
         distance_relation.append([pair[0], pair[1], distanceAVG])
         distance_relation.append([pair[1], pair[0], distanceAVG])
-        repository_handler.reset_working_tmp()
         
     repository_handler.clear_working_tmp()
     repository_handler.clear_reference_tmp()
@@ -100,13 +98,11 @@ def construct_environment(distance_relation: list[tuple[str, str, PairwiseDistan
     
     d = len(branches)
     me.line_matrix = np.zeros(shape=(d, d))
-    me.diff_matrix = np.zeros(shape=(d, d))
 
     for e in distance_relation:
         xi = branches.index(e[0])
         yi = branches.index(e[1])
         me.line_matrix[xi, yi] = e[2].conflicting_lines
-        me.diff_matrix[xi, yi] = e[2].diff_lines
 
     return me
 
@@ -139,21 +135,11 @@ def analyze_with_config(input_dir: str, fetch_updates: bool,
     repository_handler.create_reference_tmp()
     
     distance_relation = calculate_distances(repository_handler)
-
-    #repository_handler.clear_reference_tmp()
-
     environment = construct_environment(distance_relation, repository_handler.branches)
-
     environment.embedding_lines = multidimensional_scaling(environment.line_matrix, 3)
-    environment.embedding_differences = multidimensional_scaling(environment.diff_matrix, 3)
-
-    drift_lines = calculate_standard_deviation(environment.embedding_lines)
-    drift_diff = calculate_standard_deviation(environment.embedding_differences)
+    drift_lines = calculate_median_distance_avg(environment.embedding_lines)
 
     environment.sd = drift_lines
-    environment.dd = drift_diff
-
     print("statement drift (sd) = " + str(drift_lines))
-    print("difference drift (dd) = " + str(drift_diff))
 
     return environment

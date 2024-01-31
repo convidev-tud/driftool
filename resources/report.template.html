@@ -130,7 +130,6 @@
     <div class="container horizontal content-div">
             <div class="container vertical bordered w40">
                 <span class="red-font"><h3>sd = ${sd}</h3></span>
-                <span class="blue-font"><h3>dd = ${dd}</h3></span>
                 <hr>
 
                 % for a in branch_array:
@@ -150,18 +149,12 @@
                         <label class="form-check-label" for="btn-label-check">Show Branch Labels</label>                           
                     </li>
                     <li class="nav-item" role="presentation">
-                      <button class="nav-link btn-sm" id="pills-sd-tab" data-bs-toggle="pill" data-bs-target="#pills-sd" type="button" role="tab" aria-controls="pills-sd" aria-selected="true">SD (Statement Conflicts)</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                      <button class="nav-link active btn-sm" id="pills-dd-tab" data-bs-toggle="pill" data-bs-target="#pills-dd" type="button" role="tab" aria-controls="pills-dd" aria-selected="false">DD (Line Diff)</button>
+                      <button class="nav-link active btn-sm" id="pills-sd-tab" data-bs-toggle="pill" data-bs-target="#pills-sd" type="button" role="tab" aria-controls="pills-sd" aria-selected="true">SD (Statement Conflicts)</button>
                     </li>
                   </ul>
                   <div class="tab-content" id="nav-tabContent">
-                    <div class="tab-pane fade  full-h" id="pills-sd" role="tabpanel" aria-labelledby="pills-sd-tab" tabindex="0">
+                    <div class="tab-pane fade show active full-h" id="pills-sd" role="tabpanel" aria-labelledby="pills-sd-tab" tabindex="0">
                         <div id='conflict-div' class='bordered visualplot'><!-- Plotly chart will be drawn inside this DIV --></div>
-                    </div>
-                    <div class="tab-pane fade show active full-h" id="pills-dd" role="tabpanel" aria-labelledby="pills-dd-tab" tabindex="0">
-                        <div id='difference-div' class='bordered visualplot'><!-- Plotly chart will be drawn inside this DIV --></div>
                     </div>
                   </div>
             </div>
@@ -180,13 +173,11 @@
                         <tr>
                             <th>Peer</th>
                             <th>sd</th>
-                            <th>dd</th>
                         </tr>
                         % for peer in branch_env.distances:
                             <tr>
                                 <td>${peer.peer_branch}</td>
                                 <td>${peer.sd}</td>
-                                <td>${peer.dd}</td>
                             </tr>
                         % endfor
                     </table>
@@ -234,8 +225,6 @@
         const number_branches = ${number_branches}
 
         const embedding_conflicts_3d = JSON.parse("${sd_embeddings}")
-        const embedding_differences_3d = JSON.parse("${dd_embeddings}")
-
         function highlight_branch(index, mode){
             console.log(index, mode)
             for(var i = 0; i < number_branches; i++){
@@ -282,50 +271,16 @@
             type: 'scatter3d'
         };
 
-        var trace_differences = {
-            x: embedding_differences_3d.map(d => d[0]), 
-            y: embedding_differences_3d.map(d => d[1]), 
-            z: embedding_differences_3d.map(d => d[2]),
-            mode: 'markers+text',
-            text: JSON.parse('${branch_array_json}'),
-            textfont : {
-                family:'Times New Roman'
-            },
-            textposition: 'bottom center',
-            hoverinfo:'none',
-            marker: {
-                size: 12,
-                color: 'rgb(0,0,255)',
-                opacity: 0.4},
-            type: 'scatter3d'
-        };
-
-        var trace_differences_unlabeled = {
-            x: embedding_differences_3d.map(d => d[0]), 
-            y: embedding_differences_3d.map(d => d[1]), 
-            z: embedding_differences_3d.map(d => d[2]),
-            mode: 'markers',
-            hoverinfo:'none',
-            marker: {
-                size: 12,
-                color: 'rgb(0,0,255)',
-                opacity: 0.4},
-            type: 'scatter3d'
-        };
-
         console.log(trace_conflicts)
-        console.log(trace_differences)
 
         function render(){
 
             const withLabels = document.getElementById('btn-label-check').checked;
 
             var data_conflicts = [trace_conflicts_unlabeled];
-            var data_differences = [trace_differences_unlabeled];
 
             if(withLabels){
                 data_conflicts = [trace_conflicts];
-                data_differences = [trace_differences];
             }
 
             var layout = {margin: {
@@ -336,7 +291,6 @@
             }};
 
             Plotly.newPlot('conflict-div', data_conflicts, layout);
-            Plotly.newPlot('difference-div', data_differences, layout);
 
             document.getElementById('conflict-div').on('plotly_click', function(data){
                 var pt = [
@@ -360,30 +314,6 @@
                 }
                 console.log("on-click branch " + JSON.stringify(branches))
                 highlight_branch(branches, "sd")
-            });
-
-            document.getElementById('difference-div').on('plotly_click', function(data){
-                var pt = [
-                    undefined,
-                    undefined,
-                    undefined
-                ];
-                for(var i=0; i < data.points.length; i++){
-                    pt[0] = data.points[i].x
-                    pt[1] = data.points[i].y
-                    pt[2] = data.points[i].z
-                }
-
-                var branches = []
-
-                for(var i=0; i < embedding_differences_3d.length; i++){
-                    var e = embedding_differences_3d[i]
-                    if(e[0] === pt[0] && e[1] === pt[1] && e[2] === pt[2]){
-                        branches.push(i)
-                    }
-                }
-                console.log("on-click branch " + JSON.stringify(branches))
-                highlight_branch(branches, "dd")
             });
 
         }

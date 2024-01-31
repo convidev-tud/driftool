@@ -1,44 +1,56 @@
 # driftool :: Git Branch-Variance Analysis
 
-**🚑 Under development, do not use in production yet!**
+**🚑 Under active development, features may change unexpectedly!**
 
 ---
 
-The driftool calculates the drift analysis for git repositories. It automatically compares all branches, simulates merges and generates both a scalar drift metric, as well as a 3D view of the repository drift.
-The base measure is the standard deviation of diffs and merge conflicts in between branches.
+The driftool calculates the drift analysis for git repositories. 
+It automatically compares all branches, simulates merges and generates both a scalar drift metric, as well as a 3D view of the repository drift.
+The pairwise distance is the number of lines of merge conflicts.
+The base measure of the point-cloud is the *mean absolute deviation around a central point*.
 
-The results of driftool indicate how well or poorly a repository is managed. High drift indicates large differences between branches. The drift is an absolute metric that always must stand in the context of the repository size. A repository with dozens of collaborateurs and branches naturally has more drift as a project with 3 developers working on. However, the evolution of the drift over time gives useful insigts about the project health.
+The results of driftool indicate how well or poorly a repository is managed. 
+High drift indicates large inconsistencies in between branches. 
+The drift is an absolute metric that always has to be interpreted in the context of the repository size. 
+A repository with dozens of collaborateurs and branches naturally has more drift as a project with 3 developers working on. 
+However, the evolution of the drift over time gives useful insigts about the project health.
 
 ## Key Metrics
 
-The driftool calculates the *Drift* for two difference measures.
+The driftool calculates the *Drift* measure **sd** (gamma).
 
-* **sd** is the *Statement Drift* := a variance-based measure using LoC of potential merge conflicts
-* **dd** is the *Difference Drift* := a variance-based measure using LoC of branch diffs
+* **sd** is the *Statement Drift* := a measure for the merge complexity based on the pair-wise git merge conflict count as a distance
 
 In general, higher numbers indicate a more complex repository management.
 
-:bulb: Per default, a git merge is a symmetric operation, meaning A into B produces the same conflicts as B into A. However, through certain git operations (resets, gitignore change etc.) it happens that the merge is not symmatric. For example, A into B has 2 conflicts, although B into A has 0 conflicts. To cope with that, (the current version of) driftool performs each merge both ways and takes the AVG of conflicts.
+:bulb: Per default, a git merge is a symmetric operation, meaning A into B produces the same conflicts as B into A. However, through certain git operations (resets, force operations, messed-up history) it happens that the merge is not symmatric. For example, A into B has 2 conflicing lines, although B into A has 4 conflicting lines. To cope with that, the driftool performs each merge both ways and takes the AVG of conflicts.
 
 ## Report Generation
 
-The driftool generates HTML reports for further human analysis. The following figure shows such an analysis. The right side list displays all analysed branches. The top-right graph shows the drift based on (merge-)conflicting lines. The bottom-right graph shows the drift based on pure differences. Both graphs are interactive 3D visualizations.
+The driftool generates HTML reports for further human analysis. 
+The following figure shows such an analysis. 
+The right side list displays all analysed branches. 
 
 ![Driftool results screenshot](./doc/screenshot_results_example.png)
 
-The scatterplots use a synthetic coordinate system resulting from multidimensional scaling of the pairwise distance measures. However, Point distribution is helpful for repository analysis. Evenly scattered points indicate many unrelated but conflicting changes. Clusters indicate groups of very compatible branches. Outliers indicate standalone branches with lots of differences compared to the majority.
+The scatterplot uses a synthetic coordinate system resulting from multidimensional scaling of the pairwise distances. 
+However, point distribution is helpful for repository analysis. 
+Evenly scattered points indicate many unrelated but conflicting changes. 
+Clusters indicate groups of very compatible branches. 
+Outliers indicate standalone branches with lots of inconsistencies compared to the majority.
 
 ## Usage
 
 The driftool is a python application. To run it, it requires:
 - python 3.12.0 (other versions might work but are not tested)
 - pip
-- git installation (accessible via PATH) 
+- git accessible via PATH
 
 It is preferred to use the existing ``requirements.txt`` to create a virtualenv.
 Please see the official [virtualenv documentation](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#install-packages-in-a-virtual-environment-using-pip-and-venv).
 
-> :bulb: Note that for large repositories, the drift calculation can take some time. The number of comparison rounds grows ``0.5 * (number of branches)^2``. Each comparison round is linearly dependent on the repository size.
+> :bulb: Note that for large repositories, the drift calculation can take some time. 
+> The number of comparisons is ``(number of branches)^2 - (number of branches)``. Each comparison round is linearly dependent on the repository size. We experienced times around 1s per comparison.
 
 > :bulb: Driftool is not sufficiently tested on Windows. A known Windows issue is the possible inability to delete temporary files due to the git file lock. After using the driftool on Windows, please remove the ./tmp folder in the working directory manually.
 
@@ -69,7 +81,6 @@ All processing steps are performed on a temporary local copy of the git reposito
 * ``-g`` | ``--blacklist=`` STRING (optional) files to be ignored during comparison. A list of regex expressions which are matched against the file path, seperated by ``::``. Binaries or large autogenerated files should be ignored during analysis, e.g., ``\.pdf``, ``package-lock\.json`` or ``gradle\-wrapper\/``. This has no impact on directory structures.
 * ``-w`` | ``--whitelist=`` STRING (optional) files to be whitelisted during comparison. A list of regex expressions which are matched against the file path, seperated by ``::``. This has no impact on directory structures.
 ---
-* ``-x`` | ``--open_socket=`` INT (optional) opens an (unsecured) websocket server on the given port that forwards the analysis progress to each consumer. :ambulance: Not supported yet!
 * ``-r`` | ``--report_title=`` STRING (optional) renders a custom headline string into the generated HTML report. Long titles may result in bad formatting of the HTML.
 
 > :bulb: On Windows, use the driftool only via the Powershell and use Unix-style path encodings.
@@ -85,8 +96,6 @@ Analyze the *foo* repository. The results are written to the working directory. 
 #### Config
 
 Instead of passing the arguments via the CLI, a config .json file can be specified instead. It must adhere to the following template.
-
-> :zap: Experimental feature, not tested in-depth.
 
 ```JSON
 {
@@ -105,8 +114,7 @@ Instead of passing the arguments via the CLI, a config .json file can be specifi
     ],
     "whitelist": [
         "STRING"
-    ],
-    "open_socket": "STRING"
+    ]
 }
 ```
 
@@ -116,7 +124,8 @@ The following example is provided as ``config.template.json`` as part of this re
 
 ```JSON
 {
-    "input_repository": "/home/user/repository/",
+    "input_repository": "/Users/.../my-repository",
+    "report_title": "My Report",
     "output_directory": "./",
     "fetch_updates": false,
     "print_plot": false,
@@ -126,6 +135,7 @@ The following example is provided as ``config.template.json`` as part of this re
         "^release\\-",
         "^v\\."
     ],
+    "whitelist": [],
     "blacklist": [
         "build\\/",
         "dist\\/",
@@ -134,9 +144,9 @@ The following example is provided as ``config.template.json`` as part of this re
         "\\.lib\\.js",
         "node\\-modules\\/",
         "\\.pdf",
-        "javadoc\\/"
-    ],
-    "whitelist": []
+        "javadoc\\/",
+        "\\.png"
+    ]
 }
 ```
 
@@ -146,7 +156,8 @@ The following example only analyses Java files and HTML templates adn ignores al
 
 ```JSON
 {
-    "input_repository": "/home/user/repository/",
+    "input_repository": "/Users/.../my-repository",
+    "report_title": "My Report",
     "output_directory": "./",
     "fetch_updates": false,
     "print_plot": false,

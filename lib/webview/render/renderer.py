@@ -37,8 +37,7 @@ def generate_branch_distance_map(me: MeasuredEnvironment) -> list[BranchEnvironm
         for peer in range(len(me.branches)):
             peer_branch = me.branches[peer]
             sd = me.line_matrix[base, peer]
-            dd = me.diff_matrix[base, peer]
-            distances.append(BranchDistance(peer_branch, sd, dd))
+            distances.append(BranchDistance(peer_branch, sd))
 
         res.append(BranchEnvironment(base_branch, distances))
 
@@ -55,28 +54,22 @@ def render_html(me: MeasuredEnvironment, report_title: str, branch_ignore: list[
     '''
     mytemplate = Template(filename='resources/report.template.html')
     buf = StringIO()
-    
-    #TODO make accuracy an argument
 
     sd_embeddings = (me.embedding_lines * 10).astype(int)
-    dd_embeddings = (me.embedding_differences / 10).astype(int)
-
     branch_wise_distances = generate_branch_distance_map(me)
 
     ctx = Context(buf,
                   title=report_title,
                   sd=str("%.2f" % me.sd), 
-                  dd=str("%.2f" % me.dd), 
                   branch_ignore=branch_ignore,
                   file_ignore=file_ignore,
                   branch_array=me.branches, 
                   branch_array_json=json.dumps(me.branches),
                   number_branches=len(me.branches),
                   sd_embeddings=json.dumps(sd_embeddings.tolist()),
-                  dd_embeddings=json.dumps(dd_embeddings.tolist()),
                   branch_distances=branch_wise_distances,
                   full_json_dump=me.serialize())
     mytemplate.render_context(ctx)
     result = buf.getvalue()
-    #print(result)
+
     return result

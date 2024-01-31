@@ -24,7 +24,7 @@ def purge_blacklist(regex_list: list[str], root_path: str):
         for root, dirs, files in os.walk(root_path):
 
             if git_pattern.search(str(root)) is None:
-                print("TRAVERSE: " + str(root) + " " + str(dirs) + " " + str(files))
+                #print("TRAVERSE: " + str(root) + " " + str(dirs) + " " + str(files))
 
                 for file in files:
                     if pattern.search(root + file) is not None:
@@ -43,7 +43,7 @@ def keep_whitelist(regex_list: list[str], root_path: str):
     for root, dirs, files in os.walk(root_path):
 
         if git_pattern.search(str(root)) is None:
-            print("TRAVERSE: " + str(root) + " " + str(dirs) + " " + str(files))
+            #print("TRAVERSE: " + str(root) + " " + str(dirs) + " " + str(files))
 
             for file in files:
                 do_purge = True

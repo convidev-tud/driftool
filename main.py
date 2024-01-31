@@ -136,6 +136,9 @@ if __name__ == '__main__':
         output.write(measured_envrionment.serialize())
         output.close()
 
+    if print_plot:
+       visualise_embeddings(measured_envrionment)
+
     if generate_html and output_dir:
         html_content = render_html(measured_envrionment, report_title, ignore_branches, ignore_files)
         html_file = output_dir + identifier + ".html"
@@ -145,6 +148,3 @@ if __name__ == '__main__':
 
         if show_html:
             webbrowser.open_new_tab('file:///' + os.getcwd() + "/" + html_file)
-        
-    if print_plot:
-       visualise_embeddings(measured_envrionment)

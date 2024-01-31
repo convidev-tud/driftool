@@ -21,18 +21,15 @@ class BranchDistance:
 
     peer_branch: str = None
     sd: str = None
-    dd: str = None
 
-    def __init__(self, peer_branch: str, sd: float, dd: float) -> None:
+    def __init__(self, peer_branch: str, sd: float) -> None:
         self.peer_branch = peer_branch
         self.sd = str("%.2f" % sd)
-        self.dd = str("%.2f" % dd)
 
     def serialize(self) -> str:
         obj = {
             "peer_branch": self.peer_branch,
             "sd": self.sd,
-            "dd": self.dd,
             }
         return json.dumps(obj, indent=4)
 
