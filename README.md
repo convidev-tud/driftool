@@ -1,4 +1,4 @@
-# driftool :: Git Branch-Variance Analysis
+# driftool :: Git Branch Inconsistency Analysis
 
 **🚑 Under active development, features may change unexpectedly!**
 
