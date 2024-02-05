@@ -20,7 +20,7 @@ import math
 from lib.data.pairwise_distance import PairwiseDistance, distance_avg
 from lib.analysis.repository_handler import RepositoryHandler
 from lib.data.measured_environment import MeasuredEnvironment
-
+from lib.analysis.csv_data import read_branches_from_csv, read_distances_from_csv
 
 def calculate_median_distance_avg(embeddings: np.ndarray[float]) -> float:
     '''
@@ -137,9 +137,27 @@ def analyze_with_config(input_dir: str, fetch_updates: bool,
     distance_relation = calculate_distances(repository_handler)
     environment = construct_environment(distance_relation, repository_handler.branches)
     environment.embedding_lines = multidimensional_scaling(environment.line_matrix, 3)
-    drift_lines = calculate_median_distance_avg(environment.embedding_lines)
 
-    environment.sd = drift_lines
-    print("statement drift (sd) = " + str(drift_lines))
+    environment.sd = calculate_median_distance_avg(environment.embedding_lines)
+    print("statement drift (sd) = " + str(environment.sd))
+
+    return environment
+
+def analyze_with_config_csv(csv_input_file) -> MeasuredEnvironment:
+    '''
+    Orchestrates the drift calculation step by step if a CSV input file is used (precalculated matrix).
+    1. Read the branches distance matrix from the CSV
+    2. Calculate the distance relation
+    3. Transfrom the relation into an Environment with distance matrices
+    4. Calculate the standard deviations -> the actual dirft metric
+    '''
+
+    branches = read_branches_from_csv(csv_input_file)               
+    distance_relation = read_distances_from_csv(csv_input_file)
+    environment = construct_environment(distance_relation, branches)
+    environment.embedding_lines = multidimensional_scaling(environment.line_matrix, 3)
+
+    environment.sd = calculate_median_distance_avg(environment.embedding_lines)
+    print("statement drift (sd) = " + str(environment.sd))
 
     return environment

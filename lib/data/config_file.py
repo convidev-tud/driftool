@@ -25,8 +25,10 @@ class ConfigFile:
     branch_ignore: list[str]
     file_ignore: list[str]
     file_whitelist: list[str]
-    open_socket: str | None = None
     report_title: str | None = None
+    simple_export: bool
+    csv_file: str | None = None
+
 
     def __init__(self, config_json_string: str) -> None:
 
@@ -34,10 +36,12 @@ class ConfigFile:
 
         if "output_directory" in conf:
             self.output_directory = conf["output_directory"]
-        if "open_socket" in conf:
-            self.open_socket = conf["open_socket"]
         if "report_title" in conf:
             self.report_title = conf["report_title"]
+        if "csv_file" in conf:
+            self.csv_file = conf["csv_file"]    
+        if "simple_export" in conf:
+            self.simple_export = conf["simple_export"]    
 
         self.input_repository = conf["input_repository"]
         self.fetch_updates = conf["fetch_updates"]

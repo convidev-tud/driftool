@@ -21,7 +21,7 @@ from datetime import datetime
 
 from lib.data.measured_environment import MeasuredEnvironment
 from lib.data.config_file import ConfigFile
-from lib.analysis.analysis import analyze_with_config
+from lib.analysis.analysis import analyze_with_config, analyze_with_config_csv
 from lib.analysis.plot import visualise_embeddings
 from lib.webview.render.renderer import render_html
 
@@ -41,14 +41,15 @@ if __name__ == '__main__':
     ignore_files: list[str] = list()
     whitelist_files: list[str] = list()
     ignore_branches: list[str] = list()
-    open_socket: str | None = None
     report_title: str | None = None
+    csv_input_file: str | None = None
+    simple_report: bool = False
 
     try:
-        opts, args = getopt.getopt(argv, "h:c:i:o:f:p:t:b:g:w:s:x:r", 
+        opts, args = getopt.getopt(argv, "h:c:i:o:f:p:t:b:g:w:s:r:v:y", 
                                    ["config=", "input_repository=", "output_directory=", "fetch_updates=", 
                                     "print_plot", "html", "branch_ignore=", "file_ignore=", "whitelist=", 
-                                    "show_html", "open_socket=", "report_title="])
+                                    "show_html", "open_socket=", "report_title=", "csv_file=", "simple_report"])
     except getopt.GetoptError:
         print('see https://github.com/KKegel/driftool for further information')
         sys.exit(2)
@@ -84,11 +85,12 @@ if __name__ == '__main__':
             values = arg.split("::")
             for val in values:
                 whitelist_files.append(val)
-        elif opt in ("-x", "--open_socket"):
-            open_socket = True
-            print("Socket mode not supported yet. Proceeding without socket connection!")
         elif opt in ("-r", "--report_title"):
             report_title = arg
+        elif opt in ("-v", "--csv_file"):
+           csv_input_file = arg
+        elif opt in ("-y", "--simple_report"):
+           simple_report = True
 
     if config_path is not None:
         config_file = open(config_path, "r")
@@ -104,8 +106,9 @@ if __name__ == '__main__':
         ignore_branches = config.branch_ignore
         ignore_files = config.file_ignore
         whitelist_files = config.file_whitelist
-        open_socket = config.open_socket
         report_title = config.report_title
+        csv_input_file = config.csv_file
+        simple_report = config.simple_export
 
 
     if report_title is None:
@@ -120,13 +123,22 @@ if __name__ == '__main__':
     print("ignore_branches: " + str(ignore_branches))
     print("ignore_files: " + str(ignore_files))
     print("file_whitelist: " + str(whitelist_files))
-    print("open_socket: " + str(open_socket))
+    print("csv_input_file: " + str(csv_input_file))
+    print("simple_report: " + str(simple_report))
 
-    if input_dir is None:
+    if input_dir is None and csv_input_file is None:
         print("Missing requirement: input directory")
         sys.exit(2)
 
-    measured_envrionment: MeasuredEnvironment = analyze_with_config(input_dir, fetch_updates, ignore_files, whitelist_files, ignore_branches)
+    measured_envrionment: MeasuredEnvironment = MeasuredEnvironment()
+
+    if csv_input_file is None:
+        measured_envrionment = analyze_with_config(input_dir, fetch_updates, ignore_files, whitelist_files, ignore_branches)
+    else:
+        if len(ignore_branches) > 0 or len(ignore_files) > 0 or len(whitelist_files) > 0 or fetch_updates:
+            print("INVALID CONFIGURATION. CSV IMPORT FORBIDS REPOSITORY OPERATIONS.")
+            sys.exit(2)
+        measured_envrionment = analyze_with_config_csv(csv_input_file)
 
     identifier = ("driftool_results_" + str(datetime.now())).replace(":", "_").replace(".", "_").replace(" ", "_")
 
@@ -135,6 +147,12 @@ if __name__ == '__main__':
         output = open(output_file, "x")
         output.write(measured_envrionment.serialize())
         output.close()
+
+        if simple_report:
+            output_file_simple = output_dir + "d_"+report_title + ".txt"
+            output_simple = open(output_file_simple, "w")
+            output_simple.write(str(measured_envrionment.sd))
+            output_simple.close()
 
     if print_plot:
        visualise_embeddings(measured_envrionment)
