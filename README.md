@@ -82,6 +82,8 @@ All processing steps are performed on a temporary local copy of the git reposito
 * ``-w`` | ``--whitelist=`` STRING (optional) files to be whitelisted during comparison. A list of regex expressions which are matched against the file path, seperated by ``::``. This has no impact on directory structures.
 ---
 * ``-r`` | ``--report_title=`` STRING (optional) renders a custom headline string into the generated HTML report. Long titles may result in bad formatting of the HTML.
+* ``-v`` | ``--csv_file=`` STRING (optional) DEVEVLOPER FEATURE Set a CSV distance matrix as input. This bypasses the repository analysis. Check the doc comments in the code for more information.
+* ``-y`` | ``--simple_report`` BOOLEAN (optional) if set, a simple report consisting of a single txt file with the drift number is produces in addition to the full report.
 
 > :bulb: On Windows, use the driftool only via the Powershell and use Unix-style path encodings.
 
@@ -106,6 +108,8 @@ Instead of passing the arguments via the CLI, a config .json file can be specifi
     "print_plot": "BOOLEAN",
     "html": "BOOLEAN",
     "show_html": "BOOLEAN",
+    "simple_export": "BOOLEAN",
+    "csv_file": "STRING",
     "branch_ignore": [
         "STRING"
     ],
@@ -131,6 +135,7 @@ The following example is provided as ``config.template.json`` as part of this re
     "print_plot": false,
     "html": true,
     "show_html": true,
+    "simple_export": false,
     "branch_ignore": [
         "^release\\-",
         "^v\\."
@@ -163,6 +168,7 @@ The following example only analyses Java files and HTML templates adn ignores al
     "print_plot": false,
     "html": true,
     "show_html": true,
+    "simple_export": false,
     "branch_ignore": [
         "^release\\-",
         "^v\\."
