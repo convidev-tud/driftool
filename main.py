@@ -32,24 +32,8 @@ if __name__ == '__main__':
 
     config_path: str | None = None
 
-    input_dir: str = ""
-    output_dir: str | None = None
-    fetch_updates: bool = False
-    print_plot: bool = False
-    generate_html: bool = False
-    show_html: bool = False
-    ignore_files: list[str] = list()
-    whitelist_files: list[str] = list()
-    ignore_branches: list[str] = list()
-    report_title: str | None = None
-    csv_input_file: str | None = None
-    simple_report: bool = False
-
     try:
-        opts, args = getopt.getopt(argv, "h:c:i:o:f:p:t:b:g:w:s:r:v:y", 
-                                   ["config=", "input_repository=", "output_directory=", "fetch_updates=", 
-                                    "print_plot", "html", "branch_ignore=", "file_ignore=", "whitelist=", 
-                                    "show_html", "open_socket=", "report_title=", "csv_file=", "simple_report"])
+        opts, args = getopt.getopt(argv, "h:c", ["config="])
     except getopt.GetoptError:
         print('see https://github.com/KKegel/driftool for further information')
         sys.exit(2)
@@ -59,110 +43,63 @@ if __name__ == '__main__':
             sys.exit()
         elif opt in ("-c", "--config"):
             config_path = arg
-            break
-            # Ingore other arguments as soon as a config is specified (they will be overwritten nonetheless)
-        elif opt in ("-i", "--input_repository"):
-            input_dir = arg
-        elif opt in ("-o", "--output_directory"):
-           output_dir = arg
-        elif opt in ("-f", "--fetch_updates"):
-            fetch_updates = arg == "true"
-        elif opt in ("-p", "--print_plot"):
-            print_plot = True
-        elif opt in ("-t", "--html"):
-            generate_html = True
-        elif opt in ("-s", "--show_html"):
-            show_html = True
-        elif opt in ("-b", "--branch_ignore"):
-            values = arg.split("::")
-            for val in values:
-                ignore_branches.append(val)
-        elif opt in ("-g", "--file_ignore"):
-            values = arg.split("::")
-            for val in values:
-                ignore_files.append(val)
-        elif opt in ("-w", "--whitelist"):
-            values = arg.split("::")
-            for val in values:
-                whitelist_files.append(val)
-        elif opt in ("-r", "--report_title"):
-            report_title = arg
-        elif opt in ("-v", "--csv_file"):
-           csv_input_file = arg
-        elif opt in ("-y", "--simple_report"):
-           simple_report = True
-
-    if config_path is not None:
-        config_file = open(config_path, "r")
-        config = ConfigFile(config_file.read())
-        config_file.close()
-        
-        input_dir = config.input_repository
-        output_dir = config.output_directory
-        fetch_updates = config.fetch_updates
-        print_plot = config.print_plot
-        generate_html = config.html
-        show_html = config.show_html
-        ignore_branches = config.branch_ignore
-        ignore_files = config.file_ignore
-        whitelist_files = config.file_whitelist
-        report_title = config.report_title
-        csv_input_file = config.csv_file
-        simple_report = config.simple_export
 
 
-    if report_title is None:
-        report_title = ""
-
-    print("input_dir: " + str(input_dir))
-    print("output_dir: " + str(output_dir))
-    print("fetch_updates: " + str(fetch_updates))
-    print("print_plot: " + str(print_plot))
-    print("generate_html: " + str(generate_html))
-    print("show_html: " + str(show_html))
-    print("ignore_branches: " + str(ignore_branches))
-    print("ignore_files: " + str(ignore_files))
-    print("file_whitelist: " + str(whitelist_files))
-    print("csv_input_file: " + str(csv_input_file))
-    print("simple_report: " + str(simple_report))
-
-    if input_dir is None and csv_input_file is None:
-        print("Missing requirement: input directory")
+    if config_path is None:
+        print("Missing driftool input config!")
         sys.exit(2)
 
-    measured_envrionment: MeasuredEnvironment = MeasuredEnvironment()
+    config_file = open(config_path, "r")
+    config = ConfigFile(config_file.read())
+    config_file.close()
 
-    if csv_input_file is None:
-        measured_envrionment = analyze_with_config(input_dir, fetch_updates, ignore_files, whitelist_files, ignore_branches)
-    else:
-        if len(ignore_branches) > 0 or len(ignore_files) > 0 or len(whitelist_files) > 0 or fetch_updates:
-            print("INVALID CONFIGURATION. CSV IMPORT FORBIDS REPOSITORY OPERATIONS.")
-            sys.exit(2)
-        measured_envrionment = analyze_with_config_csv(csv_input_file)
+
+    if config.report_title is None:
+        config.report_title = ""
+
+    print("input_repository: " + str(config.input_repository))
+    print("output_directory: " + str(config.output_directory))
+    print("fetch_updates: " + str(config.fetch_updates))
+    print("print_plot: " + str(config.print_plot))
+    print("html: " + str(config.html))
+    print("show_html: " + str(config.show_html))
+    print("branch_ignore: " + str(config.branch_ignore))
+    print("file_ignore: " + str(config.file_ignore))
+    print("file_whitelist: " + str(config.file_whitelist))
+    print("csv_file: " + str(config.csv_file))
+    print("simple_export: " + str(config.simple_export))
+
+    if config.input_repository is None:
+        print("Missing requirement: input directory")
+        sys.exit(2)
+    
+
+    measured_envrionment: MeasuredEnvironment = analyze_with_config(config.input_repository, config.fetch_updates, config.file_ignore, config.file_whitelist, config.branch_ignore)
 
     identifier = ("driftool_results_" + str(datetime.now())).replace(":", "_").replace(".", "_").replace(" ", "_")
 
-    if output_dir is not None:
-        output_file = output_dir + identifier + ".json"
+    if config.output_directory is not None:
+        output_file = config.output_directory + identifier + ".json"
         output = open(output_file, "x")
         output.write(measured_envrionment.serialize())
         output.close()
 
-        if simple_report:
-            output_file_simple = output_dir + "d_"+report_title + ".txt"
+        if config.simple_export:
+            output_file_simple = config.output_directory + "d_"+config.report_title + ".txt"
             output_simple = open(output_file_simple, "w")
             output_simple.write(str(measured_envrionment.sd))
             output_simple.close()
 
-    if print_plot:
+
+    if config.print_plot:
        visualise_embeddings(measured_envrionment)
 
-    if generate_html and output_dir:
-        html_content = render_html(measured_envrionment, report_title, ignore_branches, ignore_files)
-        html_file = output_dir + identifier + ".html"
+    if config.html and config.output_directory:
+        html_content = render_html(measured_envrionment, config.report_title, config.branch_ignore, config.file_ignore)
+        html_file = config.output_directory + identifier + ".html"
         html_output = open(html_file, "x")
         html_output.write(html_content)
         html_output.close()
 
-        if show_html:
+        if config.show_html:
             webbrowser.open_new_tab('file:///' + os.getcwd() + "/" + html_file)

@@ -1,0 +1,22 @@
+input_repository: /Users/.../my-repository
+output_directory: ../
+fetch_updates: false
+report_title: My Report
+print_plot: falser
+html: true
+show_html: true
+simple_export: false
+branch_ignore:
+    - "^release\\-"
+    - "^v\\."
+blacklist: 
+    - "build\\/"
+    - "dist\\/"
+    - "gen\\/"
+    - "\\.min\\.js"
+    - "\\.lib\\.js"
+    - "node\\-modules\\/"
+    - "\\.pdf"
+    - "javadoc\\/"
+    - "\\.png"
+whitelist: []
