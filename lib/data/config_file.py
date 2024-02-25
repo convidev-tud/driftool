@@ -32,7 +32,7 @@ class ConfigFile:
 
     def __init__(self, config_yaml_string: str) -> None:
 
-        conf = yaml.load(config_yaml_string)
+        conf = yaml.safe_load(config_yaml_string)
 
         if "output_directory" in conf:
             self.output_directory = conf["output_directory"]

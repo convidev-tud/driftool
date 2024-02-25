@@ -11,6 +11,7 @@ env/
 *env/
 
 test-config*
+config-*
 
 driftool_results*
 

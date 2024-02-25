@@ -2,7 +2,7 @@ input_repository: /Users/.../my-repository
 output_directory: ../
 fetch_updates: false
 report_title: My Report
-print_plot: falser
+print_plot: false
 html: true
 show_html: true
 simple_export: false

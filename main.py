@@ -12,7 +12,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import getopt
 import sys
 import webbrowser
 import os
@@ -32,17 +31,13 @@ if __name__ == '__main__':
 
     config_path: str | None = None
 
-    try:
-        opts, args = getopt.getopt(argv, "h:c", ["config="])
-    except getopt.GetoptError:
-        print('see https://github.com/KKegel/driftool for further information')
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '-h':
+    for index, arg in enumerate(argv):
+        if arg == '-h':
             print('see https://github.com/KKegel/driftool for further information')
             sys.exit()
-        elif opt in ("-c", "--config"):
-            config_path = arg
+        elif arg in ["-c", "--config", "config="]:
+            config_path = argv[index + 1]
+            print("config: " + config_path)
 
 
     if config_path is None:
