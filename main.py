@@ -20,7 +20,8 @@ from datetime import datetime
 
 from lib.data.measured_environment import MeasuredEnvironment
 from lib.data.config_file import ConfigFile
-from lib.analysis.analysis import analyze_with_config, analyze_with_config_csv
+from lib.data.sysconf import SysConf
+from lib.analysis.analysis import analyze_with_config
 from lib.analysis.plot import visualise_embeddings
 from lib.webview.render.renderer import render_html
 
@@ -30,6 +31,7 @@ if __name__ == '__main__':
     argv = sys.argv[1:]
 
     config_path: str | None = None
+    sysconf_path: str = "./driftool.yaml"
 
     for index, arg in enumerate(argv):
         if arg == '-h':
@@ -38,6 +40,10 @@ if __name__ == '__main__':
         elif arg in ["-c", "--config", "config="]:
             config_path = argv[index + 1]
             print("config: " + config_path)
+        elif arg in ["-s", "--sys", "sys="]:
+            sysconf_path = argv[index + 1]
+    
+    print("sysconf: " + sysconf_path)
 
 
     if config_path is None:
@@ -68,8 +74,13 @@ if __name__ == '__main__':
         print("Missing requirement: input directory")
         sys.exit(2)
     
+    sysconf_file = open(sysconf_path, "r")
+    sysconf = SysConf(sysconf_file.read())
+    sysconf_file.close()
 
-    measured_envrionment: MeasuredEnvironment = analyze_with_config(config.input_repository, config.fetch_updates, config.file_ignore, config.file_whitelist, config.branch_ignore)
+    print("Starting drift calculation on " + sysconf.number_threads + " threads...")
+
+    measured_envrionment: MeasuredEnvironment = analyze_with_config(config.input_repository, config.fetch_updates, config.file_ignore, config.file_whitelist, config.branch_ignore, sysconf)
 
     identifier = ("driftool_results_" + str(datetime.now())).replace(":", "_").replace(".", "_").replace(" ", "_")
 

@@ -21,6 +21,8 @@ from lib.data.pairwise_distance import PairwiseDistance, distance_avg
 from lib.analysis.repository_handler import RepositoryHandler
 from lib.data.measured_environment import MeasuredEnvironment
 from lib.analysis.csv_data import read_branches_from_csv, read_distances_from_csv
+from lib.data.sysconf import SysConf
+from lib.analysis.async_exec import async_execute
 
 def calculate_median_distance_avg(embeddings: np.ndarray[float]) -> float:
     '''
@@ -121,7 +123,7 @@ def multidimensional_scaling(distance_matrix: np.ndarray[float], dimensions: int
 
 
 def analyze_with_config(input_dir: str, fetch_updates: bool, 
-                        ignore_files: list[str], whitelist_files: list[str], ignore_branches: list[str]) -> MeasuredEnvironment:
+                        ignore_files: list[str], whitelist_files: list[str], ignore_branches: list[str], sysconf: SysConf) -> MeasuredEnvironment:
     '''
     The secret main method of the driftool application.
     Orchestrates the drift calculation step by step.
@@ -134,7 +136,26 @@ def analyze_with_config(input_dir: str, fetch_updates: bool,
     repository_handler: RepositoryHandler = RepositoryHandler(input_dir, fetch_updates, ignore_files, whitelist_files, ignore_branches)
     repository_handler.create_reference_tmp()
     
-    distance_relation = calculate_distances(repository_handler)
+    threads = sysconf.number_threads
+    
+    if threads < 2:
+        distance_relation = calculate_distances(repository_handler)
+    else:
+        branches = repository_handler.branches
+        # get all pairs
+        # the chars '~' and ':' are forbidden in git branch names, so we can use them as seperators
+        threads = [list()] * threads
+        thread_idx = 0
+        for b1 in branches:
+            for b2 in branches:
+                threads[thread_idx].append(b1 + "~" + b2)
+                thread_idx += 1
+                thread_idx %= threads
+        # start the threads and wait until all results are delivered
+        results = async_execute(threads)
+        # TODO create an thread.py in the main directory as a standalone script
+        # TODO run the scripts
+    
     environment = construct_environment(distance_relation, repository_handler.branches)
     environment.embedding_lines = multidimensional_scaling(environment.line_matrix, 3)
 

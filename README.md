@@ -68,8 +68,15 @@ All processing steps are performed on a temporary local copy of the git reposito
 
 #### Arguments
 
-* ``-c`` | ``--config`` STRING path to a config yaml file.
----
+* ``-c`` | ``--config`` STRING path to a config yaml file. This is the repository analysis config.
+* ``-s`` | ``--sys`` (optional) STRING path to a sysconf yaml file. This is the driftool system config. If not specified, the ``driftool.yaml`` located in the default directory will be used.
+
+#### Sysconf Paramters
+
+* ``number_threads`` INT the number of threads + 1 the driftool will use. To run the analysis on 4 threads, set this to 4. A fifth thread serves as an orchestrator. Each thread > 1 will occupy additional disk space. This space is as large as the analyzed repository.
+
+#### Config Parameters
+
 * ``input_repository`` STRING absolute path to the input repository.
 * ``output_directory`` STRING (optional) exports the analysis to a json file to the specified directory.
 * ``fetch_updates``BOOLEAN pull each branch of the (local tmp) repository before analysis starts.
@@ -122,7 +129,7 @@ input_repository: /Users/.../my-repository
 output_directory: ../
 fetch_updates: false
 report_title: My Report
-print_plot: falser
+print_plot: false
 html: true
 show_html: true
 simple_export: false

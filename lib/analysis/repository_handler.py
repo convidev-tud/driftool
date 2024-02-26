@@ -40,6 +40,15 @@ class RepositoryHandler:
 
     def __init__(self, input_dir, fetch_updates: bool, ignore_files: list[str], 
                  whitelist_files: list[str], ignore_branches: list[str]):
+        '''
+        Specify all required arguments to setup the repository analysis.
+        In multithreading usecases only:
+        If a RepositoryHandler object only serves as a pseudo object and the actual reference tmp is already
+        created by a real RepositoryHandler, all values can set to dummy values as the arguments are not needed.
+        In this case:
+        You must use set_bypass_arguments(...) with a valid tmp path once.
+        You can afterward only use merge_and_count_conflicts(...) and NO other method of this class!
+        '''
         self._input_dir = input_dir
         self._fetch_updates = fetch_updates
         self._branch_ignores = ignore_branches
@@ -51,6 +60,14 @@ class RepositoryHandler:
     def create_reference_tmp(self):
         self._reference_tmp_path = "./tmp/" + str(uuid.uuid4())
         copytree(self._input_dir, self._reference_tmp_path)
+
+
+    def set_bypass_arguments(self, reference_path):
+        '''
+        Set paramters without materializing them regularly.
+        Used for multihreading usecases.
+        '''
+        self._reference_tmp_path = reference_path
 
 
     def commit_file_selectors(self):
