@@ -182,7 +182,10 @@ def analyze_with_config(input_dir: str, fetch_updates: bool,
         branches = repository_handler.materialize_all_branches_in_reference()
         # get all pairs
         # the chars '~' and ':' are forbidden in git branch names, so we can use them as seperators
-        threads = [list()] * number_threads
+        threads = list()
+        for i in range(0, number_threads, 1):
+            threads.append(list())
+        
         thread_idx = 0
         for b1 in branches:
             for b2 in branches:
