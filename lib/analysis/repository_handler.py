@@ -104,7 +104,7 @@ class RepositoryHandler:
         cancel_merge = subprocess.run(["git", "merge", "--abort"], capture_output=True, cwd=self._working_tmp_path)
         if self.head is not None:
             reset = subprocess.run(["git", "reset", "--hard", self.head], capture_output=True, cwd=self._working_tmp_path)
-        stash_clutter = subprocess.run(["git", "clean"], capture_output=True, cwd=self._working_tmp_path)
+        stash_clutter = subprocess.run(["git", "clean", "-f"], capture_output=True, cwd=self._working_tmp_path)
 
 
     def clear_working_tmp(self):
@@ -133,7 +133,7 @@ class RepositoryHandler:
         for branch in all_branches:
             print(branch)
             subprocess.run(["git", "checkout", branch], capture_output=True, cwd=path)
-            subprocess.run(["git", "clean"], capture_output=True, cwd=path)
+            subprocess.run(["git", "clean", "-f"], capture_output=True, cwd=path)
             
             if self._fetch_updates:
                 pull = subprocess.run(["git", "pull", "origin", branch], capture_output=True, cwd=path).stdout
