@@ -11,32 +11,59 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+
 import asyncio
 
-def async_execute(threads: list[list[str]]):
-    std = asyncio.run(run_and_join(threads))
-    #TODO parse std and get the actual results
-    #TODO write async run script
+from lib.data.pairwise_distance import PairwiseDistance
 
-async def run_and_join(threads: list[list[str]]):
 
-    async def run(pairs: list[str]):
-        '''
-        print(f'[{cmd!r} exited with {proc.returncode}]')
-        if stdout:
-        print(f'[stdout]\n{stdout.decode()}')
+def async_execute(threads: list[list[str]], reference_dir: str) -> list[tuple[str, str, PairwiseDistance]]:
+    
+    std = asyncio.run(run_and_join(threads, reference_dir))
+    distance_relation = list()
+    
+    print("All threads returned their results!")
+    
+    for stdout, stderr in std:
         if stderr:
-         print(f'[stderr]\n{stderr.decode()}')
-        '''
+            print(stderr.decode())
+        if stdout:
+            #print(stdout.decode())
+            out: str = stdout.decode().split("\n")
+            
+            for line in out:
+                if not "~" in line:
+                    continue
+                combination = line.split("~")
+                distance = PairwiseDistance()
+                distance.conflicting_lines = float(combination[2])
+                distance_relation.append((combination[0], combination[1], distance))
+            
+    return distance_relation
+
+
+async def run(combinations: str, reference_dir: str):
+        print("Async thread started, please wait...")
         proc = await asyncio.create_subprocess_shell(
-            cmd,
+            "python thread.py " + combinations + " " + reference_dir,
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
 
         stdout, stderr = await proc.communicate()
         return (stdout, stderr)
-       
 
-    return await asyncio.gather(*[run(t) for t in threads])
+
+async def run_and_join(threads: list[list[str]], reference_dir):
+    arguments = list()
+    for thread in threads:
+        combinations = ""
+        for idx, pair in enumerate(thread):
+            if idx < len(thread)-1:
+                combinations += (pair + ":")
+            else:
+                combinations += pair
+        arguments.append(combinations)
+         
+    return await asyncio.gather(*[run(arg, reference_dir) for arg in arguments])
     
 
     

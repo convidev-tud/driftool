@@ -16,6 +16,7 @@ import itertools
 import numpy as np
 from sklearn.manifold import MDS
 import math
+import sys
 
 from lib.data.pairwise_distance import PairwiseDistance, distance_avg
 from lib.analysis.repository_handler import RepositoryHandler
@@ -61,6 +62,7 @@ def calculate_distances(repository_handler: RepositoryHandler) -> list[tuple[str
 
     distance_relation: list[tuple[str, str, PairwiseDistance]] = list()
 
+    # Add self-distances (0 per definition)
     for branch in branches:
         distance_relation.append([branch, branch, PairwiseDistance()])
 
@@ -85,6 +87,42 @@ def calculate_distances(repository_handler: RepositoryHandler) -> list[tuple[str
         
     repository_handler.clear_working_tmp()
     repository_handler.clear_reference_tmp()
+
+    return distance_relation
+
+
+def calculate_partial_distance_relation(repository_handler: RepositoryHandler, 
+                                        branch_combinations: list[tuple[str, str]]) -> list[tuple[str, str, PairwiseDistance]]:
+    '''
+    Calculate the a partial distance relation.
+    The returned distance relation of type list[tuple[str, str, PairwiseDistance]] maps a pair
+    of branches to their pairwise distance.
+    Note: This function must be symmetrical. For example (A, B) -> 7 implies that (=>) (B, A) -> 7 as well.
+    However, sometimes the actual calculation is not symmetrical because of exotic git behaviour.
+    In this cases, the AVG of both directions is calculated and stored for both directions.
+
+    This function is used in mutlithreading usecases where the branch combinations are pre-calculated.
+
+    sd  = statement drift = variance(conflicting_lines)
+    '''
+
+    distance_relation: list[tuple[str, str, PairwiseDistance]] = list()
+
+    repository_handler.create_working_tmp()
+    
+    for pair in branch_combinations:
+     
+        distanceA = repository_handler.merge_and_count_conflicts(pair[0], pair[1])
+        repository_handler.reset_working_tmp()
+        distanceB = repository_handler.merge_and_count_conflicts(pair[1], pair[0])
+        repository_handler.reset_working_tmp()
+        
+        distanceAVG = distance_avg(distanceA, distanceB)
+        
+        distance_relation.append([pair[0], pair[1], distanceAVG])
+        distance_relation.append([pair[1], pair[0], distanceAVG])
+        
+    repository_handler.clear_working_tmp()
 
     return distance_relation
 
@@ -136,25 +174,30 @@ def analyze_with_config(input_dir: str, fetch_updates: bool,
     repository_handler: RepositoryHandler = RepositoryHandler(input_dir, fetch_updates, ignore_files, whitelist_files, ignore_branches)
     repository_handler.create_reference_tmp()
     
-    threads = sysconf.number_threads
+    number_threads = sysconf.number_threads
     
-    if threads < 2:
+    if number_threads < 2:
         distance_relation = calculate_distances(repository_handler)
     else:
-        branches = repository_handler.branches
+        branches = repository_handler.materialize_all_branches_in_reference()
         # get all pairs
         # the chars '~' and ':' are forbidden in git branch names, so we can use them as seperators
-        threads = [list()] * threads
+        threads = [list()] * number_threads
         thread_idx = 0
         for b1 in branches:
             for b2 in branches:
+                # Only add one-direction combinations and no identity combinations
+                if b1 == b2:
+                    break
                 threads[thread_idx].append(b1 + "~" + b2)
                 thread_idx += 1
-                thread_idx %= threads
+                thread_idx %= number_threads
+                
         # start the threads and wait until all results are delivered
-        results = async_execute(threads)
-        # TODO create an thread.py in the main directory as a standalone script
-        # TODO run the scripts
+        distance_relation = async_execute(threads, repository_handler._reference_tmp_path)
+        for branch in branches:
+            distance_relation.append([branch, branch, PairwiseDistance()])
+        repository_handler.clear_reference_tmp()
     
     environment = construct_environment(distance_relation, repository_handler.branches)
     environment.embedding_lines = multidimensional_scaling(environment.line_matrix, 3)
@@ -164,13 +207,14 @@ def analyze_with_config(input_dir: str, fetch_updates: bool,
 
     return environment
 
+
 def analyze_with_config_csv(csv_input_file) -> MeasuredEnvironment:
     '''
     Orchestrates the drift calculation step by step if a CSV input file is used (precalculated matrix).
     1. Read the branches distance matrix from the CSV
     2. Calculate the distance relation
     3. Transfrom the relation into an Environment with distance matrices
-    4. Calculate the standard deviations -> the actual dirft metric
+    4. Calculate the standard deviations -> the actual dirft metric˚
     '''
 
     branches = read_branches_from_csv(csv_input_file)               

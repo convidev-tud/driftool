@@ -15,6 +15,7 @@
 import sys
 import webbrowser
 import os
+import time
 
 from datetime import datetime
 
@@ -27,6 +28,8 @@ from lib.webview.render.renderer import render_html
 
 
 if __name__ == '__main__':
+
+    start_time = time.time()
 
     argv = sys.argv[1:]
 
@@ -78,7 +81,7 @@ if __name__ == '__main__':
     sysconf = SysConf(sysconf_file.read())
     sysconf_file.close()
 
-    print("Starting drift calculation on " + sysconf.number_threads + " threads...")
+    print("Starting drift calculation on " + str(sysconf.number_threads) + " threads...")
 
     measured_envrionment: MeasuredEnvironment = analyze_with_config(config.input_repository, config.fetch_updates, config.file_ignore, config.file_whitelist, config.branch_ignore, sysconf)
 
@@ -96,6 +99,8 @@ if __name__ == '__main__':
             output_simple.write(str(measured_envrionment.sd))
             output_simple.close()
 
+    end_time = time.time()
+    print("Duration (s) = " + str(end_time - start_time))
 
     if config.print_plot:
        visualise_embeddings(measured_envrionment)
