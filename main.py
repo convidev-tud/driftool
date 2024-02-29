@@ -33,21 +33,8 @@ if __name__ == '__main__':
 
     argv = sys.argv[1:]
 
-    config_path: str | None = None
+    config_path: str = argv[0]
     sysconf_path: str = "./driftool.yaml"
-
-    for index, arg in enumerate(argv):
-        if arg == '-h':
-            print('see https://github.com/KKegel/driftool for further information')
-            sys.exit()
-        elif arg in ["-c", "--config", "config="]:
-            config_path = argv[index + 1]
-            print("config: " + config_path)
-        elif arg in ["-s", "--sys", "sys="]:
-            sysconf_path = argv[index + 1]
-    
-    print("sysconf: " + sysconf_path)
-
 
     if config_path is None:
         print("Missing driftool input config!")

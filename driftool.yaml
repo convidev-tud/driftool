@@ -1,1 +1,2 @@
-number_threads: 1
+number_threads: 2
+max_ram_gb: 6 

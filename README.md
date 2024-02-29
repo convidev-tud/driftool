@@ -61,19 +61,25 @@ For large (memory instensive) repositories, we recommend running the driftool fr
 ### CLI
 
 1. If installed, activate the venv and make sure all requirements are installed
-2. Run ```python main.py -c config.yaml``` with the desired configuration.
+2. Run ```python main.py config.yaml``` with the desired configuration.
 3. After completion, the drift metrics are printed to stdout, if specified, report files and graph views are generated.
 
 All processing steps are performed on a temporary local copy of the git repository. The orignal repository is not touched.
 
 #### Arguments
 
-* ``-c`` | ``--config`` STRING path to a config yaml file. This is the repository analysis config.
-* ``-s`` | ``--sys`` (optional) STRING path to a sysconf yaml file. This is the driftool system config. If not specified, the ``driftool.yaml`` located in the default directory will be used.
+* STRING path to a config yaml file. This is the repository analysis config.
+
+The driftool system config. The ``driftool.yaml`` located in the default directory will be used.
+
+
+**If run via docker, the config file and the repository must be located in the ``./volume`` directory. The path must be provided in local syntax ``./volume/config.yaml`` and ``./volume/repository``.**
+
 
 #### Sysconf Paramters
 
 * ``number_threads`` INT the number of threads + 1 the driftool will use. To run the analysis on 4 threads, set this to 4. A fifth thread serves as an orchestrator. Each thread > 1 will occupy additional disk space. This space is as large as the analyzed repository.
+* ``max_ram_gb`` The maximum number of GB RAM used by the tool. This must be at least ``repository_size * number_threads + repository_size``. We recommend to add at least 2 GB more to ensure a stable analysis.
 
 #### Config Parameters
 
@@ -97,9 +103,8 @@ All processing steps are performed on a temporary local copy of the git reposito
 **Example**
 
 ```
-python main.py -c ../my_config.yaml
+python main.py ../my_config.yaml
 ```
-
 #### Config
 
 ```YAML
@@ -122,7 +127,7 @@ whitelist:
 
 **Example**
 
-The following example is provided as ``config.template.json`` as part of this repository.
+The following example is provided as ``config.template.yaml`` as part of this repository.
 
 ```YAML
 input_repository: /Users/.../my-repository
