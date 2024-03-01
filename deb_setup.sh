@@ -1,17 +1,22 @@
 #!/bin/bash
 
-apt-get update
-apt-get upgrade
+rm -rf ./volume
+rm -rf ./tmp
+mkdir -p ./volume
 
-apt install python3
-apt install python3-virtualenv
-apt install python-is-python3
+apt-get -y update
+apt-get -y upgrade
 
-apt install git
+apt -y install python3
+apt -y install python3-venv
+apt -y install python-is-python3
+apt -y install python3-pip
 
-git config user.name "driftool"
-git config user.email "analysis@driftool.io"
+apt -y install git
 
-python -m venv env
+git config --global user.name "driftool"
+git config --global user.email "analysis@driftool.io"
+
+python3 -m venv env
 source env/bin/activate
-python -m pip install -r requirements.txt
+python3 -m pip install -r requirements.txt

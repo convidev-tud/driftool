@@ -1,4 +1,3 @@
 #!/bin/bash
 
-docker build -t driftool .
-mkdir ./volume
+docker build -t driftool:latest .

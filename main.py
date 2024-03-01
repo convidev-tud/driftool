@@ -64,6 +64,10 @@ if __name__ == '__main__':
         print("Missing requirement: input directory")
         sys.exit(2)
     
+    # Prefer the driftool.yaml located in the volume dir to configure easliy on build docker images
+    if os.path.isfile("./volume/driftool.yaml"):
+        sysconf_path = "./volume/driftool.yaml"
+        
     sysconf_file = open(sysconf_path, "r")
     sysconf = SysConf(sysconf_file.read())
     sysconf_file.close()
