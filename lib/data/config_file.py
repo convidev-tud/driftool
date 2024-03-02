@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import json
+import yaml
 
 class ConfigFile:
 
@@ -30,9 +30,9 @@ class ConfigFile:
     csv_file: str | None = None
 
 
-    def __init__(self, config_json_string: str) -> None:
+    def __init__(self, config_yaml_string: str) -> None:
 
-        conf = json.loads(config_json_string)
+        conf = yaml.safe_load(config_yaml_string)
 
         if "output_directory" in conf:
             self.output_directory = conf["output_directory"]

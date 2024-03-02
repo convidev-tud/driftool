@@ -9,8 +9,10 @@ __pycache__/
 tmp/
 env/
 *env/
+volume/
 
 test-config*
+config-*
 
 driftool_results*
 
