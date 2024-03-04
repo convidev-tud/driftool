@@ -25,7 +25,7 @@ reference_path = argv[1]
 if encoded_pairs is None or encoded_pairs == "":
     sys.exit(1)
 
-repository_handler = RepositoryHandler("", False, list(), list(), list())
+repository_handler = RepositoryHandler("", False, list(), list(), list(), 0)
 repository_handler.set_bypass_arguments(reference_path)
 
 pairs = encoded_pairs.split(":")
