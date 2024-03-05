@@ -53,6 +53,7 @@ html: BOOLEAN
 show_html: BOOLEAN
 simple_export: BOOLEAN
 csv_file: STRING
+timeout: 90
 branch_ignore:
     - STRING
 blacklist: 
