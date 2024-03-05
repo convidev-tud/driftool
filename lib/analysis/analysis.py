@@ -195,7 +195,10 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf) -> MeasuredEnviron
                 threads[thread_idx].append(b1 + "~" + b2)
                 thread_idx += 1
                 thread_idx %= number_threads
-                
+        
+        # Do not start empty threads
+        threads = list(filter(lambda x: (len(x) > 0), threads))
+        
         # start the threads and wait until all results are delivered
         distance_relation = async_execute(threads, repository_handler._reference_tmp_path)
         for branch in branches:

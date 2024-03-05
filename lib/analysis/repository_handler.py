@@ -139,6 +139,7 @@ class RepositoryHandler:
             excludes.append(re.compile(rule))
 
         last_commits = self.get_branch_activity()
+        print(last_commits)
 
         # Check if a branch is ignored because of the regex or the commit-date timeout
         self.branches = list()
@@ -189,7 +190,8 @@ class RepositoryHandler:
         # 2024-02-26 17:41:57 +0100~origin
         # 2021-04-15 16:10:35 +0200~origin/issue/2713/text-editor-unlink
         # 2021-05-24 16:48:03 +0200~origin/issue/4405/add-menu-link-avatar
-        datestrings = subprocess.run('git branch -a --format="%(committerdate:iso8601)~%(refname:short)" | grep -v HEAD', capture_output=True, shell=True, cwd="./").stdout.decode("utf-8").split("\n")
+        datestrings = subprocess.run('git branch -a --format="%(committerdate:iso8601)~%(refname:short)" | grep -v HEAD', 
+                                     capture_output=True, shell=True, cwd=self._reference_tmp_path).stdout.decode("utf-8").split("\n")
         last_commits: dict = {}
         for datestring in datestrings:
             if not datestring:
