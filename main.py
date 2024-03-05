@@ -44,7 +44,6 @@ if __name__ == '__main__':
     config = ConfigFile(config_file.read())
     config_file.close()
 
-
     if config.report_title is None:
         config.report_title = ""
 
@@ -59,6 +58,7 @@ if __name__ == '__main__':
     print("file_whitelist: " + str(config.file_whitelist))
     print("csv_file: " + str(config.csv_file))
     print("simple_export: " + str(config.simple_export))
+    print("timeout: " + str(config.timeout))
 
     if config.input_repository is None:
         print("Missing requirement: input directory")
@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
     print("Starting drift calculation on " + str(sysconf.number_threads) + " threads...")
 
-    measured_envrionment: MeasuredEnvironment = analyze_with_config(config.input_repository, config.fetch_updates, config.file_ignore, config.file_whitelist, config.branch_ignore, sysconf)
+    measured_envrionment: MeasuredEnvironment = analyze_with_config(config, sysconf)
 
     identifier = ("driftool_results_" + str(datetime.now())).replace(":", "_").replace(".", "_").replace(" ", "_")
 

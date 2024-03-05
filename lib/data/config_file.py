@@ -28,6 +28,7 @@ class ConfigFile:
     report_title: str | None = None
     simple_export: bool
     csv_file: str | None = None
+    timeout: int | None = None
 
 
     def __init__(self, config_yaml_string: str) -> None:
@@ -42,6 +43,8 @@ class ConfigFile:
             self.csv_file = conf["csv_file"]    
         if "simple_export" in conf:
             self.simple_export = conf["simple_export"]    
+        if "timeout" in conf:
+            self.timeout = int(conf["timeout"])   
 
         self.input_repository = conf["input_repository"]
         self.fetch_updates = conf["fetch_updates"]

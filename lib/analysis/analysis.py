@@ -16,7 +16,6 @@ import itertools
 import numpy as np
 from sklearn.manifold import MDS
 import math
-import sys
 
 from lib.data.pairwise_distance import PairwiseDistance, distance_avg
 from lib.analysis.repository_handler import RepositoryHandler
@@ -24,6 +23,7 @@ from lib.data.measured_environment import MeasuredEnvironment
 from lib.analysis.csv_data import read_branches_from_csv, read_distances_from_csv
 from lib.data.sysconf import SysConf
 from lib.analysis.async_exec import async_execute
+from lib.data.config_file import ConfigFile
 
 def calculate_median_distance_avg(embeddings: np.ndarray[float]) -> float:
     '''
@@ -160,18 +160,18 @@ def multidimensional_scaling(distance_matrix: np.ndarray[float], dimensions: int
     return embeddings
 
 
-def analyze_with_config(input_dir: str, fetch_updates: bool, 
-                        ignore_files: list[str], whitelist_files: list[str], ignore_branches: list[str], sysconf: SysConf) -> MeasuredEnvironment:
+def analyze_with_config(config: ConfigFile, sysconf: SysConf) -> MeasuredEnvironment:
     '''
-    The secret main method of the driftool application.
+    The computation main method of the driftool application.
     Orchestrates the drift calculation step by step.
     1. Read and prepare the repository
     2. Calculate the distance relation
     3. Transfrom the relation into an Environment with distance matrices
-    4. Calculate the standard deviations -> the actual dirft metric
+    4. Calculate the median average -> the actual drift metric
     '''
 
-    repository_handler: RepositoryHandler = RepositoryHandler(input_dir, fetch_updates, ignore_files, whitelist_files, ignore_branches)
+    timeout = 0 if config.timeout is None else config.timeout
+    repository_handler: RepositoryHandler = RepositoryHandler(config.input_repository, config.fetch_updates, config.file_ignore, config.file_whitelist, config.branch_ignore, timeout)
     repository_handler.create_reference_tmp()
     
     number_threads = sysconf.number_threads
@@ -195,7 +195,10 @@ def analyze_with_config(input_dir: str, fetch_updates: bool,
                 threads[thread_idx].append(b1 + "~" + b2)
                 thread_idx += 1
                 thread_idx %= number_threads
-                
+        
+        # Do not start empty threads
+        threads = list(filter(lambda x: (len(x) > 0), threads))
+        
         # start the threads and wait until all results are delivered
         distance_relation = async_execute(threads, repository_handler._reference_tmp_path)
         for branch in branches:
@@ -212,13 +215,6 @@ def analyze_with_config(input_dir: str, fetch_updates: bool,
 
 
 def analyze_with_config_csv(csv_input_file) -> MeasuredEnvironment:
-    '''
-    Orchestrates the drift calculation step by step if a CSV input file is used (precalculated matrix).
-    1. Read the branches distance matrix from the CSV
-    2. Calculate the distance relation
-    3. Transfrom the relation into an Environment with distance matrices
-    4. Calculate the standard deviations -> the actual dirft metric˚
-    '''
 
     branches = read_branches_from_csv(csv_input_file)               
     distance_relation = read_distances_from_csv(csv_input_file)

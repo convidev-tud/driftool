@@ -14,6 +14,7 @@
 
 from shutil import copytree, rmtree
 from pathlib import Path
+from datetime import datetime, timezone
 
 import uuid
 import subprocess
@@ -33,13 +34,14 @@ class RepositoryHandler:
     _branch_ignores: list[str]
     _file_ignores: list[str]
     _file_whitelist: list[str]
+    _timeout_days: int
     
     branches: list[str]
     head: str | None = None
 
 
     def __init__(self, input_dir, fetch_updates: bool, ignore_files: list[str], 
-                 whitelist_files: list[str], ignore_branches: list[str]):
+                 whitelist_files: list[str], ignore_branches: list[str], timeout_days: int):
         '''
         Specify all required arguments to setup the repository analysis.
         In multithreading usecases only:
@@ -54,6 +56,7 @@ class RepositoryHandler:
         self._branch_ignores = ignore_branches
         self._file_ignores = ignore_files
         self._file_whitelist = whitelist_files
+        self._timeout_days = timeout_days
         self.branches = list()
 
 
@@ -104,7 +107,7 @@ class RepositoryHandler:
         cancel_merge = subprocess.run(["git", "merge", "--abort"], capture_output=True, cwd=self._working_tmp_path)
         if self.head is not None:
             reset = subprocess.run(["git", "reset", "--hard", self.head], capture_output=True, cwd=self._working_tmp_path)
-        stash_clutter = subprocess.run(["git", "clean", "-f"], capture_output=True, cwd=self._working_tmp_path)
+        stash_clutter = subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=self._working_tmp_path)
 
 
     def clear_working_tmp(self):
@@ -130,35 +133,75 @@ class RepositoryHandler:
             if not line in all_branches and not "HEAD->" in line and not line.isspace() and line != "":
                 all_branches.append(line)
 
-        for branch in all_branches:
-            print(branch)
-            subprocess.run(["git", "checkout", branch], capture_output=True, cwd=path)
-            subprocess.run(["git", "clean", "-f"], capture_output=True, cwd=path)
-            
-            if self._fetch_updates:
-                pull = subprocess.run(["git", "pull", "origin", branch], capture_output=True, cwd=path).stdout
-
-            self.commit_file_selectors()
-        
-        self.branches = list()
-        
+        # create regexes to find ignored branches
         excludes = list()
-
         for rule in self._branch_ignores:
             excludes.append(re.compile(rule))
 
+        last_commits = self.get_branch_activity()
+        print(last_commits)
+
+        # Check if a branch is ignored because of the regex or the commit-date timeout
+        self.branches = list()
+
+        # checkout every analyzed branch locally
         for branch in all_branches:
+            
+            print(branch)
+            
             ignore = False
             for expr in excludes:
                 match = expr.search(branch)
                 if match is not None:
                     ignore = True
                     break
-            if not ignore:
-                self.branches.append(branch)
+                
+            # FIXME this seems not to work right now.    
+            
+            if self._timeout_days > 0 and last_commits[branch] > self._timeout_days:
+                ignore = True
+            
+            # Do not analyse the branch (do also not checkout) if it is ignored to save processing time
+            if ignore:
+                print("---> IGNORE")
+                continue
+            
+            print("---> KEEP")
+            self.branches.append(branch)
+            subprocess.run(["git", "checkout", branch], capture_output=True, cwd=path)
+            subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=path)
+            
+            if self._fetch_updates:
+                pull = subprocess.run(["git", "pull", "origin", branch], capture_output=True, cwd=path).stdout
 
+            self.commit_file_selectors()
+        
         self.branches.sort()
+        
         return self.branches
+    
+    
+    def get_branch_activity(self) -> dict:
+        # Get the last commit timestamps for each branch
+        # git branch -l --format="%(committerdate:iso8601)~%(refname:short)" | grep -v HEAD
+        # EXAMPLES:
+        # 2024-03-02 20:52:47 +0100~12-dockerization
+        # 2024-02-26 17:41:57 +0100~main
+        # 2024-02-26 17:41:57 +0100~origin
+        # 2021-04-15 16:10:35 +0200~origin/issue/2713/text-editor-unlink
+        # 2021-05-24 16:48:03 +0200~origin/issue/4405/add-menu-link-avatar
+        datestrings = subprocess.run('git branch -a --format="%(committerdate:iso8601)~%(refname:short)" | grep -v HEAD', 
+                                     capture_output=True, shell=True, cwd=self._reference_tmp_path).stdout.decode("utf-8").split("\n")
+        last_commits: dict = {}
+        for datestring in datestrings:
+            if not datestring:
+                continue
+            split = datestring.split("~")
+            commit_date = datetime.fromisoformat(split[0])
+            branch: str = split[1].replace("origin/", "")
+            today = datetime.now(timezone.utc)
+            last_commits[branch] = (today - commit_date).days
+        return last_commits
     
 
     def merge_and_count_conflicts(self, base_branch: str, incoming_branch: str) -> PairwiseDistance:
