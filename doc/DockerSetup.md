@@ -23,7 +23,6 @@ This repository contains serveral files playing a role for the docker setup and 
 * ``run.sh`` is the entry script to start the driftool container from the image. Beforehand, the ``build.sh`` must be executed once. If the ``build.sh`` was executed without modifications, the ``run.sh`` works out of the box. Otherwise, the script must be modified accordingly. The run script takes two positional parameters. The first parameter is the name of the repository config and the second paramter is the RAM size which will be allocated by the container.  Output reports are placed in the ``./volume`` directory. The container is destroyed after each run.
 Example: ``./run.sh volume/repository.yaml 4``. **You must execute this command only in the source root directory of this repository!**
 * (``dockerfile``) is the standard entry point for ``docker build`` and describes the composition of the docker image. If you are a driftool user, you do not have to edit this file.
-* (``deb_setup.sh``) is the bash script which is executed during the build process defined in the ``dockerfile``. Basically, it defines several setup steps for which we preferrably used bash syntax. If you are a driftool user, you do not have to edit this file.
 * (``deb_run.sh``) is the entrypoint script of the created container. It prepares the ramdisk and starts the driftool's main method. If you are a driftool user, you do not have to edit this file.
 
 ### Repository and Config Location
