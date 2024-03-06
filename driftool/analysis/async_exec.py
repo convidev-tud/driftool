@@ -14,7 +14,7 @@
 
 import asyncio
 
-from lib.data.pairwise_distance import PairwiseDistance
+from data.pairwise_distance import PairwiseDistance
 
 
 def async_execute(threads: list[list[str]], reference_dir: str) -> list[tuple[str, str, PairwiseDistance]]:
@@ -45,7 +45,7 @@ def async_execute(threads: list[list[str]], reference_dir: str) -> list[tuple[st
 async def run(combinations: str, reference_dir: str):
         print("Async thread started, please wait...")
         proc = await asyncio.create_subprocess_shell(
-            "python thread.py " + combinations + " " + reference_dir,
+            "python driftool/thread.py " + combinations + " " + reference_dir,
             stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
 
         stdout, stderr = await proc.communicate()
