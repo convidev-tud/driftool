@@ -11,7 +11,9 @@ __pycache__/
 tmp/
 env/
 *env/
-volume/
+volume/*
+!.gitkeep
+!*/config-template.yaml
 
 test-config*
 config-*
