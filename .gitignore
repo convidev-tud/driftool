@@ -13,7 +13,7 @@ env/
 *env/
 volume/*
 !.gitkeep
-!*/config-template.yaml
+!volume/config.template.yaml
 
 test-config*
 config-*
