@@ -1,0 +1,14 @@
+input_repository: volume/my-repository
+output_directory: volume/
+fetch_updates: false
+report_title: My Report
+print_plot: false
+html: true
+show_html: false
+simple_export: false
+branch_ignore:
+    - "^release\\-"
+    - "^v\\."
+blacklist: []
+whitelist:
+    - "\\.java"

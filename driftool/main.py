@@ -19,12 +19,12 @@ import time
 
 from datetime import datetime
 
-from lib.data.measured_environment import MeasuredEnvironment
-from lib.data.config_file import ConfigFile
-from lib.data.sysconf import SysConf
-from lib.analysis.analysis import analyze_with_config
-from lib.analysis.plot import visualise_embeddings
-from lib.webview.render.renderer import render_html
+from data.measured_environment import MeasuredEnvironment
+from data.config_file import ConfigFile
+from data.sysconf import SysConf
+from analysis.analysis import analyze_with_config
+from analysis.plot import visualise_embeddings
+from webview.render.renderer import render_html
 
 
 if __name__ == '__main__':

@@ -17,13 +17,13 @@ import numpy as np
 from sklearn.manifold import MDS
 import math
 
-from lib.data.pairwise_distance import PairwiseDistance, distance_avg
-from lib.analysis.repository_handler import RepositoryHandler
-from lib.data.measured_environment import MeasuredEnvironment
-from lib.analysis.csv_data import read_branches_from_csv, read_distances_from_csv
-from lib.data.sysconf import SysConf
-from lib.analysis.async_exec import async_execute
-from lib.data.config_file import ConfigFile
+from data.pairwise_distance import PairwiseDistance, distance_avg
+from analysis.repository_handler import RepositoryHandler
+from data.measured_environment import MeasuredEnvironment
+from analysis.csv_data import read_branches_from_csv, read_distances_from_csv
+from data.sysconf import SysConf
+from analysis.async_exec import async_execute
+from data.config_file import ConfigFile
 
 def calculate_median_distance_avg(embeddings: np.ndarray[float]) -> float:
     '''

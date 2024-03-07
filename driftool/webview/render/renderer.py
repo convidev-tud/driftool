@@ -17,8 +17,8 @@ from mako.runtime import Context
 from io import StringIO
 import json
 
-from lib.data.measured_environment import MeasuredEnvironment
-from lib.data.distance import BranchDistance, BranchEnvironment
+from data.measured_environment import MeasuredEnvironment
+from data.distance import BranchDistance, BranchEnvironment
 
 
 def generate_branch_distance_map(me: MeasuredEnvironment) -> list[BranchEnvironment]:
@@ -52,7 +52,7 @@ def render_html(me: MeasuredEnvironment, report_title: str, branch_ignore: list[
     This template file contains placeholders for the data values.
     Data objects are preprocessed and passed to the tmplate engine
     '''
-    mytemplate = Template(filename='resources/report.template.html')
+    mytemplate = Template(filename='driftool/resources/report.template.html')
     buf = StringIO()
 
     sd_embeddings = (me.embedding_lines * 10).astype(int)

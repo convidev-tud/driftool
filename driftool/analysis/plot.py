@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 from matplotlib import pyplot as plt
-from lib.data.measured_environment import MeasuredEnvironment
+from data.measured_environment import MeasuredEnvironment
 
 def visualise_embeddings(me: MeasuredEnvironment):
     '''

@@ -23,4 +23,4 @@ echo preparing analysis
 ls -l
 
 source env/bin/activate
-python3 -W ignore main.py $1
+python3 -W ignore driftool/main.py $1
