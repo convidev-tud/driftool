@@ -15,23 +15,38 @@
 import yaml
 
 class ConfigFile:
+    """
+    Represents a configuration file for the Driftool application.
 
-    input_repository: str
-    output_directory: str | None = None
-    fetch_updates: bool
-    print_plot: bool
-    html: bool
-    show_html: bool
-    branch_ignore: list[str]
-    file_ignore: list[str]
-    file_whitelist: list[str]
-    report_title: str | None = None
-    simple_export: bool
-    csv_file: str | None = None
-    timeout: int | None = None
+    Attributes:
+        input_repository (str): The input repository to analyze.
+        output_directory (str | None): The output directory to store the analysis results. Defaults to None.
+        fetch_updates (bool): Flag indicating whether to fetch updates from the repository.
+        print_plot (bool): Flag indicating whether to print the analysis plot.
+        html (bool): Flag indicating whether to generate an HTML report.
+        show_html (bool): Flag indicating whether to open the HTML report in a web browser.
+        branch_ignore (list[str]): List of branches to ignore during analysis.
+        file_ignore (list[str]): List of files to ignore during analysis.
+        file_whitelist (list[str]): List of files to include during analysis.
+        report_title (str | None): The title of the analysis report. Defaults to None.
+        simple_export (bool): Flag indicating whether to perform a simple export of the analysis results.
+        csv_file (str | None): The path to the CSV file to export the analysis results. Defaults to None.
+        timeout (int | None): The timeout duration for the analysis. Defaults to None.
 
+    Methods:
+        __init__(config_yaml_string: str) -> None: Initializes a ConfigFile instance with the provided YAML string.
+    """
 
     def __init__(self, config_yaml_string: str) -> None:
+        """
+        Initializes a ConfigFile instance with the provided YAML string.
+
+        Args:
+            config_yaml_string (str): The YAML string representing the configuration.
+
+        Raises:
+            ValueError: If the YAML string is invalid or missing required fields.
+        """
 
         conf = yaml.safe_load(config_yaml_string)
 
