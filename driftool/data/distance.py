@@ -14,8 +14,6 @@
 
 import json
 
-import json
-
 class BranchDistance:
     '''
     A helper data class for report generation.

@@ -17,13 +17,13 @@ import numpy as np
 from sklearn.manifold import MDS
 import math
 
-from data.pairwise_distance import PairwiseDistance, distance_avg
-from analysis.repository_handler import RepositoryHandler
-from data.measured_environment import MeasuredEnvironment
-from analysis.csv_data import read_branches_from_csv, read_distances_from_csv
-from data.sysconf import SysConf
-from analysis.async_exec import async_execute
-from data.config_file import ConfigFile
+from driftool.data.pairwise_distance import PairwiseDistance, distance_avg
+from driftool.analysis.repository_handler import RepositoryHandler
+from driftool.data.measured_environment import MeasuredEnvironment
+from driftool.analysis.csv_data import read_branches_from_csv, read_distances_from_csv
+from driftool.data.sysconf import SysConf
+from driftool.analysis.async_exec import async_execute
+from driftool.data.config_file import ConfigFile
 
 def calculate_median_distance_avg(embeddings: np.ndarray[float]) -> float:
     '''

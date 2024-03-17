@@ -22,7 +22,7 @@ from datetime import datetime
 from data.measured_environment import MeasuredEnvironment
 from data.config_file import ConfigFile
 from data.sysconf import SysConf
-from analysis.analysis import analyze_with_config
+from analysis.analysis import analyze_with_config, analyze_with_config_csv
 from analysis.plot import visualise_embeddings
 from webview.render.renderer import render_html
 
@@ -74,7 +74,15 @@ if __name__ == '__main__':
 
     print("Starting drift calculation on " + str(sysconf.number_threads) + " threads...")
 
-    measured_envrionment: MeasuredEnvironment = analyze_with_config(config, sysconf)
+    measured_envrionment: MeasuredEnvironment = MeasuredEnvironment()
+
+    if config.csv_file is None:
+        measured_envrionment = analyze_with_config(config, sysconf)
+    else:
+        if len(config.branch_ignore) > 0 or len(config.file_ignore) > 0 or len(config.file_whitelist) > 0 or config.fetch_updates:
+            print("INVALID CONFIGURATION. CSV IMPORT FORBIDS REPOSITORY OPERATIONS.")
+            sys.exit(2)
+        measured_envrionment = analyze_with_config_csv(config.csv_file)
 
     identifier = ("driftool_results_" + str(datetime.now())).replace(":", "_").replace(".", "_").replace(" ", "_")
 

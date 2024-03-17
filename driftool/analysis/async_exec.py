@@ -14,7 +14,7 @@
 
 import asyncio
 
-from data.pairwise_distance import PairwiseDistance
+from driftool.data.pairwise_distance import PairwiseDistance
 
 
 def async_execute(threads: list[list[str]], reference_dir: str) -> list[tuple[str, str, PairwiseDistance]]:

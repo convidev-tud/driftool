@@ -22,8 +22,8 @@ import os, os.path
 import re
 import stat
 
-from data.pairwise_distance import PairwiseDistance
-from analysis.directory import purge_blacklist, keep_whitelist
+from driftool.data.pairwise_distance import PairwiseDistance
+from driftool.analysis.directory import purge_blacklist, keep_whitelist
 
 class RepositoryHandler:
 

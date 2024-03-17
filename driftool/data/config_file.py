@@ -48,18 +48,28 @@ class ConfigFile:
             ValueError: If the YAML string is invalid or missing required fields.
         """
 
-        conf = yaml.safe_load(config_yaml_string)
-
+        conf: dict = yaml.safe_load(config_yaml_string)
+       
         if "output_directory" in conf:
             self.output_directory = conf["output_directory"]
+        else:
+            self.output_directory = None
         if "report_title" in conf:
             self.report_title = conf["report_title"]
+        else:
+            self.report_title = None
         if "csv_file" in conf:
-            self.csv_file = conf["csv_file"]    
+            self.csv_file = conf["csv_file"]
+        else:
+            self.csv_file = None
         if "simple_export" in conf:
-            self.simple_export = conf["simple_export"]    
+            self.simple_export = conf["simple_export"]
+        else:
+            self.simple_export = None
         if "timeout" in conf:
-            self.timeout = int(conf["timeout"])   
+            self.timeout = int(conf["timeout"])
+        else:
+            self.timeout = None
 
         self.input_repository = conf["input_repository"]
         self.fetch_updates = conf["fetch_updates"]
@@ -69,4 +79,5 @@ class ConfigFile:
         self.branch_ignore = conf["branch_ignore"]
         self.file_ignore = conf["blacklist"]
         self.file_whitelist = conf["whitelist"]
+        
        
