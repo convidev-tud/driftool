@@ -14,8 +14,8 @@
 
 import sys
 
-from analysis.analysis import calculate_partial_distance_relation
-from analysis.repository_handler import RepositoryHandler
+from driftool.analysis.analysis import calculate_partial_distance_relation
+from driftool.analysis.repository_handler import RepositoryHandler
 
 argv = sys.argv[1:]
 

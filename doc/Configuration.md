@@ -4,9 +4,9 @@
 ## Arguments
 
 * STRING path to a CONFIG yaml file. This is the repository analysis config.
-* The driftool system config aka SYSCONF. The ``driftool.yaml`` located in the default directory will be used.
+* The driftool system config (SYSCONF). The ``driftool.yaml`` is not passed via a command-line argument but the driftool resolves the config by name. It must be located in the repository root (or volume folder for docker setup).
 
-**If run via docker, the config file and the repository must be located in the ``./volume`` directory. The path must be provided in local syntax ``./volume/config.yaml`` and ``./volume/repository``.** See the provided docker tutorial for more information.
+**If run via docker, the config files and the input repository must be located in the ``./volume`` directory. The path must be provided in local syntax ``./volume/config.yaml`` and ``./volume/repository``.** See the provided docker tutorial for more information.
 
 
 ## Sysconf Paramters

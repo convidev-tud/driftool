@@ -1,3 +1,6 @@
 #!/bin/bash
 
-python -m unittest discover
+chmod 733 tests/resources/repositories/repo_a_setup.sh
+chmod 733 tests/resources/repositories/repo_a_destruct.sh
+
+python -W ignore -m unittest discover
