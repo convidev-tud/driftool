@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from data.pairwise_distance import PairwiseDistance
+from driftool.data.pairwise_distance import PairwiseDistance
 import csv 
 
 def read_branches_from_csv(csv_input_file: str) -> list[str]:

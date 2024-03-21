@@ -17,8 +17,8 @@ from mako.runtime import Context
 from io import StringIO
 import json
 
-from data.measured_environment import MeasuredEnvironment
-from data.distance import BranchDistance, BranchEnvironment
+from driftool.data.measured_environment import MeasuredEnvironment
+from driftool.data.distance import BranchDistance, BranchEnvironment
 
 
 def generate_branch_distance_map(me: MeasuredEnvironment) -> list[BranchEnvironment]:

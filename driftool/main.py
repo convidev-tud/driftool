@@ -16,22 +16,21 @@ import sys
 import webbrowser
 import os
 import time
+import subprocess
 
 from datetime import datetime
 
-from data.measured_environment import MeasuredEnvironment
-from data.config_file import ConfigFile
-from data.sysconf import SysConf
-from analysis.analysis import analyze_with_config
-from analysis.plot import visualise_embeddings
-from webview.render.renderer import render_html
+from driftool.data.measured_environment import MeasuredEnvironment
+from driftool.data.config_file import ConfigFile
+from driftool.data.sysconf import SysConf
+from driftool.analysis.analysis import analyze_with_config, analyze_with_config_csv
+from driftool.analysis.plot import visualise_embeddings
+from driftool.webview.render.renderer import render_html
 
 
-if __name__ == '__main__':
-
+def exec(argv):
+    
     start_time = time.time()
-
-    argv = sys.argv[1:]
 
     config_path: str = argv[0]
     sysconf_path: str = "./driftool.yaml"
@@ -74,12 +73,22 @@ if __name__ == '__main__':
 
     print("Starting drift calculation on " + str(sysconf.number_threads) + " threads...")
 
-    measured_envrionment: MeasuredEnvironment = analyze_with_config(config, sysconf)
+    measured_envrionment: MeasuredEnvironment = MeasuredEnvironment()
+
+    if config.csv_file is None:
+        measured_envrionment = analyze_with_config(config, sysconf)
+    else:
+        if len(config.branch_ignore) > 0 or len(config.file_ignore) > 0 or len(config.file_whitelist) > 0 or config.fetch_updates:
+            print("INVALID CONFIGURATION. CSV IMPORT FORBIDS REPOSITORY OPERATIONS.")
+            sys.exit(2)
+        measured_envrionment = analyze_with_config_csv(config.csv_file)
 
     identifier = ("driftool_results_" + str(datetime.now())).replace(":", "_").replace(".", "_").replace(" ", "_")
 
     if config.output_directory is not None:
+        
         output_file = config.output_directory + identifier + ".json"
+        subprocess.run(["mkdir", "-p", config.output_directory], capture_output=True)
         output = open(output_file, "x")
         output.write(measured_envrionment.serialize())
         output.close()
@@ -105,3 +114,7 @@ if __name__ == '__main__':
 
         if config.show_html:
             webbrowser.open_new_tab('file:///' + os.getcwd() + "/" + html_file)
+
+
+if __name__ == '__main__':
+    exec(argv = sys.argv[1:])

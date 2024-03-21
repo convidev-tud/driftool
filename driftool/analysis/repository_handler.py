@@ -22,8 +22,8 @@ import os, os.path
 import re
 import stat
 
-from data.pairwise_distance import PairwiseDistance
-from analysis.directory import purge_blacklist, keep_whitelist
+from driftool.data.pairwise_distance import PairwiseDistance
+from driftool.analysis.directory import purge_blacklist, keep_whitelist
 
 class RepositoryHandler:
 
@@ -101,6 +101,8 @@ class RepositoryHandler:
     def create_working_tmp(self):
         self._working_tmp_path = "./tmp/" + str(uuid.uuid4())
         copytree(self._reference_tmp_path, self._working_tmp_path)
+        out1 = subprocess.run(["git", "config", "user.name", '"driftool"'], capture_output=True, cwd=self._reference_tmp_path).stdout
+        out2 = subprocess.run(["git", "config", "user.email", '"analysis@driftool.io"'], capture_output=True, cwd=self._reference_tmp_path).stdout
 
 
     def reset_working_tmp(self):
