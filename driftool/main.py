@@ -84,6 +84,8 @@ def exec(argv):
         measured_envrionment = analyze_with_config_csv(config.csv_file)
 
     identifier = ("driftool_results_" + str(datetime.now())).replace(":", "_").replace(".", "_").replace(" ", "_")
+    if config.anonymous:
+        identifier = "report"
 
     if config.output_directory is not None:
         

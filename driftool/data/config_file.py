@@ -70,6 +70,11 @@ class ConfigFile:
             self.timeout = int(conf["timeout"])
         else:
             self.timeout = None
+            
+        if "anonymous" in conf:
+            self.anonymous = bool(conf["anonymous"])
+        else:
+            self.anonymous = False
 
         self.input_repository = conf["input_repository"]
         self.fetch_updates = conf["fetch_updates"]
