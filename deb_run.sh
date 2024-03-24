@@ -23,4 +23,8 @@ echo preparing analysis
 ls -l
 
 source env/bin/activate
+
+python -m build
+pip3 install ./dist/driftool-0.0.1-py3-none-any.whl
+
 python3 -W ignore driftool/main.py $1
