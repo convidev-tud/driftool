@@ -15,6 +15,7 @@
 import itertools
 import numpy as np
 from sklearn.manifold import MDS
+import os
 import math
 
 from driftool.data.pairwise_distance import PairwiseDistance, distance_avg
@@ -211,6 +212,12 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf) -> MeasuredEnviron
     environment.sd = calculate_median_distance_avg(environment.embedding_lines)
     print("statement drift (sd) = " + str(environment.sd))
 
+    log = repository_handler.log
+    logfile = open(os.path.join(config.output_directory, "log.txt"), "w")
+    for line in log:
+        logfile.write(line + "\n")
+    logfile.close()
+    
     return environment
 
 

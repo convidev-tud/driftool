@@ -58,6 +58,7 @@ class RepositoryHandler:
         self._file_whitelist = whitelist_files
         self._timeout_days = timeout_days
         self.branches = list()
+        self.log = list()
 
 
     def create_reference_tmp(self):
@@ -160,8 +161,12 @@ class RepositoryHandler:
                 
             # FIXME this seems not to work right now.    
             
-            if self._timeout_days > 0 and branch in last_commits and last_commits[branch] > self._timeout_days:
-                ignore = True
+            if branch in last_commits:
+                if self._timeout_days > 0 and last_commits[branch] > self._timeout_days:
+                    ignore = True
+            else:
+                self.log.append("Branch " + branch + " not found in last_commits")
+                
             
             # Do not analyse the branch (do also not checkout) if it is ignored to save processing time
             if ignore:
@@ -203,6 +208,8 @@ class RepositoryHandler:
             branch: str = split[1].replace("origin/", "")
             today = datetime.now(timezone.utc)
             last_commits[branch] = (today - commit_date).days
+            self.log.append("RAW: " + datestring)
+            self.log.append("Branch " + branch + " last commit: " + str(commit_date))
         return last_commits
     
 
