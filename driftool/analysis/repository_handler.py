@@ -160,7 +160,7 @@ class RepositoryHandler:
                 
             # FIXME this seems not to work right now.    
             
-            if self._timeout_days > 0 and last_commits[branch] > self._timeout_days:
+            if self._timeout_days > 0 and branch in last_commits and last_commits[branch] > self._timeout_days:
                 ignore = True
             
             # Do not analyse the branch (do also not checkout) if it is ignored to save processing time
