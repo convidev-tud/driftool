@@ -205,7 +205,9 @@ class RepositoryHandler:
                 continue
             split = datestring.split("~")
             commit_date = datetime.fromisoformat(split[0])
-            branch: str = split[1].replace("origin/", "")
+            branch = split[1]
+            if branch.startswith("origin/"):
+                branch = branch.replace("origin/", "")
             today = datetime.now(timezone.utc)
             last_commits[branch] = (today - commit_date).days
             self.log.append("RAW: " + datestring)
