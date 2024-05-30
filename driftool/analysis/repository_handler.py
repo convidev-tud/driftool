@@ -197,6 +197,7 @@ class RepositoryHandler:
         # 2024-02-26 17:41:57 +0100~origin
         # 2021-04-15 16:10:35 +0200~origin/issue/2713/text-editor-unlink
         # 2021-05-24 16:48:03 +0200~origin/issue/4405/add-menu-link-avatar
+        
         datestrings = subprocess.run('git branch -a --format="%(committerdate:iso8601)~%(refname:short)" | grep -v HEAD', 
                                      capture_output=True, shell=True, cwd=self._reference_tmp_path).stdout.decode("utf-8").split("\n")
         last_commits: dict = {}
@@ -208,7 +209,10 @@ class RepositoryHandler:
             branch = split[1]
             if branch.startswith("origin/"):
                 branch = branch.replace("origin/", "")
-            today = datetime.now(timezone.utc)
+                
+            # Setting the timeout time to always 12:00 avoids timout problems depending on the analysis time.
+            # Consequently, all analysis runs of the same day will lead to the same results.
+            today = datetime.now(timezone.utc).replace(hour=12, minute=0, second=0, microsecond=0)
             last_commits[branch] = (today - commit_date).days
             self.log.append("RAW: " + datestring)
             self.log.append("Branch " + branch + " last commit: " + str(commit_date))
