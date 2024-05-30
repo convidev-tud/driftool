@@ -74,9 +74,12 @@ def exec(argv):
     print("Starting drift calculation on " + str(sysconf.number_threads) + " threads...")
 
     measured_envrionment: MeasuredEnvironment = MeasuredEnvironment()
-
+    analysis_log: list[str] | None = None
+    
     if config.csv_file is None:
-        measured_envrionment = analyze_with_config(config, sysconf)
+        analysis_results = analyze_with_config(config, sysconf)
+        measured_envrionment = analysis_results[0]
+        analysis_log = analysis_results[1]
     else:
         if len(config.branch_ignore) > 0 or len(config.file_ignore) > 0 or len(config.file_whitelist) > 0 or config.fetch_updates:
             print("INVALID CONFIGURATION. CSV IMPORT FORBIDS REPOSITORY OPERATIONS.")
@@ -94,6 +97,12 @@ def exec(argv):
         output = open(output_file, "x")
         output.write(measured_envrionment.serialize())
         output.close()
+        
+        if analysis_log is not None:
+            logfile = open(os.path.join(config.output_directory, "log.txt"), "w")
+            for line in analysis_log:
+                logfile.write(line + "\n")
+            logfile.close()
 
         if config.simple_export:
             output_file_simple = config.output_directory + "d_"+config.report_title + ".txt"

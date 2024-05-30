@@ -213,12 +213,8 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf) -> MeasuredEnviron
     print("statement drift (sd) = " + str(environment.sd))
 
     log = repository_handler.log
-    logfile = open(os.path.join(config.output_directory, "log.txt"), "w")
-    for line in log:
-        logfile.write(line + "\n")
-    logfile.close()
     
-    return environment
+    return (environment, log)
 
 
 def analyze_with_config_csv(csv_input_file) -> MeasuredEnvironment:
