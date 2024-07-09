@@ -29,7 +29,7 @@
 * ``file_whitelist`` STRING files to be whitelisted during comparison. A list of regex expressions which are matched against the file path. This has no impact on directory structures.
 * ``timeout`` INT (optional) specifies the number of days in which a branch must have received its last commit. Otherwise it will not be analyzed. A value <= 0 skips this check.
 ---
-* ``report_title=` STRING (optional) renders a custom headline string into the generated HTML report. Long titles may result in bad formatting of the HTML.
+* ``report_title=`` STRING (optional) renders a custom headline string into the generated HTML report. Long titles may result in bad formatting of the HTML.
 * ``csv_file`` STRING (optional) DEVEVLOPER FEATURE Set a CSV distance matrix as input. This bypasses the repository analysis. Check the doc comments in the code for more information.
 * ``simple_export`` BOOLEAN if set, a simple report consisting of a single txt file with the drift number is produces in addition to the full report.
   
