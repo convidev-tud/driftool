@@ -29,8 +29,6 @@ All processing steps are performed on a temporary local copy of the git reposito
 
 You can provide a pre-caluclated distance matrix for calculating drift value and drift plot.
 
-``python main.py -y -v "./matrix.csv" -r "report_title" -o "./"``
-
 The CSV file must look like this. The top horizontal row denotes the branch names. The same branch ordering applies to the vertical dimension. The body contains the pairwise distances. The matrix must be symmetric.
 
 ```CSV
