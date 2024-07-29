@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import asyncio
+import uuid
 
 from driftool.data.pairwise_distance import PairwiseDistance
 
@@ -28,16 +29,20 @@ def async_execute(threads: list[list[str]], reference_dir: str) -> list[tuple[st
         if stderr:
             print(stderr.decode())
         if stdout:
-            #print(stdout.decode())
-            out: str = stdout.decode().split("\n")
             
-            for line in out:
-                if not "~" in line:
-                    continue
-                combination = line.split("~")
-                distance = PairwiseDistance()
-                distance.conflicting_lines = float(combination[2])
-                distance_relation.append((combination[0], combination[1], distance))
+            #print(stdout.decode())
+            results_file = stdout.decode()
+            
+            with open(results_file, "r") as file:
+                out: str = file.read().split("\n")
+            
+                for line in out:
+                    if not "~" in line:
+                        continue
+                    combination = line.split("~")
+                    distance = PairwiseDistance()
+                    distance.conflicting_lines = float(combination[2])
+                    distance_relation.append((combination[0], combination[1], distance))
             
     return distance_relation
 
@@ -61,7 +66,10 @@ async def run_and_join(threads: list[list[str]], reference_dir):
                 combinations += (pair + ":")
             else:
                 combinations += pair
-        arguments.append(combinations)
+        file_name = "./io/" + "out_" + str(uuid.uuid4()) + ".txt"
+        with open(file_name, "x") as file:
+            file.write(combinations)
+        arguments.append(file_name)
          
     return await asyncio.gather(*[run(arg, reference_dir) for arg in arguments])
     

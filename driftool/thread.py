@@ -13,6 +13,7 @@
 #  limitations under the License.
 
 import sys
+import uuid
 
 from driftool.analysis.analysis import calculate_partial_distance_relation
 from driftool.analysis.repository_handler import RepositoryHandler
@@ -28,7 +29,11 @@ if encoded_pairs is None or encoded_pairs == "":
 repository_handler = RepositoryHandler("", False, list(), list(), list(), 0)
 repository_handler.set_bypass_arguments(reference_path)
 
-pairs = encoded_pairs.split(":")
+file = open(encoded_pairs, "r")
+encoded_pairs_content = file.read()
+pairs = encoded_pairs_content.split(":")
+file.close()
+
 branch_combinations = list()
 
 for pair in pairs:
@@ -37,7 +42,12 @@ for pair in pairs:
 
 partial_distances = calculate_partial_distance_relation(repository_handler, branch_combinations)
 
-for result in partial_distances:
-    print(result[0] + "~" + result[1] + "~" + str(result[2].conflicting_lines))
+file_name = "./io/" + "in_" + str(uuid.uuid4()) + ".txt"
+with open(file_name, "x") as file:
+    lines = []
+    for result in partial_distances:
+        lines.append(result[0] + "~" + result[1] + "~" + str(result[2].conflicting_lines) + "\n")
+    file.writelines(lines)
+    print(file_name)
 
 sys.exit(0)
