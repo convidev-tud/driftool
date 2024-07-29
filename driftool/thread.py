@@ -29,6 +29,7 @@ if encoded_pairs is None or encoded_pairs == "":
 repository_handler = RepositoryHandler("", False, list(), list(), list(), 0)
 repository_handler.set_bypass_arguments(reference_path)
 
+print("Reading job from out/")
 file = open(encoded_pairs, "r")
 encoded_pairs_content = file.read()
 pairs = encoded_pairs_content.split(":")
@@ -48,6 +49,6 @@ with open(file_name, "x") as file:
     for result in partial_distances:
         lines.append(result[0] + "~" + result[1] + "~" + str(result[2].conflicting_lines) + "\n")
     file.writelines(lines)
-    print(file_name)
+    print("reading from " + file_name)
 
 sys.exit(0)

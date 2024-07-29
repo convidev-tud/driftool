@@ -31,10 +31,11 @@ def async_execute(threads: list[list[str]], reference_dir: str) -> list[tuple[st
         if stdout:
             
             #print(stdout.decode())
-            results_file = stdout.decode()
+            results_file = stdout.decode().split("\n")[0]
             
             with open(results_file, "r") as file:
                 out: str = file.read().split("\n")
+                print("Reading results from in/")
             
                 for line in out:
                     if not "~" in line:
@@ -59,6 +60,8 @@ async def run(combinations: str, reference_dir: str):
 
 async def run_and_join(threads: list[list[str]], reference_dir):
     arguments = list()
+    print("Found tasks for " + str(len(threads)) + " threads")
+    print("Writing tasks to out/")
     for thread in threads:
         combinations = ""
         for idx, pair in enumerate(thread):
