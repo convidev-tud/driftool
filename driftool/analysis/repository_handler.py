@@ -107,21 +107,17 @@ class RepositoryHandler:
 
 
     def reset_working_tmp(self):
-        cancel_merge = subprocess.run(["git", "merge", "--abort"], capture_output=True, cwd=self._working_tmp_path)
+        cancel_merge = subprocess.run(["git", "reset", "--merge"], capture_output=True, cwd=self._working_tmp_path)
         if self.head is not None:
             reset = subprocess.run(["git", "reset", "--hard", self.head], capture_output=True, cwd=self._working_tmp_path)
         stash_clutter = subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=self._working_tmp_path)
 
 
     def clear_working_tmp(self):
-        try:
-            os.access(self._working_tmp_path, stat.S_IWUSR)
-            rmtree(self._working_tmp_path)
-            self._working_tmp_path = None
-            self.head = None
-        except:
-            print("DELETE TMP/ FILE MANUALLY!")
-
+        os.access(self._working_tmp_path, stat.S_IWUSR)
+        rmtree(self._working_tmp_path)
+        self._working_tmp_path = None
+        self.head = None
 
 
     def materialize_all_branches_in_reference(self) -> list[str]:
@@ -224,10 +220,12 @@ class RepositoryHandler:
         distance = PairwiseDistance()
 
         subprocess.run(["git", "checkout", base_branch], capture_output=True, cwd=self._working_tmp_path)
+        reset = subprocess.run(["git", "reset", "--hard"], capture_output=True, cwd=self._working_tmp_path)
         
         m = re.compile("(?<=commit\\s)(.*?)(?=\\\n)")
         commit_log = subprocess.run(["git", "log", "-n 1"], capture_output=True, cwd=self._working_tmp_path).stdout
         commit_hash = m.search(commit_log.decode("utf-8")).group()
+        
         self.head = commit_hash
 
         stdout_merge = subprocess.run(["git", "merge", incoming_branch], capture_output=True, cwd=self._working_tmp_path).stdout
