@@ -90,13 +90,9 @@ class RepositoryHandler:
 
 
     def clear_reference_tmp(self):
-        try:
-            os.access(self._reference_tmp_path, stat.S_IWUSR)
-            rmtree(self._reference_tmp_path)
-            self._reference_tmp_path = None
-            print("TMP files cleaned")
-        except:
-            print("DELETE TMP/ FILE MANUALLY!")
+        os.access(self._reference_tmp_path, stat.S_IWUSR)
+        rmtree(self._reference_tmp_path)
+        self._reference_tmp_path = None
 
 
     def create_working_tmp(self):
@@ -219,7 +215,10 @@ class RepositoryHandler:
         
         distance = PairwiseDistance()
 
-        subprocess.run(["git", "checkout", base_branch], capture_output=True, cwd=self._working_tmp_path)
+        checkout = subprocess.run(["git", "checkout", base_branch], capture_output=True, cwd=self._working_tmp_path)
+        if checkout.returncode != 0:
+            raise Exception("Failed to checkout base branch")
+        
         reset = subprocess.run(["git", "reset", "--hard"], capture_output=True, cwd=self._working_tmp_path)
         
         m = re.compile("(?<=commit\\s)(.*?)(?=\\\n)")

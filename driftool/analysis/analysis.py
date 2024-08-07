@@ -132,6 +132,8 @@ def construct_environment(distance_relation: list[tuple[str, str, PairwiseDistan
     '''
     Construct the MeasuredEnvironment from the distance relation.
     This basically transforms the distance relation into a distance matrix.
+    
+    THE DISTANCE RELATION MUST BE SYMMETRICAL!
     '''
 
     me = MeasuredEnvironment()
@@ -213,8 +215,6 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf) -> MeasuredEnviron
         
         # start the threads and wait until all results are delivered
         distance_relation = async_execute(threads, repository_handler._reference_tmp_path)
-        for branch in branches:
-            distance_relation.append([branch, branch, PairwiseDistance()])
         repository_handler.clear_reference_tmp()
     
     environment = construct_environment(distance_relation, repository_handler.branches)
