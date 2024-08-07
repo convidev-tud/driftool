@@ -69,7 +69,8 @@ async def run_and_join(threads: list[list[str]], reference_dir):
                 combinations += (pair + ":")
             else:
                 combinations += pair
-        file_name = "./io/" + "out_" + str(uuid.uuid4()) + ".txt"
+        #FIXME REPLACE VOLUME WITH IO
+        file_name = "./volume/" + "out_" + str(uuid.uuid4()) + ".txt"
         with open(file_name, "x") as file:
             file.write(combinations)
         arguments.append(file_name)
