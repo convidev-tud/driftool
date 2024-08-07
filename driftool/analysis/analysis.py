@@ -183,6 +183,7 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf) -> MeasuredEnviron
         branches = repository_handler.materialize_all_branches_in_reference()
         # get all pairs
         # the chars '~' and ':' are forbidden in git branch names, so we can use them as seperators
+        visited_combinations = list()
         threads = list()
         for i in range(0, number_threads, 1):
             threads.append(list())
@@ -192,7 +193,17 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf) -> MeasuredEnviron
             for b2 in branches:
                 # Only add one-direction combinations and no identity combinations
                 if b1 == b2:
-                    break
+                    continue
+                
+                combination_encoding = b1 + "~" + b2
+                reversed_encoding = b2 + "~" + b1
+                
+                if combination_encoding in visited_combinations or reversed_encoding in visited_combinations:
+                    continue
+                
+                visited_combinations.append(combination_encoding)
+                visited_combinations.append(reversed_encoding)
+                
                 threads[thread_idx].append(b1 + "~" + b2)
                 thread_idx += 1
                 thread_idx %= number_threads
