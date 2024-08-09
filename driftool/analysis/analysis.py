@@ -211,10 +211,13 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf) -> MeasuredEnviron
                 thread_idx %= number_threads
         
         # Do not start empty threads
-        threads = list(filter(lambda x: (len(x) > 0), threads))
+        non_empty_threads = list()
+        for thread in threads:
+            if len(thread) > 0:
+                non_empty_threads.append(thread)
         
         # start the threads and wait until all results are delivered
-        distance_relation = async_execute(threads, repository_handler._reference_tmp_path)
+        distance_relation = async_execute(non_empty_threads, repository_handler._reference_tmp_path)
         repository_handler.clear_reference_tmp()
     
     environment = construct_environment(distance_relation, repository_handler.branches)

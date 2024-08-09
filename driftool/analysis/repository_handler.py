@@ -64,6 +64,9 @@ class RepositoryHandler:
     def create_reference_tmp(self):
         self._reference_tmp_path = "./tmp/" + str(uuid.uuid4())
         copytree(self._input_dir, self._reference_tmp_path)
+        out1 = subprocess.run(["git", "config", "user.name", '"driftool"'], capture_output=True, cwd=self._reference_tmp_path).stdout
+        out2 = subprocess.run(["git", "config", "user.email", '"analysis@driftool.io"'], capture_output=True, cwd=self._reference_tmp_path).stdout
+
 
 
     def set_bypass_arguments(self, reference_path):
@@ -98,14 +101,17 @@ class RepositoryHandler:
     def create_working_tmp(self):
         self._working_tmp_path = "./tmp/" + str(uuid.uuid4())
         copytree(self._reference_tmp_path, self._working_tmp_path)
-        out1 = subprocess.run(["git", "config", "user.name", '"driftool"'], capture_output=True, cwd=self._reference_tmp_path).stdout
-        out2 = subprocess.run(["git", "config", "user.email", '"analysis@driftool.io"'], capture_output=True, cwd=self._reference_tmp_path).stdout
+        out1 = subprocess.run(["git", "config", "user.name", '"driftool"'], capture_output=True, cwd=self._working_tmp_path).stdout
+        out2 = subprocess.run(["git", "config", "user.email", '"analysis@driftool.io"'], capture_output=True, cwd=self._working_tmp_path).stdout
 
 
     def reset_working_tmp(self):
-        cancel_merge = subprocess.run(["git", "reset", "--merge"], capture_output=True, cwd=self._working_tmp_path)
-        if self.head is not None:
-            reset = subprocess.run(["git", "reset", "--hard", self.head], capture_output=True, cwd=self._working_tmp_path)
+        cancel_merge = subprocess.run(["git", "merge", "--abort"], capture_output=True, cwd=self._working_tmp_path)
+        if self.merge_successful:
+            cancel_merge = subprocess.run(["git", "reset", "--hard", "HEAD~1"], capture_output=True, cwd=self._working_tmp_path)
+            print(str(cancel_merge.stdout))
+            self.merge_successful = False
+        stash = subprocess.run(["git", "stash"], capture_output=True, cwd=self._working_tmp_path)
         stash_clutter = subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=self._working_tmp_path)
 
 
@@ -220,6 +226,7 @@ class RepositoryHandler:
             raise Exception("Failed to checkout base branch")
         
         reset = subprocess.run(["git", "reset", "--hard"], capture_output=True, cwd=self._working_tmp_path)
+        clean = subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=self._working_tmp_path)
         
         m = re.compile("(?<=commit\\s)(.*?)(?=\\\n)")
         commit_log = subprocess.run(["git", "log", "-n 1"], capture_output=True, cwd=self._working_tmp_path).stdout
@@ -229,9 +236,16 @@ class RepositoryHandler:
 
         stdout_merge = subprocess.run(["git", "merge", incoming_branch], capture_output=True, cwd=self._working_tmp_path).stdout
 
+        #FIXME CHECK THIS
         stdout_lines = map(lambda t: str(t), stdout_merge.splitlines())
         conflict_lines = list(filter(lambda s: ("Merge conflict in" in s), stdout_lines))
         conflict_files = list(map(lambda u: u.split("Merge conflict in ")[1], conflict_lines))
+        
+        if len(conflict_files) < 0:
+            self.merge_successful = True
+        else:
+            self.merge_successful = False
+            
         conflict_files = list(map(lambda u: u[:len(u)-1], conflict_files))
 
         if len(conflict_files) > 0:
@@ -243,7 +257,7 @@ class RepositoryHandler:
                 #print("CONFLICT IN: " + file)
 
                 try:
-                    conflicting_file = open(self._working_tmp_path + "/" + file, "r", encoding='utf-8', errors='ignore').readlines()
+                    conflicting_file = open(self._working_tmp_path + "/" + file, "r", encoding='utf-8', errors='strict').readlines()
                 except:
                     continue
 
