@@ -20,14 +20,17 @@ from driftool.data.pairwise_distance import PairwiseDistance
 
 def async_execute(threads: list[list[str]], reference_dir: str) -> list[tuple[str, str, PairwiseDistance]]:
     
+    total_elements = sum(len(thread) for thread in threads)
     std = asyncio.run(run_and_join(threads, reference_dir))
-    distance_relation = list()
-    
+    assert len(std) == len(threads)
     print("All threads returned their results!")
+    
+    distance_relation = list()
     
     for stdout, stderr in std:
         if stderr:
             print(stderr.decode())
+            raise Exception(stderr.decode())
         if stdout:
             
             #print(stdout.decode())
@@ -44,11 +47,12 @@ def async_execute(threads: list[list[str]], reference_dir: str) -> list[tuple[st
                     distance = PairwiseDistance()
                     distance.conflicting_lines = float(combination[2])
                     distance_relation.append((combination[0], combination[1], distance))
-            
+    
+    assert len(distance_relation) == total_elements*2
     return distance_relation
 
 
-async def run(combinations: str, reference_dir: str):
+async def run(combinations: str, reference_dir: str) -> tuple[bytes, bytes]:
         print("Async thread started, please wait...")
         proc = await asyncio.create_subprocess_shell(
             "python driftool/thread.py " + combinations + " " + reference_dir,
@@ -58,7 +62,7 @@ async def run(combinations: str, reference_dir: str):
         return (stdout, stderr)
 
 
-async def run_and_join(threads: list[list[str]], reference_dir):
+async def run_and_join(threads: list[list[str]], reference_dir) -> list[tuple[bytes, bytes]]:
     arguments = list()
     print("Found tasks for " + str(len(threads)) + " threads")
     print("Writing tasks to out/")
@@ -66,16 +70,22 @@ async def run_and_join(threads: list[list[str]], reference_dir):
         combinations = ""
         for idx, pair in enumerate(thread):
             if idx < len(thread)-1:
-                combinations += (pair + ":")
+                combinations += (pair + "\n")
             else:
                 combinations += pair
         #FIXME REPLACE VOLUME WITH IO
         file_name = "./volume/" + "out_" + str(uuid.uuid4()) + ".txt"
-        with open(file_name, "x") as file:
-            file.write(combinations)
+        file = open(file_name, "x")
+        file.write(combinations)
         arguments.append(file_name)
          
-    return await asyncio.gather(*[run(arg, reference_dir) for arg in arguments])
+         
+    async with asyncio.TaskGroup() as tg:
+        tasks = [tg.create_task(run(arg, reference_dir)) for arg in arguments]
+    
+    results = [task.result() for task in tasks]
+         
+    return results
     
 
     

@@ -32,7 +32,7 @@ repository_handler.set_bypass_arguments(reference_path)
 print("Reading job from out/")
 file = open(encoded_pairs, "r")
 encoded_pairs_content = file.read()
-pairs = encoded_pairs_content.split(":")
+pairs = encoded_pairs_content.split("\n")
 file.close()
 
 branch_combinations = list()
