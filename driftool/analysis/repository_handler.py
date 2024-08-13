@@ -109,7 +109,7 @@ class RepositoryHandler:
         cancel_merge = subprocess.run(["git", "merge", "--abort"], capture_output=True, cwd=self._working_tmp_path)
         if self.merge_successful:
             cancel_merge = subprocess.run(["git", "reset", "--hard", "HEAD~1"], capture_output=True, cwd=self._working_tmp_path)
-            print(str(cancel_merge.stdout))
+            #print(str(cancel_merge.stdout))
             self.merge_successful = False
         stash = subprocess.run(["git", "stash"], capture_output=True, cwd=self._working_tmp_path)
         stash_clutter = subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=self._working_tmp_path)
@@ -140,7 +140,7 @@ class RepositoryHandler:
             excludes.append(re.compile(rule))
 
         last_commits = self.get_branch_activity()
-        print(last_commits)
+        #print(last_commits)
 
         # Check if a branch is ignored because of the regex or the commit-date timeout
         self.branches = list()
@@ -148,7 +148,7 @@ class RepositoryHandler:
         # checkout every analyzed branch locally
         for branch in all_branches:
             
-            print(branch)
+            #print(branch)
             
             ignore = False
             for expr in excludes:
@@ -168,10 +168,10 @@ class RepositoryHandler:
             
             # Do not analyse the branch (do also not checkout) if it is ignored to save processing time
             if ignore:
-                print("---> IGNORE")
+                #print("---> IGNORE")
                 continue
             
-            print("---> KEEP")
+            #print("---> KEEP")
             self.branches.append(branch)
             subprocess.run(["git", "checkout", branch], capture_output=True, cwd=path)
             subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=path)
