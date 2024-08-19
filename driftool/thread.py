@@ -50,7 +50,7 @@ for pair in pairs:
 partial_distances = calculate_partial_distance_relation(repository_handler, branch_combinations)
 
 #FIXME REPLACE VOLUME WITH IO
-file_name = "./volume/" + "in_" + str(tidx) + "_" + str(uuid.uuid4()) + ".txt"
+file_name = "./io/" + "in_" + str(tidx) + "_" + str(uuid.uuid4()) + ".txt"
 with open(file_name, "x") as file:
     lines = []
     for result in partial_distances:
