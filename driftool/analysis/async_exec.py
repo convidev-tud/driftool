@@ -18,12 +18,14 @@ import uuid
 from driftool.data.pairwise_distance import PairwiseDistance
 
 
-def async_execute(threads: list[list[str]], reference_dir: str) -> list[tuple[str, str, PairwiseDistance]]:
+def async_execute(threads: list[list[str]], reference_dir: str) -> tuple[list[str], list[tuple[str, str, PairwiseDistance]]]:
     
+    log: list[str] = list()
     total_elements = sum(len(thread) for thread in threads)
     std = asyncio.run(run_and_join(threads, reference_dir))
     assert len(std) == len(threads)
     print("All threads returned their results!")
+    log.append("All threads returned their results!")
     
     distance_relation = list()
     
@@ -32,9 +34,14 @@ def async_execute(threads: list[list[str]], reference_dir: str) -> list[tuple[st
     for stdout, stderr in std:
         if not stderr:
             print(str(stdout))
+            log.append(str(stdout.decode()))
             results_without_error.append(stdout.decode().split("\n")[0].split("_")[1])
+        else:
+            print(str(stderr))
+            log.append(str(stderr.decode()))
 
     print("SUCCESSFUL THREADS: " + str(results_without_error))
+    log.append("SUCCESSFUL THREADS: " + str(results_without_error))
 
     for stdout, stderr in std:
         if stderr:
@@ -58,8 +65,9 @@ def async_execute(threads: list[list[str]], reference_dir: str) -> list[tuple[st
                     distance_relation.append((combination[0], combination[1], distance))
                 file.close()
     
+    assert len(results_without_error) == len(threads)
     assert len(distance_relation) == total_elements*2
-    return distance_relation
+    return (log, distance_relation)
 
 
 async def run(combinations: str, reference_dir: str) -> tuple[bytes, bytes]:

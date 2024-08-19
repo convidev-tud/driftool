@@ -173,11 +173,13 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf) -> MeasuredEnviron
     4. Calculate the median average -> the actual drift metric
     '''
 
-    timeout = 0 if config.timeout is None else config.timeout
+    timeout: int = 0 if config.timeout is None else config.timeout
     repository_handler: RepositoryHandler = RepositoryHandler(config.input_repository, config.fetch_updates, config.file_ignore, config.file_whitelist, config.branch_ignore, timeout)
     repository_handler.create_reference_tmp()
     
-    number_threads = sysconf.number_threads
+    number_threads: int = sysconf.number_threads
+    has_error: bool = False
+    async_log: list[str] = list()
     
     if number_threads < 2:
         distance_relation = calculate_distances(repository_handler)
@@ -217,18 +219,35 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf) -> MeasuredEnviron
                 non_empty_threads.append(thread)
         
         # start the threads and wait until all results are delivered
-        distance_relation = async_execute(non_empty_threads, repository_handler._reference_tmp_path)
+        try:
+            (async_log, distance_relation) = async_execute(non_empty_threads, repository_handler._reference_tmp_path)
+        except Exception as e:
+            has_error = True
+            print("Error during async execution: " + str(e))
+            async_log.append("Error during async execution: " + str(e))
         repository_handler.clear_reference_tmp()
     
-    environment = construct_environment(distance_relation, repository_handler.branches)
-    environment.embedding_lines = multidimensional_scaling(environment.line_matrix, 3)
+    '''
+    Create the measured environment.
+    In case of an error, the environment is empty and the sd is set to -1.
+    The matrix becomes a zero matrix.
+    However, the results can still be written to all result file formats and filtered out later.
+    '''
+    if not has_error:
+        environment = construct_environment(distance_relation, repository_handler.branches)
+        environment.embedding_lines = multidimensional_scaling(environment.line_matrix, 3)
 
-    environment.sd = calculate_median_distance_avg(environment.embedding_lines)
-    print("statement drift (sd) = " + str(environment.sd))
+        environment.sd = calculate_median_distance_avg(environment.embedding_lines)
+        print("statement drift (sd) = " + str(environment.sd))
+    else :
+        environment = MeasuredEnvironment()
+        environment.branches = repository_handler.branches
+        environment.line_matrix = np.zeros(shape=(len(environment.branches), len(environment.branches)))
+        environment.sd = -1
 
     log = repository_handler.log
     
-    return (environment, log)
+    return (environment, log + async_log)
 
 
 def analyze_with_config_csv(csv_input_file) -> MeasuredEnvironment:
