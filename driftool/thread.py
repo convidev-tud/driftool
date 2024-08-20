@@ -51,10 +51,13 @@ partial_distances = calculate_partial_distance_relation(repository_handler, bran
 
 #FIXME REPLACE VOLUME WITH IO
 file_name = "./io/" + "in_" + str(tidx) + "_" + str(uuid.uuid4()) + ".txt"
-with open(file_name, "x") as file:
-    lines = []
-    for result in partial_distances:
-        lines.append(result[0] + "~" + result[1] + "~" + str(result[2].conflicting_lines) + "\n")
-    file.writelines(lines)
-    print(file_name)
-    sys.exit(0)
+file = open(file_name, "x")
+lines = []
+for result in partial_distances:
+    lines.append(result[0] + "~" + result[1] + "~" + str(result[2].conflicting_lines) + "\n")
+lines.append("---LOG\n")
+lines.extend(repository_handler.log)
+file.writelines(lines)
+file.close()
+print(file_name)
+sys.exit(0)

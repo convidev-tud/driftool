@@ -33,7 +33,7 @@ class TestAnalysisIntegration(unittest.TestCase):
         config_content = open(config_path, "r").read()
         config = ConfigFile(config_content)
         sysconf = SysConf("number_threads: 1")
-        me_repo = analyze_with_config(config, sysconf)[0]
+        me_repo = analyze_with_config(config, sysconf)
     
         csv_file = "tests/resources/repositories/repo_a_distances.csv"
         me_csv = analyze_with_config_csv(csv_file)
@@ -50,7 +50,7 @@ class TestAnalysisIntegration(unittest.TestCase):
         config = ConfigFile(config_content)
         sysconf = SysConf("number_threads: 1")
         
-        me_repo = analyze_with_config(config, sysconf)[0]
+        me_repo = analyze_with_config(config, sysconf)
         
         csv_file = "tests/resources/repositories/repo_a_distances_blacklist.csv"
         me_csv = analyze_with_config_csv(csv_file)
@@ -66,7 +66,7 @@ class TestAnalysisIntegration(unittest.TestCase):
         config_content = open(config_path, "r").read()
         config = ConfigFile(config_content)
         sysconf = SysConf("number_threads: 1")
-        me_repo = analyze_with_config(config, sysconf)[0]
+        me_repo = analyze_with_config(config, sysconf)
         print("drift: " + str(me_repo.sd))
         self.assertCountEqual(me_repo.branches, ['main', 'additive_feature', 'conflicting_feature_a'])
         self.assertAlmostEqual(me_repo.sd, 0)
@@ -79,7 +79,7 @@ class TestAnalysisIntegration(unittest.TestCase):
         config = ConfigFile(config_content)
         sysconf = SysConf("number_threads: 1")
         
-        me_repo = analyze_with_config(config, sysconf)[0]
+        me_repo = analyze_with_config(config, sysconf)
         
         csv_file = "tests/resources/repositories/repo_a_distances_whitelist.csv"
         me_csv = analyze_with_config_csv(csv_file)

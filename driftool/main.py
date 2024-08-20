@@ -74,12 +74,23 @@ def exec(argv):
     print("Starting drift calculation on " + str(sysconf.number_threads) + " threads...")
 
     measured_envrionment: MeasuredEnvironment = MeasuredEnvironment()
-    analysis_log: list[str] | None = None
+    analysis_log: list[str] = list()
     
     if config.csv_file is None:
-        analysis_results = analyze_with_config(config, sysconf)
-        measured_envrionment = analysis_results[0]
-        analysis_log = analysis_results[1]
+        try:
+            measured_envrionment = analyze_with_config(config, sysconf, analysis_log)
+        except:
+            print("An unexpected error occurred during the analysis.")
+            print("Please check the log for more information.")
+            analysis_log.append("Force writing log to file due to unexpected termination.")
+            logfile = open(os.path.join(config.output_directory, "log.txt"), "w")
+            for line in analysis_log:
+                if not line.endswith("\n"):
+                    line += "\n"
+                logfile.write(line)
+            logfile.close()
+            analysis_log = None
+            sys.exit(2)
     else:
         if len(config.branch_ignore) > 0 or len(config.file_ignore) > 0 or len(config.file_whitelist) > 0 or config.fetch_updates:
             print("INVALID CONFIGURATION. CSV IMPORT FORBIDS REPOSITORY OPERATIONS.")
@@ -100,8 +111,12 @@ def exec(argv):
         
         if analysis_log is not None:
             logfile = open(os.path.join(config.output_directory, "log.txt"), "w")
+            print("Writing log to file...")
             for line in analysis_log:
-                logfile.write(line + "\n")
+                print(line)
+                if not line.endswith("\n"):
+                    line += "\n"
+                logfile.write(line)
             logfile.close()
 
         if config.simple_export:

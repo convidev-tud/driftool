@@ -18,14 +18,13 @@ import uuid
 from driftool.data.pairwise_distance import PairwiseDistance
 
 
-def async_execute(threads: list[list[str]], reference_dir: str) -> tuple[list[str], list[tuple[str, str, PairwiseDistance]]]:
+def async_execute(threads: list[list[str]], reference_dir: str, log: list[str]) -> list[tuple[str, str, PairwiseDistance]]:
     
-    log: list[str] = list()
+    log.append(">>> Starting async_execute")
     total_elements = sum(len(thread) for thread in threads)
     std = asyncio.run(run_and_join(threads, reference_dir))
     assert len(std) == len(threads)
     print("All threads returned their results!")
-    log.append("All threads returned their results!")
     
     distance_relation = list()
     
@@ -46,27 +45,40 @@ def async_execute(threads: list[list[str]], reference_dir: str) -> tuple[list[st
     for stdout, stderr in std:
         if stderr:
             print(stderr.decode())
+            log.append(stderr.decode())
+            print("Aborting thread result analysis")
             raise Exception(stderr.decode())
         if stdout:
             
             #print(stdout.decode())
             results_file = stdout.decode().split("\n")[0]
             
-            with open(results_file, "r") as file:
-                out: str = file.read().split("\n")
-                print("Reading results from in/")
-            
-                for line in out:
-                    if not "~" in line:
-                        continue
-                    combination = line.split("~")
-                    distance = PairwiseDistance()
-                    distance.conflicting_lines = float(combination[2])
-                    distance_relation.append((combination[0], combination[1], distance))
-                file.close()
+            file = open(results_file, "r")
+            out: list[str] = file.read().split("\n")
+            print("Reading results from in/")
+            log.append("Reading results from in/")
+            log.extend(out)
+            for line in out:
+                if line == "---LOG":
+                    break
+                if not "~" in line:
+                    continue
+                combination = line.split("~")
+                distance = PairwiseDistance()
+                distance.conflicting_lines = float(combination[2])
+                distance_relation.append((combination[0], combination[1], distance))
+            file.close()
     
-    assert len(results_without_error) == len(threads)
-    assert len(distance_relation) == total_elements*2
+    if not len(results_without_error) == len(threads):
+        log.append("Not all Threads returned successful!")
+        print("Aborting thread result analysis")
+        raise Exception("Not all Threads returned successful!")
+    if not len(distance_relation) == total_elements*2:
+        log.append("Not all combinations were calculated!")
+        print("Aborting thread result analysis")
+        raise Exception("Not all combinations were calculated!")
+    
+    log.append(">>> Finished async_execute")
     return (log, distance_relation)
 
 
