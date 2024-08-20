@@ -57,7 +57,10 @@ for result in partial_distances:
     lines.append(result[0] + "~" + result[1] + "~" + str(result[2].conflicting_lines) + "\n")
 lines.append("---LOG\n")
 lines.extend(repository_handler.log)
-file.writelines(lines)
+for line in lines:
+    if not line.endswith("\n"):
+        line += "\n"
+    file.write(line)
 file.close()
 print(file_name)
 sys.exit(0)

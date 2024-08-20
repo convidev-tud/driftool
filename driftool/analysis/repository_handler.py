@@ -280,17 +280,18 @@ class RepositoryHandler:
         stdout_lines: list[str] = list()
         for line in stdout_merge.splitlines():
             stdout_lines.append(line.decode("utf-8"))
-        self.log.extend(stdout_lines)
+            self.log.append(line.decode("utf-8") + "\n")
         self.log.append("--------conflict lines")
         conflict_lines: list[str] = list()
         for line in stdout_lines:
             if "Merge conflict in" in line:
                 conflict_lines.append(line)
-        self.log.extend(conflict_lines)
+                self.log.append(line + "\n")
         self.log.append("--------conflict files")
         conflict_files: list[str] = list()
         for line in conflict_lines:
             conflict_files.append(line.split("Merge conflict in ")[1].strip())
+            self.log.append(line.split("Merge conflict in ")[1].strip() + "\n")
             
         self.log.extend(conflict_files)
         self.log.append("--------")

@@ -32,9 +32,9 @@ def async_execute(threads: list[list[str]], reference_dir: str, log: list[str]) 
     results_without_error = list()
     for stdout, stderr in std:
         if not stderr:
-            print(str(stdout))
+            print(stdout.decode())
             log.append(str(stdout.decode()))
-            results_without_error.append(stdout.decode().split("\n")[0].split("_")[1])
+            results_without_error.append(stdout.decode().strip())
         else:
             print(str(stderr))
             log.append(str(stderr.decode()))
@@ -50,7 +50,7 @@ def async_execute(threads: list[list[str]], reference_dir: str, log: list[str]) 
             raise Exception(stderr.decode())
         if stdout:
             
-            #print(stdout.decode())
+            print("STDOUT: ", stdout.decode())
             results_file = stdout.decode().split("\n")[0]
             
             file = open(results_file, "r")
@@ -79,7 +79,7 @@ def async_execute(threads: list[list[str]], reference_dir: str, log: list[str]) 
         raise Exception("Not all combinations were calculated!")
     
     log.append(">>> Finished async_execute")
-    return (log, distance_relation)
+    return distance_relation
 
 
 async def run(combinations: str, reference_dir: str) -> tuple[bytes, bytes]:

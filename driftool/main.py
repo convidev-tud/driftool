@@ -75,6 +75,7 @@ def exec(argv):
 
     measured_envrionment: MeasuredEnvironment = MeasuredEnvironment()
     analysis_log: list[str] = list()
+    analysis_log.append(">>>>>>>> LOGSTART")
     
     if config.csv_file is None:
         try:
@@ -113,7 +114,6 @@ def exec(argv):
             logfile = open(os.path.join(config.output_directory, "log.txt"), "w")
             print("Writing log to file...")
             for line in analysis_log:
-                print(line)
                 if not line.endswith("\n"):
                     line += "\n"
                 logfile.write(line)
