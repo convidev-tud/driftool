@@ -84,7 +84,7 @@ def exec(argv):
             print("An unexpected error occurred during the analysis.")
             print("Please check the log for more information.")
             analysis_log.append("-------- Force writing log to file due to unexpected termination.")
-            logfile = open(os.path.join(config.output_directory, "log.txt"), "w")
+            logfile = open(os.path.join(config.output_directory, "log.txt"), "x")
             for line in analysis_log:
                 if not line.endswith("\n"):
                     line += "\n"
@@ -111,7 +111,7 @@ def exec(argv):
         output.close()
         
         if analysis_log is not None:
-            logfile = open(os.path.join(config.output_directory, "log.txt"), "w")
+            logfile = open(os.path.join(config.output_directory, "log.txt"), "x")
             print("Writing log to file...")
             for line in analysis_log:
                 if not line.endswith("\n"):
@@ -121,7 +121,7 @@ def exec(argv):
 
         if config.simple_export:
             output_file_simple = config.output_directory + "d_"+config.report_title + ".txt"
-            output_simple = open(output_file_simple, "w")
+            output_simple = open(output_file_simple, "x")
             output_simple.write(str(measured_envrionment.sd))
             output_simple.close()
 

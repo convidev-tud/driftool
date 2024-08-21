@@ -20,6 +20,7 @@ import uuid
 import subprocess
 import os, os.path
 import re
+import pytz
 import stat
 
 from driftool.data.pairwise_distance import PairwiseDistance
@@ -217,7 +218,7 @@ class RepositoryHandler:
         # 2021-04-15 16:10:35 +0200~origin/issue/2713/text-editor-unlink
         # 2021-05-24 16:48:03 +0200~origin/issue/4405/add-menu-link-avatar
         
-        datestrings = subprocess.run('git branch -a --format="%(committerdate:iso8601)~%(refname:short)" | grep -v HEAD', 
+        datestrings = subprocess.run('git branch -a --format="%(committerdate:short)~%(refname:short)" | grep -v HEAD', 
                                      capture_output=True, shell=True, cwd=self._reference_tmp_path).stdout.decode("utf-8").split("\n")
         last_commits: dict = {}
         for datestring in datestrings:
@@ -225,6 +226,7 @@ class RepositoryHandler:
                 continue
             split = datestring.split("~")
             commit_date = datetime.fromisoformat(split[0])
+            commit_date = commit_date.replace(tzinfo=pytz.UTC).replace(hour=12, minute=0, second=0, microsecond=0)
             branch = split[1]
             if branch.startswith("origin/"):
                 branch = branch.replace("origin/", "")
