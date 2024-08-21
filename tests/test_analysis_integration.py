@@ -23,7 +23,7 @@ class TestAnalysisIntegration(unittest.TestCase):
     
     def setUp(self):
         out1 = subprocess.run(["tests/resources/repositories/repo_a_setup.sh"], capture_output=True).stdout
-
+    
     def tearDown(self):
         out1 = subprocess.run(["tests/resources/repositories/repo_a_destruct.sh"], capture_output=True).stdout
 
@@ -89,6 +89,7 @@ class TestAnalysisIntegration(unittest.TestCase):
         self.assertAlmostEqual(me_repo.sd, me_csv.sd)
     
     
+
     def test_full_integration_json_report(self):
         print("Testing full integration with json report")
         config_path = "tests/resources/repositories/repo_a_config.yaml"
@@ -102,7 +103,7 @@ class TestAnalysisIntegration(unittest.TestCase):
         print("folder content: " + str(lines))
         self.assertEqual(len(lines), 3)
         
-        
+
     def test_full_integration_simple_report(self):
         print("Testing full integration with simple report")
         config_path = "tests/resources/repositories/repo_a_config_simple.yaml"

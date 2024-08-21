@@ -229,9 +229,9 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf, async_log: list[st
             log: list[str] = list()
             distance_relation = async_execute(non_empty_threads, repository_handler._reference_tmp_path, log)
             async_log.extend(log)
-        except:
+        except Exception as e:
             has_error = True
-            #print(async_log)
+            print(e)
             print("Error during async execution")
             async_log.append("Error during async execution")
             
