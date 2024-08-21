@@ -83,7 +83,7 @@ def exec(argv):
         except:
             print("An unexpected error occurred during the analysis.")
             print("Please check the log for more information.")
-            analysis_log.append("Force writing log to file due to unexpected termination.")
+            analysis_log.append("-------- Force writing log to file due to unexpected termination.")
             logfile = open(os.path.join(config.output_directory, "log.txt"), "w")
             for line in analysis_log:
                 if not line.endswith("\n"):
