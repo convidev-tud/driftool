@@ -1,0 +1,13 @@
+input_repository: 
+output_directory: 
+fetch_updates: false
+report_title: 
+print_plot: false
+html: false
+show_html: false
+csv_file:
+simple_export: false
+timeout: 0
+branch_ignore: []
+blacklist: []
+whitelist: []
