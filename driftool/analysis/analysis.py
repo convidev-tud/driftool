@@ -225,16 +225,16 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf, async_log: list[st
         
         # start the threads and wait until all results are delivered
         async_log.extend(repository_handler.log)
+        thread_log: list[str] = list()
         try:
-            log: list[str] = list()
-            distance_relation = async_execute(non_empty_threads, repository_handler._reference_tmp_path, log)
-            async_log.extend(log)
+            distance_relation = async_execute(non_empty_threads, repository_handler._reference_tmp_path, thread_log)
         except Exception as e:
             has_error = True
             print(e)
             print("Error during async execution")
             async_log.append("Error during async execution")
             
+        async_log.extend(thread_log)
         repository_handler.clear_reference_tmp()
     
     '''

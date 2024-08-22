@@ -46,8 +46,16 @@ for pair in pairs:
         raise Exception("all pairs: " + str(pairs) + "\n" + " pair: " + pair)
 
 
+partial_distances = list()
+log = list()
 
-partial_distances = calculate_partial_distance_relation(repository_handler, branch_combinations)
+try:
+    partial_distances = calculate_partial_distance_relation(repository_handler, branch_combinations)
+    log = repository_handler.log
+except:
+    log = repository_handler.log
+    log.append("THREAD CANCELLED DU TO EXCEPTION, RETURNING EMPTY RESULT LIST!")
+
 
 #FIXME REPLACE VOLUME WITH IO
 file_name = "./io/" + "in_" + str(tidx) + "_" + str(uuid.uuid4()) + ".txt"
@@ -56,7 +64,7 @@ lines = []
 for result in partial_distances:
     lines.append(result[0] + "~" + result[1] + "~" + str(result[2].conflicting_lines) + "\n")
 lines.append("---LOG\n")
-lines.extend(repository_handler.log)
+lines.extend(log)
 for line in lines:
     if not line.endswith("\n"):
         line += "\n"

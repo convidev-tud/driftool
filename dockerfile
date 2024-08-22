@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
-#FROM debian:trixie works as well (unstable preview)
-FROM debian:bookworm
+#FROM debian:bookworm or debian:trixie works as well (unstable preview)
+FROM debian:trixie
 USER root 
 
 COPY . /driftool
