@@ -20,6 +20,7 @@ import uuid
 import subprocess
 import os, os.path
 import re
+import pytz
 import stat
 
 from driftool.data.pairwise_distance import PairwiseDistance
@@ -57,13 +58,18 @@ class RepositoryHandler:
         self._file_ignores = ignore_files
         self._file_whitelist = whitelist_files
         self._timeout_days = timeout_days
-        self.branches = list()
-        self.log = list()
+        self.branches : list[str]= list()
+        
+        self.log: list[str] = list()
+        self.log.append("##########REPOSITORY_HANDLER##########")
 
 
     def create_reference_tmp(self):
         self._reference_tmp_path = "./tmp/" + str(uuid.uuid4())
         copytree(self._input_dir, self._reference_tmp_path)
+        out1 = subprocess.run(["git", "config", "user.name", '"driftool"'], capture_output=True, cwd=self._reference_tmp_path).stdout
+        out2 = subprocess.run(["git", "config", "user.email", '"analysis@driftool.io"'], capture_output=True, cwd=self._reference_tmp_path).stdout
+
 
 
     def set_bypass_arguments(self, reference_path):
@@ -72,6 +78,7 @@ class RepositoryHandler:
         Used for multihreading usecases.
         '''
         self._reference_tmp_path = reference_path
+        self.log.append("Bypassing arguments for multithreading")
 
 
     def commit_file_selectors(self):
@@ -90,51 +97,57 @@ class RepositoryHandler:
 
 
     def clear_reference_tmp(self):
-        try:
-            os.access(self._reference_tmp_path, stat.S_IWUSR)
-            rmtree(self._reference_tmp_path)
-            self._reference_tmp_path = None
-            print("TMP files cleaned")
-        except:
-            print("DELETE TMP/ FILE MANUALLY!")
+        os.access(self._reference_tmp_path, stat.S_IWUSR)
+        rmtree(self._reference_tmp_path)
+        self._reference_tmp_path = None
 
 
     def create_working_tmp(self):
+        self.log.append("Creating working tmp")
         self._working_tmp_path = "./tmp/" + str(uuid.uuid4())
         copytree(self._reference_tmp_path, self._working_tmp_path)
-        out1 = subprocess.run(["git", "config", "user.name", '"driftool"'], capture_output=True, cwd=self._reference_tmp_path).stdout
-        out2 = subprocess.run(["git", "config", "user.email", '"analysis@driftool.io"'], capture_output=True, cwd=self._reference_tmp_path).stdout
+        out1 = subprocess.run(["git", "config", "user.name", '"driftool"'], capture_output=True, cwd=self._working_tmp_path).stdout
+        out2 = subprocess.run(["git", "config", "user.email", '"analysis@driftool.io"'], capture_output=True, cwd=self._working_tmp_path).stdout
 
 
     def reset_working_tmp(self):
+        self.log.append("Resetting working tmp")
         cancel_merge = subprocess.run(["git", "merge", "--abort"], capture_output=True, cwd=self._working_tmp_path)
-        if self.head is not None:
-            reset = subprocess.run(["git", "reset", "--hard", self.head], capture_output=True, cwd=self._working_tmp_path)
+        self.log.append(str(cancel_merge.stdout.decode("utf-8")))
+        if self.merge_successful:
+            cancel_merge = subprocess.run(["git", "reset", "--hard", "HEAD~1"], capture_output=True, cwd=self._working_tmp_path)
+            self.log.append(str(cancel_merge.stdout.decode("utf-8")))
+            #print(str(cancel_merge.stdout))
+            self.merge_successful = False
+        stash = subprocess.run(["git", "stash"], capture_output=True, cwd=self._working_tmp_path)
+        self.log.append(str(stash.stdout.decode("utf-8")))
         stash_clutter = subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=self._working_tmp_path)
+        self.log.append(str(stash_clutter.stdout.decode("utf-8")))
 
 
     def clear_working_tmp(self):
-        try:
-            os.access(self._working_tmp_path, stat.S_IWUSR)
-            rmtree(self._working_tmp_path)
-            self._working_tmp_path = None
-            self.head = None
-        except:
-            print("DELETE TMP/ FILE MANUALLY!")
-
+        self.log.append("Clearing working tmp")
+        os.access(self._working_tmp_path, stat.S_IWUSR)
+        rmtree(self._working_tmp_path)
+        self._working_tmp_path = None
+        self.head = None
 
 
     def materialize_all_branches_in_reference(self) -> list[str]:
+        self.log.append(">>> Start materialize_all_branches_in_reference")
         #get the git repository in reference tmp
         path = self._reference_tmp_path
 
         # checkout each origin branch
         remote_branches_raw = subprocess.run(["git", "branch", "--all"], capture_output=True, cwd=path).stdout.decode("utf-8")
+        self.log.append("all materilized branches:")
+        self.log.append(remote_branches_raw)
         all_branches: list[str] = list()
         for line in remote_branches_raw.split("\n"):
             line = line.replace("remotes/origin/", "").replace("*", "").replace(" ", "")
             if not line in all_branches and not "HEAD->" in line and not line.isspace() and line != "":
                 all_branches.append(line)
+                self.log.append("added branch of interest: " + line)
 
         # create regexes to find ignored branches
         excludes = list()
@@ -142,7 +155,7 @@ class RepositoryHandler:
             excludes.append(re.compile(rule))
 
         last_commits = self.get_branch_activity()
-        print(last_commits)
+        #print(last_commits)
 
         # Check if a branch is ignored because of the regex or the commit-date timeout
         self.branches = list()
@@ -150,7 +163,7 @@ class RepositoryHandler:
         # checkout every analyzed branch locally
         for branch in all_branches:
             
-            print(branch)
+            #print(branch)
             
             ignore = False
             for expr in excludes:
@@ -170,13 +183,17 @@ class RepositoryHandler:
             
             # Do not analyse the branch (do also not checkout) if it is ignored to save processing time
             if ignore:
-                print("---> IGNORE")
+                #print("---> IGNORE")
                 continue
             
-            print("---> KEEP")
+            #print("---> KEEP")
             self.branches.append(branch)
-            subprocess.run(["git", "checkout", branch], capture_output=True, cwd=path)
-            subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=path)
+            res_checkout = subprocess.run(["git", "checkout", branch], capture_output=True, cwd=path)
+            res_clean = subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=path)
+            self.log.append("Checkout branch " + branch)
+            self.log.append(str(res_checkout.stdout.decode("utf-8")))
+            self.log.append("Clean branch " + branch)
+            self.log.append(str(res_clean.stdout.decode("utf-8")))
             
             if self._fetch_updates:
                 pull = subprocess.run(["git", "pull", "origin", branch], capture_output=True, cwd=path).stdout
@@ -184,11 +201,14 @@ class RepositoryHandler:
             self.commit_file_selectors()
         
         self.branches.sort()
+        self.log.append("Sorted branch list: " + str(self.branches))
+        self.log.append("<<< End materialize_all_branches_in_reference")
         
         return self.branches
     
     
     def get_branch_activity(self) -> dict:
+        self.log.append(">>> Start get_branch_activity")
         # Get the last commit timestamps for each branch
         # git branch -l --format="%(committerdate:iso8601)~%(refname:short)" | grep -v HEAD
         # EXAMPLES:
@@ -198,7 +218,7 @@ class RepositoryHandler:
         # 2021-04-15 16:10:35 +0200~origin/issue/2713/text-editor-unlink
         # 2021-05-24 16:48:03 +0200~origin/issue/4405/add-menu-link-avatar
         
-        datestrings = subprocess.run('git branch -a --format="%(committerdate:iso8601)~%(refname:short)" | grep -v HEAD', 
+        datestrings = subprocess.run('git branch -a --format="%(committerdate:short)~%(refname:short)" | grep -v HEAD', 
                                      capture_output=True, shell=True, cwd=self._reference_tmp_path).stdout.decode("utf-8").split("\n")
         last_commits: dict = {}
         for datestring in datestrings:
@@ -206,6 +226,7 @@ class RepositoryHandler:
                 continue
             split = datestring.split("~")
             commit_date = datetime.fromisoformat(split[0])
+            commit_date = commit_date.replace(tzinfo=pytz.UTC).replace(hour=12, minute=0, second=0, microsecond=0)
             branch = split[1]
             if branch.startswith("origin/"):
                 branch = branch.replace("origin/", "")
@@ -216,26 +237,73 @@ class RepositoryHandler:
             last_commits[branch] = (today - commit_date).days
             self.log.append("RAW: " + datestring)
             self.log.append("Branch " + branch + " last commit: " + str(commit_date))
+            
+        self.log.append("<<< End get_branch_activity")
         return last_commits
     
 
     def merge_and_count_conflicts(self, base_branch: str, incoming_branch: str) -> PairwiseDistance:
+        self.log.append(">>> Start merge_and_count_conflicts")
+        self.log.append("Merge from " + incoming_branch + " into " + base_branch)
         
         distance = PairwiseDistance()
 
-        subprocess.run(["git", "checkout", base_branch], capture_output=True, cwd=self._working_tmp_path)
+        checkout = subprocess.run(["git", "checkout", base_branch], capture_output=True, cwd=self._working_tmp_path)
+        self.log.append("Checkout base branch " + base_branch)
+        self.log.append(str(checkout.stdout.decode("utf-8")))
+        
+        if checkout.returncode != 0:
+            self.log.append(str(checkout.stderr.decode("utf-8")))
+            self.log.append("<<< End merge_and_count_conflicts")
+            raise Exception("Failed to checkout base branch")
+        
+        reset = subprocess.run(["git", "reset", "--hard"], capture_output=True, cwd=self._working_tmp_path)
+        self.log.append("Reset base branch " + base_branch)
+        self.log.append(str(reset.stdout.decode("utf-8")))
+        
+        clean = subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=self._working_tmp_path)
+        self.log.append("Clean base branch " + base_branch)
+        self.log.append(str(clean.stdout.decode("utf-8")))
         
         m = re.compile("(?<=commit\\s)(.*?)(?=\\\n)")
         commit_log = subprocess.run(["git", "log", "-n 1"], capture_output=True, cwd=self._working_tmp_path).stdout
         commit_hash = m.search(commit_log.decode("utf-8")).group()
+        
         self.head = commit_hash
 
+        self.log.append("ATTEMPT MERGE")
+        self.log.append("HEAD: " + self.head)
+        self.log.append("Base branch: " + base_branch)
+        self.log.append("Incoming branch: " + incoming_branch)
         stdout_merge = subprocess.run(["git", "merge", incoming_branch], capture_output=True, cwd=self._working_tmp_path).stdout
+        self.log.append(str(stdout_merge.decode("utf-8")))
 
-        stdout_lines = map(lambda t: str(t), stdout_merge.splitlines())
-        conflict_lines = list(filter(lambda s: ("Merge conflict in" in s), stdout_lines))
-        conflict_files = list(map(lambda u: u.split("Merge conflict in ")[1], conflict_lines))
-        conflict_files = list(map(lambda u: u[:len(u)-1], conflict_files))
+        self.log.append("--------lines")
+        stdout_lines: list[str] = list()
+        for line in stdout_merge.splitlines():
+            stdout_lines.append(line.decode("utf-8"))
+            self.log.append(line.decode("utf-8") + "\n")
+        self.log.append("--------conflict lines")
+        conflict_lines: list[str] = list()
+        for line in stdout_lines:
+            if "Merge conflict in" in line:
+                conflict_lines.append(line)
+                self.log.append(line + "\n")
+        self.log.append("--------conflict files")
+        conflict_files: list[str] = list()
+        for line in conflict_lines:
+            conflict_files.append(line.split("Merge conflict in ")[1].strip())
+            self.log.append(line.split("Merge conflict in ")[1].strip() + "\n")
+            
+        self.log.extend(conflict_files)
+        self.log.append("--------")
+        
+        if len(conflict_files) == 0:
+            self.merge_successful = True
+            self.log.append("Merge successful")
+        else:
+            self.merge_successful = False
+            self.log.append("Merge failed")
 
         if len(conflict_files) > 0:
 
@@ -246,7 +314,7 @@ class RepositoryHandler:
                 #print("CONFLICT IN: " + file)
 
                 try:
-                    conflicting_file = open(self._working_tmp_path + "/" + file, "r", encoding='utf-8', errors='ignore').readlines()
+                    conflicting_file = open(self._working_tmp_path + "/" + file, "r", encoding='utf-8', errors='strict').readlines()
                 except:
                     continue
 
@@ -270,5 +338,8 @@ class RepositoryHandler:
 
                 #print("conflicting lines: " + str(sum_of_conflicts))
                 distance.conflicting_lines = sum_of_conflicts
+                self.log.append("conflicting lines: " + str(sum_of_conflicts))
         
+        
+        self.log.append("<<< End merge_and_count_conflicts")
         return distance

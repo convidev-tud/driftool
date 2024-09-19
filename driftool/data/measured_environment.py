@@ -28,10 +28,12 @@ class MeasuredEnvironment:
 
 
     def serialize(self) -> str:
+        matrix: list[list[float]] = self.line_matrix.tolist()
+        embedding: list[list[float]] = self.embedding_lines.tolist()
         obj = {
             "sd": self.sd,
             "branches": self.branches,
-            "line_matrix": self.line_matrix.tolist(),
-            "3d_embedding_lines": self.embedding_lines.tolist()
+            "line_matrix": matrix,
+            "3d_embedding_lines": embedding
             }
         return json.dumps(obj, indent=4)

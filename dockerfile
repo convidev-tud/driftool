@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
 
+#FROM debian:bookworm or debian:trixie works as well (unstable preview)
 FROM debian:trixie
 USER root 
 

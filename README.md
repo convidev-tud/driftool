@@ -1,7 +1,5 @@
 # driftool :: Git Branch Inconsistency Analysis
 
-**🚑 Under active development, features may change unexpectedly!**
-
 ---
 
 The driftool calculates the drift analysis for git repositories. 

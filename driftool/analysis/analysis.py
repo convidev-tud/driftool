@@ -132,6 +132,8 @@ def construct_environment(distance_relation: list[tuple[str, str, PairwiseDistan
     '''
     Construct the MeasuredEnvironment from the distance relation.
     This basically transforms the distance relation into a distance matrix.
+    
+    THE DISTANCE RELATION MUST BE SYMMETRICAL!
     '''
 
     me = MeasuredEnvironment()
@@ -161,7 +163,7 @@ def multidimensional_scaling(distance_matrix: np.ndarray[float], dimensions: int
     return embeddings
 
 
-def analyze_with_config(config: ConfigFile, sysconf: SysConf) -> MeasuredEnvironment:
+def analyze_with_config(config: ConfigFile, sysconf: SysConf, async_log: list[str] = list()) -> MeasuredEnvironment:
     '''
     The computation main method of the driftool application.
     Orchestrates the drift calculation step by step.
@@ -171,18 +173,26 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf) -> MeasuredEnviron
     4. Calculate the median average -> the actual drift metric
     '''
 
-    timeout = 0 if config.timeout is None else config.timeout
+    timeout: int = 0 if config.timeout is None else config.timeout
     repository_handler: RepositoryHandler = RepositoryHandler(config.input_repository, config.fetch_updates, config.file_ignore, config.file_whitelist, config.branch_ignore, timeout)
     repository_handler.create_reference_tmp()
     
-    number_threads = sysconf.number_threads
+    number_threads: int = sysconf.number_threads
+    has_error: bool = False
+    async_log.append(">>> Starting analyze_with_config")
     
     if number_threads < 2:
+        print("Number of threads is less than 2. Running in single-thread mode. LIMITED LOG OUTPUT!")
+        async_log.append("Number of threads is less than 2. Running in single-thread mode. LIMITED LOG OUTPUT!")
         distance_relation = calculate_distances(repository_handler)
+        async_log.extend(repository_handler.log)
     else:
+        print("Number of threads is " + str(number_threads) + ". Running in multi-thread mode.")
+        async_log.append("Number of threads is " + str(number_threads) + ". Running in multi-thread mode.")
         branches = repository_handler.materialize_all_branches_in_reference()
         # get all pairs
         # the chars '~' and ':' are forbidden in git branch names, so we can use them as seperators
+        visited_combinations = list()
         threads = list()
         for i in range(0, number_threads, 1):
             threads.append(list())
@@ -192,29 +202,66 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf) -> MeasuredEnviron
             for b2 in branches:
                 # Only add one-direction combinations and no identity combinations
                 if b1 == b2:
-                    break
+                    continue
+                
+                combination_encoding = b1 + "~" + b2
+                reversed_encoding = b2 + "~" + b1
+                
+                if combination_encoding in visited_combinations or reversed_encoding in visited_combinations:
+                    continue
+                
+                visited_combinations.append(combination_encoding)
+                visited_combinations.append(reversed_encoding)
+                
                 threads[thread_idx].append(b1 + "~" + b2)
                 thread_idx += 1
                 thread_idx %= number_threads
         
         # Do not start empty threads
-        threads = list(filter(lambda x: (len(x) > 0), threads))
+        non_empty_threads = list()
+        for thread in threads:
+            if len(thread) > 0:
+                non_empty_threads.append(thread)
         
         # start the threads and wait until all results are delivered
-        distance_relation = async_execute(threads, repository_handler._reference_tmp_path)
-        for branch in branches:
-            distance_relation.append([branch, branch, PairwiseDistance()])
+        async_log.extend(repository_handler.log)
+        thread_log: list[str] = list()
+        try:
+            distance_relation = async_execute(non_empty_threads, repository_handler._reference_tmp_path, thread_log)
+        except Exception as e:
+            has_error = True
+            print(e)
+            print("Error during async execution")
+            async_log.append("Error during async execution")
+            
+        async_log.extend(thread_log)
         repository_handler.clear_reference_tmp()
     
-    environment = construct_environment(distance_relation, repository_handler.branches)
-    environment.embedding_lines = multidimensional_scaling(environment.line_matrix, 3)
+    '''
+    Create the measured environment.
+    In case of an error, the environment is empty and the sd is set to -1.
+    The matrix becomes a zero matrix.
+    However, the results can still be written to all result file formats and filtered out later.
+    '''
+    if not has_error:
+        async_log.append("Creating measured environment")
+        environment = construct_environment(distance_relation, repository_handler.branches)
+        environment.embedding_lines = multidimensional_scaling(environment.line_matrix, 3)
 
-    environment.sd = calculate_median_distance_avg(environment.embedding_lines)
-    print("statement drift (sd) = " + str(environment.sd))
-
-    log = repository_handler.log
+        environment.sd = calculate_median_distance_avg(environment.embedding_lines)
+        print("#1 statement drift (sd) = " + str(environment.sd))
+        async_log.append("statement drift (sd) = " + str(environment.sd))
+    else :
+        print("Error during distance calculation. Environment is empty. Creating empty environment.")
+        async_log.append("Error during distance calculation. Environment is empty.")
+        environment = MeasuredEnvironment()
+        environment.branches = repository_handler.branches
+        environment.line_matrix = np.zeros(shape=(len(environment.branches), len(environment.branches)))
+        environment.embedding_lines = np.zeros(shape=(len(environment.branches), 3))
+        environment.sd = -1
     
-    return (environment, log)
+    async_log.append(">>> Finished analyze_with_config")
+    return environment
 
 
 def analyze_with_config_csv(csv_input_file) -> MeasuredEnvironment:
@@ -225,6 +272,6 @@ def analyze_with_config_csv(csv_input_file) -> MeasuredEnvironment:
     environment.embedding_lines = multidimensional_scaling(environment.line_matrix, 3)
 
     environment.sd = calculate_median_distance_avg(environment.embedding_lines)
-    print("statement drift (sd) = " + str(environment.sd))
+    print("#2 statement drift (sd) = " + str(environment.sd))
 
     return environment

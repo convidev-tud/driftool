@@ -13,31 +13,62 @@
 #  limitations under the License.
 
 import sys
+import uuid
 
 from driftool.analysis.analysis import calculate_partial_distance_relation
 from driftool.analysis.repository_handler import RepositoryHandler
 
 argv = sys.argv[1:]
 
-encoded_pairs = argv[0]
+io_filename = argv[0]
 reference_path = argv[1]
 
-if encoded_pairs is None or encoded_pairs == "":
+if io_filename is None or io_filename == "":
     sys.exit(1)
 
 repository_handler = RepositoryHandler("", False, list(), list(), list(), 0)
 repository_handler.set_bypass_arguments(reference_path)
 
-pairs = encoded_pairs.split(":")
+tidx = io_filename.split("_")[1]
+file = open(io_filename, "r")
+encoded_pairs_content = file.read()
+pairs = encoded_pairs_content.split("\n")
+file.close()
+
 branch_combinations = list()
 
+
 for pair in pairs:
-    decoding = pair.split("~")
-    branch_combinations.append((decoding[0], decoding[1]))
+    try:
+        decoding = pair.split("~")
+        branch_combinations.append((decoding[0], decoding[1]))
+    except:
+        raise Exception("all pairs: " + str(pairs) + "\n" + " pair: " + pair)
 
-partial_distances = calculate_partial_distance_relation(repository_handler, branch_combinations)
 
+partial_distances = list()
+log = list()
+
+try:
+    partial_distances = calculate_partial_distance_relation(repository_handler, branch_combinations)
+    log = repository_handler.log
+except:
+    log = repository_handler.log
+    log.append("THREAD CANCELLED DU TO EXCEPTION, RETURNING EMPTY RESULT LIST!")
+
+
+#FIXME REPLACE VOLUME WITH IO
+file_name = "./io/" + "in_" + str(tidx) + "_" + str(uuid.uuid4()) + ".txt"
+file = open(file_name, "x")
+lines = []
 for result in partial_distances:
-    print(result[0] + "~" + result[1] + "~" + str(result[2].conflicting_lines))
-
+    lines.append(result[0] + "~" + result[1] + "~" + str(result[2].conflicting_lines) + "\n")
+lines.append("---LOG\n")
+lines.extend(log)
+for line in lines:
+    if not line.endswith("\n"):
+        line += "\n"
+    file.write(line)
+file.close()
+print(file_name)
 sys.exit(0)

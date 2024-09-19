@@ -5,6 +5,8 @@ __pycache__/
 
 # C extensions
 *.so
+io/*.txt
+repodata/
 
 *.code-workspace
 
@@ -15,8 +17,10 @@ volume/*
 !.gitkeep
 !volume/config.template.yaml
 
+# Include the configs used in the unit tests
 test-config*
 config-*
+!tests/resources/configs/config-*
 
 driftool_results*
 

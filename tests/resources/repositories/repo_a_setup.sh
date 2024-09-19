@@ -9,6 +9,8 @@ git init
 git config user.name "drifool"
 git config user.email "git@driftool.io"
 
+git branch -m main
+
 git add .
 git commit -m "Initial commit"
 
