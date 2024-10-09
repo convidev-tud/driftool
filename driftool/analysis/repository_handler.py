@@ -59,6 +59,7 @@ class RepositoryHandler:
         self._file_whitelist = whitelist_files
         self._timeout_days = timeout_days
         self.branches : list[str]= list()
+        self.merge_successful = False
         
         self.log: list[str] = list()
         self.log.append("##########REPOSITORY_HANDLER##########")
@@ -199,6 +200,11 @@ class RepositoryHandler:
                 pull = subprocess.run(["git", "pull", "origin", branch], capture_output=True, cwd=path).stdout
 
             self.commit_file_selectors()
+            #clean here again
+            sec_stash = subprocess.run(["git", "stash"], capture_output=True, cwd=path)
+            sec_clean = subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=path)
+            self.log.append(str(sec_stash.stdout.decode("utf-8")))
+            self.log.append(str(sec_clean.stdout.decode("utf-8")))
         
         self.branches.sort()
         self.log.append("Sorted branch list: " + str(self.branches))
