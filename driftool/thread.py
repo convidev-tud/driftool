@@ -52,9 +52,10 @@ log = list()
 try:
     partial_distances = calculate_partial_distance_relation(repository_handler, branch_combinations)
     log = repository_handler.log
-except:
+except Exception as e:
     log = repository_handler.log
-    log.append("THREAD CANCELLED DU TO EXCEPTION, RETURNING EMPTY RESULT LIST!")
+    log.append(str(e))
+    log.append("THREAD CANCELLED DUE TO EXCEPTION, RETURNING EMPTY RESULT LIST!")
 
 
 #FIXME REPLACE VOLUME WITH IO
