@@ -108,23 +108,22 @@ def calculate_partial_distance_relation(repository_handler: RepositoryHandler,
     '''
 
     distance_relation: list[tuple[str, str, PairwiseDistance]] = list()
-
-    repository_handler.create_working_tmp()
     
     for pair in branch_combinations:
      
-        repository_handler.reset_working_tmp()
+        repository_handler.create_working_tmp()
         distanceA = repository_handler.merge_and_count_conflicts(pair[0], pair[1])
         repository_handler.reset_working_tmp()
+        repository_handler.clear_working_tmp()
+        repository_handler.create_working_tmp()
         distanceB = repository_handler.merge_and_count_conflicts(pair[1], pair[0])
+        repository_handler.reset_working_tmp()
+        repository_handler.clear_working_tmp()
         
         distanceAVG = distance_avg(distanceA, distanceB)
         
         distance_relation.append([pair[0], pair[1], distanceAVG])
         distance_relation.append([pair[1], pair[0], distanceAVG])
-        
-    repository_handler.reset_working_tmp()
-    repository_handler.clear_working_tmp()
 
     return distance_relation
 
