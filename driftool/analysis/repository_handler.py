@@ -67,7 +67,7 @@ class RepositoryHandler:
 
     def create_reference_tmp(self):
         self._reference_tmp_path = "./tmp/" + str(uuid.uuid4())
-        copytree(self._input_dir, self._reference_tmp_path)
+        copytree(self._input_dir, self._reference_tmp_path, symlinks=False, ignore_dangling_symlinks=True)
         out1 = subprocess.run(["git", "config", "user.name", '"driftool"'], capture_output=True, cwd=self._reference_tmp_path).stdout
         out2 = subprocess.run(["git", "config", "user.email", '"analysis@driftool.io"'], capture_output=True, cwd=self._reference_tmp_path).stdout
 
@@ -106,7 +106,7 @@ class RepositoryHandler:
     def create_working_tmp(self):
         self.log.append("Creating working tmp")
         self._working_tmp_path = "./tmp/" + str(uuid.uuid4())
-        copytree(self._reference_tmp_path, self._working_tmp_path)
+        copytree(self._reference_tmp_path, self._working_tmp_path, symlinks=False, ignore_dangling_symlinks=True)
         out1 = subprocess.run(["git", "config", "user.name", '"driftool"'], capture_output=True, cwd=self._working_tmp_path).stdout
         out2 = subprocess.run(["git", "config", "user.email", '"analysis@driftool.io"'], capture_output=True, cwd=self._working_tmp_path).stdout
 
