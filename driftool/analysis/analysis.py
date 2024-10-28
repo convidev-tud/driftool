@@ -112,10 +112,12 @@ def calculate_partial_distance_relation(repository_handler: RepositoryHandler,
     for pair in branch_combinations:
      
         repository_handler.create_working_tmp()
+        repository_handler.sanitize_working_tmp()
         distanceA = repository_handler.merge_and_count_conflicts(pair[0], pair[1])
         repository_handler.reset_working_tmp()
         repository_handler.clear_working_tmp()
         repository_handler.create_working_tmp()
+        repository_handler.sanitize_working_tmp()
         distanceB = repository_handler.merge_and_count_conflicts(pair[1], pair[0])
         repository_handler.reset_working_tmp()
         repository_handler.clear_working_tmp()
