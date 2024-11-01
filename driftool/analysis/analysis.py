@@ -14,9 +14,12 @@
 
 import itertools
 import numpy as np
+import subprocess
 from sklearn.manifold import MDS
 import os
 import math
+import uuid
+from shutil import copytree
 
 from driftool.data.pairwise_distance import PairwiseDistance, distance_avg
 from driftool.analysis.repository_handler import RepositoryHandler
@@ -113,11 +116,15 @@ def calculate_partial_distance_relation(repository_handler: RepositoryHandler,
      
         repository_handler.create_working_tmp()
         repository_handler.sanitize_working_tmp()
+
         distanceA = repository_handler.merge_and_count_conflicts(pair[0], pair[1])
+        
         repository_handler.reset_working_tmp()
         repository_handler.clear_working_tmp()
+        
         repository_handler.create_working_tmp()
         repository_handler.sanitize_working_tmp()
+        
         distanceB = repository_handler.merge_and_count_conflicts(pair[1], pair[0])
         repository_handler.reset_working_tmp()
         repository_handler.clear_working_tmp()
@@ -225,11 +232,25 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf, async_log: list[st
             if len(thread) > 0:
                 non_empty_threads.append(thread)
         
+        #create an independent reference sandbox for each thread
+        reference_dirs = list()
+        for thread in non_empty_threads:
+            ref_dir = "./tmp/" + str(uuid.uuid4())
+            print("create reference copy " + ref_dir)
+            copytree(repository_handler._reference_tmp_path, ref_dir, symlinks=True, ignore_dangling_symlinks=True)
+            reference_dirs.append(ref_dir)
+            out_user = subprocess.run(["git", "config", "user.name", '"driftool"'], capture_output=True, cwd=ref_dir)
+            out_mail = subprocess.run(["git", "config", "user.email", '"analysis@driftool.io"'], capture_output=True, cwd=ref_dir)
+            if out_user.returncode != 0:
+                print(out_user.stderr.decode("utf-8"))
+            print("Reference copy successfully created!")
+
+
         # start the threads and wait until all results are delivered
         async_log.extend(repository_handler.log)
         thread_log: list[str] = list()
         try:
-            distance_relation = async_execute(non_empty_threads, repository_handler._reference_tmp_path, thread_log)
+            distance_relation = async_execute(non_empty_threads, reference_dirs, thread_log)
         except Exception as e:
             has_error = True
             print(e)
@@ -237,7 +258,9 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf, async_log: list[st
             async_log.append("Error during async execution")
             
         async_log.extend(thread_log)
-        repository_handler.clear_reference_tmp()
+        
+        #the parent docker container will be destroyed anyhow
+        #repository_handler.clear_reference_tmp()
     
     '''
     Create the measured environment.

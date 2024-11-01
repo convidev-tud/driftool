@@ -80,7 +80,8 @@ def exec(argv):
     if config.csv_file is None:
         try:
             measured_envrionment = analyze_with_config(config, sysconf, analysis_log)
-        except:
+        except Exception as e:
+            print(str(e))
             print("An unexpected error occurred during the analysis.")
             print("Please check the log for more information.")
             analysis_log.append("-------- Force writing log to file due to unexpected termination.")

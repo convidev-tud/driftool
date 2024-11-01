@@ -24,7 +24,7 @@ import pytz
 import stat
 
 from driftool.data.pairwise_distance import PairwiseDistance
-from driftool.analysis.directory import purge_blacklist, keep_whitelist
+from driftool.analysis.directory import purge_blacklist, keep_whitelist, count_files
 
 class RepositoryHandler:
 
@@ -84,14 +84,17 @@ class RepositoryHandler:
 
     def commit_file_selectors(self):
 
+        self.log.append(">>> Commit file selectors")
         if len(self._file_whitelist) > 0 or len(self._file_ignores) > 0:
 
             if len(self._file_whitelist) > 0:
                 # delete everything EXCEPT the whitelist
-                keep_whitelist(self._file_whitelist, self._reference_tmp_path + "/")
+                self.log.append("WHITELIST: " + str(self._file_whitelist))
+                keep_whitelist(self._file_whitelist, self._reference_tmp_path + "/", True, self.log)
             if len(self._file_ignores) > 0:
                 # delete everything from the blacklist
-                purge_blacklist(self._file_ignores, self._reference_tmp_path + "/")
+                self.log.append("BLACKLIST: " + str(self._file_ignores))
+                purge_blacklist(self._file_ignores, self._reference_tmp_path + "/", True, self.log)
                 
             out1 = subprocess.run(["git", "add", "--all"], capture_output=True, cwd=self._reference_tmp_path)
             if out1.returncode != 0:
@@ -113,7 +116,7 @@ class RepositoryHandler:
     def create_working_tmp(self):
         self.log.append("Creating working tmp")
         self._working_tmp_path = "./tmp/" + str(uuid.uuid4())
-        copytree(self._reference_tmp_path, self._working_tmp_path, symlinks=False, ignore_dangling_symlinks=True)
+        copytree(self._reference_tmp_path, self._working_tmp_path, symlinks=True, ignore_dangling_symlinks=True)
 
         git_user = subprocess.run(["git", "config", "user.name", '"driftool"'], capture_output=True, cwd=self._working_tmp_path)
         if git_user.returncode != 0:
@@ -137,16 +140,16 @@ class RepositoryHandler:
             #print(str(cancel_merge.stdout))
             self.merge_successful = False
 
-        stash = subprocess.run(["git", "stash"], capture_output=True, cwd=self._working_tmp_path)
+        stash = subprocess.run(["git", "stash", "--include-untracked"], capture_output=True, cwd=self._working_tmp_path)
         self.log.append(str(stash.stdout.decode("utf-8")))
-        stash_clutter = subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=self._working_tmp_path)
+        stash_clutter = subprocess.run(["git", "clean", "-f", "-d", "-x"], capture_output=True, cwd=self._working_tmp_path)
         self.log.append(str(stash_clutter.stdout.decode("utf-8")))
 
 
     def sanitize_working_tmp(self):
-        stash = subprocess.run(["git", "stash"], capture_output=True, cwd=self._working_tmp_path)
+        stash = subprocess.run(["git", "stash", "--include-untracked"], capture_output=True, cwd=self._working_tmp_path)
         self.log.append(str(stash.stdout.decode("utf-8")))
-        stash_clutter = subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=self._working_tmp_path)
+        stash_clutter = subprocess.run(["git", "clean", "-f", "-d", "-x"], capture_output=True, cwd=self._working_tmp_path)
         self.log.append(str(stash_clutter.stdout.decode("utf-8")))
 
     def clear_working_tmp(self):
@@ -212,14 +215,14 @@ class RepositoryHandler:
                 continue
             
             #print("---> KEEP")
-            stash = subprocess.run(["git", "stash"], capture_output=True, cwd=path)
+            stash = subprocess.run(["git", "stash", "--include-untracked"], capture_output=True, cwd=path)
             if stash.returncode != 0:
                 self.log.append(str(stash.stderr.decode("utf-8")))
                 raise Exception("Failed to materialize branches of interest")
             
             self.log.append(str(stash.stdout.decode("utf-8")))
 
-            clean_clutter = subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=path)
+            clean_clutter = subprocess.run(["git", "clean", "-f", "-d", "-x"], capture_output=True, cwd=path)
             if clean_clutter.returncode != 0:
                 self.log.append(str(clean_clutter.stderr.decode("utf-8")))
                 raise Exception("Failed to materialize branches of interest")
@@ -232,14 +235,14 @@ class RepositoryHandler:
                 raise Exception("Failed to materialize branches of interest")
 
 
-            res_stash = subprocess.run(["git", "stash"], capture_output=True, cwd=path)
+            res_stash = subprocess.run(["git", "stash", "--include-untracked"], capture_output=True, cwd=path)
             self.log.append("Checkout branch " + branch)
             self.log.append(str(res_checkout.stdout.decode("utf-8")))
             if res_stash.returncode != 0:
                 self.log.append(str(res_stash.stderr.decode("utf-8")))
                 raise Exception("Failed to materialize branches of interest")
             
-            res_clean = subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=path)
+            res_clean = subprocess.run(["git", "clean", "-f", "-d", "-x"], capture_output=True, cwd=path)
             self.log.append("Clean branch " + branch)
             self.log.append(str(res_clean.stdout.decode("utf-8")))
             if stash.returncode != 0:
@@ -249,15 +252,16 @@ class RepositoryHandler:
             if self._fetch_updates:
                 pull = subprocess.run(["git", "pull", "origin", branch], capture_output=True, cwd=path).stdout
 
+            self.log.append("Set file selectors for: " + branch)
             self.commit_file_selectors()
             
-            sec_stash = subprocess.run(["git", "stash"], capture_output=True, cwd=path)
+            sec_stash = subprocess.run(["git", "stash", "--include-untracked"], capture_output=True, cwd=path)
             self.log.append(str(sec_stash.stdout.decode("utf-8")))
             if res_stash.returncode != 0:
                 self.log.append(str(sec_stash.stderr.decode("utf-8")))
                 raise Exception("Failed to materialize branches of interest")
 
-            sec_clean = subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=path)
+            sec_clean = subprocess.run(["git", "clean", "-f", "-d", "-x"], capture_output=True, cwd=path)
             self.log.append(str(sec_clean.stdout.decode("utf-8")))
             if res_stash.returncode != 0:
                 self.log.append(str(sec_clean.stderr.decode("utf-8")))
@@ -315,6 +319,8 @@ class RepositoryHandler:
         self.log.append("Checkout base branch " + base_branch)
         self.log.append(str(checkout.stdout.decode("utf-8")))
         
+        self.log.append("FILE COUNT IN BASE: " + str(count_files(self._working_tmp_path)))
+
         if checkout.returncode != 0:
             self.log.append(str(checkout.stderr.decode("utf-8")))
             raise Exception("Failed to checkout base branch")
@@ -327,7 +333,7 @@ class RepositoryHandler:
         self.log.append("Reset base branch " + base_branch)
         self.log.append(str(reset.stdout.decode("utf-8")))
         
-        clean = subprocess.run(["git", "clean", "-f", "-d"], capture_output=True, cwd=self._working_tmp_path)
+        clean = subprocess.run(["git", "clean", "-f", "-d", "-x"], capture_output=True, cwd=self._working_tmp_path)
         if clean.returncode != 0:
             self.log.append(str(clean.stderr.decode("utf-8")))
             raise Exception("Failed to clean base branch")
@@ -400,8 +406,9 @@ class RepositoryHandler:
 
                 try:
                     conflicting_file = open(self._working_tmp_path + "/" + file, "r", encoding='utf-8', errors='strict').readlines()
-                except:
+                except Exception as e:
                     self.log.append("Error: cannot open conflicting file: " + file)
+                    self.log.append(str(e))
                     self.log.append("--> Proceed without action")
                     #raise Exception("Failed to open file with merge conflicts inside")
 
@@ -411,12 +418,12 @@ class RepositoryHandler:
 
                 for line in conflicting_file:
 
-                    if "<<<<<<<" in line and not inside_conflict:
+                    if line.strip().startswith("<<<<<<<") and not inside_conflict:
                         # merge conflict start
                         inside_conflict = True
                         conflict_start_line = line_index
 
-                    if ">>>>>>>" in line and inside_conflict:
+                    if line.strip().startswith(">>>>>>>") and inside_conflict:
                         # merge conflict end
                         inside_conflict = False
                         sum_of_conflicts += (line_index - conflict_start_line)
@@ -424,8 +431,8 @@ class RepositoryHandler:
                     line_index += 1
 
                 #print("conflicting lines: " + str(sum_of_conflicts))
-                distance.conflicting_lines = sum_of_conflicts
-                self.log.append("conflicting lines: " + str(sum_of_conflicts))
+            distance.conflicting_lines = sum_of_conflicts
+            self.log.append("conflicting lines: " + str(sum_of_conflicts))
         
         
         self.log.append("<<< End merge_and_count_conflicts")

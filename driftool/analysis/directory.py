@@ -14,10 +14,11 @@
 
 import os, os.path
 import re
+import shutil
 
-def purge_blacklist(regex_list: list[str], root_path: str):
+def purge_blacklist(regex_list: list[str], root_path: str, remove_hidden: bool, log: list[str]):
 
-    git_pattern = re.compile(".git")
+    git_pattern = re.compile("\.git")
 
     for regex in regex_list:
         pattern = re.compile(regex)
@@ -30,26 +31,69 @@ def purge_blacklist(regex_list: list[str], root_path: str):
                     if pattern.search(root + file) is not None:
                         os.remove(os.path.join(root, file))
 
+    if remove_hidden:
+        items = os.listdir(root_path)
+        for item in items:
+            item_path = os.path.join(root_path, item)
+            if item.startswith('.') and git_pattern.search(str(item_path)) is None :
+                if os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
+                else:
+                    os.remove(item_path)
 
-def keep_whitelist(regex_list: list[str], root_path: str):
 
-    git_pattern = re.compile(".git")
-    patterns = list()
 
-    for regex in regex_list:
-        pattern = re.compile(regex)
-        patterns.append(pattern)
+def keep_whitelist(regex_list: list[str], root_path: str, remove_hidden: bool, log: list[str]):
 
+    try:
+        git_pattern = re.compile("\.git")
+        patterns = list()
+
+        for regex in regex_list:
+            pattern = re.compile(regex)
+            patterns.append(pattern)
+
+        match_count = 0
+
+        for root, dirs, files in os.walk(root_path, topdown=True):
+
+            if git_pattern.search(str(root)) is None:
+                #print("TRAVERSE: " + str(root) + " " + str(dirs) + " " + str(files))
+
+                for file in files:
+                    do_purge = True
+                    for pattern in patterns:
+                        if pattern.search(file) is not None:
+                            do_purge = False
+                            break;
+                    if do_purge:
+                        os.remove(os.path.join(root, file))
+                        match_count += 1
+
+        if remove_hidden:
+            log.append("Attempt delete hidden files")
+            items = os.listdir(root_path)
+            for item in items:
+                item_path = os.path.join(root_path, item)
+                if item.startswith('.') and not item == ".git" :
+                    log.append("REMOVE HIDDEN: " + item)
+                    if os.path.isdir(item_path):
+                        shutil.rmtree(item_path)
+                    else:
+                        os.remove(item_path)
+
+
+        print("PURGE " + str(match_count) + " FILES")
+        log.append("PURGE " + str(match_count))
+
+    except Exception as e:
+        log.append("Exception during whitelist processing")
+        log.append(str(e))
+        raise e
+    
+
+def count_files(root_path: str) -> int:
+    total = 0
     for root, dirs, files in os.walk(root_path):
-
-        if git_pattern.search(str(root)) is None:
-            #print("TRAVERSE: " + str(root) + " " + str(dirs) + " " + str(files))
-
-            for file in files:
-                do_purge = True
-                for pattern in patterns:
-                    if pattern.search(root + file) is not None:
-                        do_purge = False
-                        break;
-                if do_purge:
-                    os.remove(os.path.join(root, file))
+        total += len(files)
+    return(total)

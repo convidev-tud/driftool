@@ -18,11 +18,11 @@ import uuid
 from driftool.data.pairwise_distance import PairwiseDistance
 
 
-def async_execute(threads: list[list[str]], reference_dir: str, log: list[str]) -> list[tuple[str, str, PairwiseDistance]]:
+def async_execute(threads: list[list[str]], reference_dirs: list[str], log: list[str]) -> list[tuple[str, str, PairwiseDistance]]:
     
     log.append(">>> Starting async_execute")
     total_elements = sum(len(thread) for thread in threads)
-    std = asyncio.run(run_and_join(threads, reference_dir))
+    std = asyncio.run(run_and_join(threads, reference_dirs))
     assert len(std) == len(threads)
     print("All threads returned their results!")
     
@@ -93,10 +93,12 @@ async def run(combinations: str, reference_dir: str) -> tuple[bytes, bytes]:
         return (stdout, stderr)
 
 
-async def run_and_join(threads: list[list[str]], reference_dir) -> list[tuple[bytes, bytes]]:
-    arguments = list()
+async def run_and_join(threads: list[list[str]], reference_dirs: list[str]) -> list[tuple[bytes, bytes]]:
+    arguments: list[tuple[str]] = list()
+
     print("Found tasks for " + str(len(threads)) + " threads")
     print("Writing tasks to out/")
+
     tidx = 0
     for thread in threads:
         combinations = ""
@@ -105,17 +107,17 @@ async def run_and_join(threads: list[list[str]], reference_dir) -> list[tuple[by
                 combinations += (pair + "\n")
             else:
                 combinations += pair
-        #FIXME REPLACE VOLUME WITH IO
+        
         file_name = "./io/" + "out_" + str(tidx) + "_" + str(uuid.uuid4()) + ".txt"
         file = open(file_name, "x")
         file.write(combinations)
         file.close()
-        arguments.append(file_name)
+        arguments.append((file_name, reference_dirs[tidx]))
         tidx += 1
          
          
     async with asyncio.TaskGroup() as tg:
-        tasks = [tg.create_task(run(arg, reference_dir)) for arg in arguments]
+        tasks = [tg.create_task(run(arg[0], arg[1])) for arg in arguments]
     
     results = [task.result() for task in tasks]
          
