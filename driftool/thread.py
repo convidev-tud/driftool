@@ -63,7 +63,7 @@ file_name = "./io/" + "in_" + str(tidx) + "_" + str(uuid.uuid4()) + ".txt"
 file = open(file_name, "x")
 lines = []
 for result in partial_distances:
-    lines.append(result[0] + "~" + result[1] + "~" + str(result[2].conflicting_lines) + "\n")
+    lines.append(result[0] + "~" + result[1] + "~" + str(result[2]) + "\n")
 lines.append("---LOG\n")
 lines.extend(log)
 for line in lines:

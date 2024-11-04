@@ -15,7 +15,6 @@
 import unittest
 import numpy as np
 import math
-from driftool.data.pairwise_distance import PairwiseDistance
 from driftool.analysis.analysis import calculate_median_distance_avg, construct_environment
 
 class TestAnalysis(unittest.TestCase):
@@ -46,10 +45,8 @@ class TestAnalysis(unittest.TestCase):
 
     def test_construct_environment(self):
         print("Testing construct_environment")
-        p1 = PairwiseDistance()
-        p2 = PairwiseDistance()
-        p1.conflicting_lines = 3
-        p2.conflicting_lines = 2
+        p1 = 3
+        p2 = 2
         distance_relation = [('A', 'B', p1), ('B', 'C', p2)]
         branches = ['A', 'B', 'C']
         expected_line_matrix = np.array([[0, 3, 0], [0, 0, 2], [0, 0, 0]])

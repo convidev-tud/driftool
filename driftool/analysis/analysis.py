@@ -16,18 +16,16 @@ import itertools
 import numpy as np
 import subprocess
 from sklearn.manifold import MDS
-import os
 import math
 import uuid
 from shutil import copytree
-
-from driftool.data.pairwise_distance import PairwiseDistance, distance_avg
 from driftool.analysis.repository_handler import RepositoryHandler
 from driftool.data.measured_environment import MeasuredEnvironment
 from driftool.analysis.csv_data import read_branches_from_csv, read_distances_from_csv
 from driftool.data.sysconf import SysConf
 from driftool.analysis.async_exec import async_execute
 from driftool.data.config_file import ConfigFile
+from driftool.analysis.directory import count_files, copy_dir
 
 def calculate_median_distance_avg(embeddings: np.ndarray[float]) -> float:
     '''
@@ -43,10 +41,9 @@ def calculate_median_distance_avg(embeddings: np.ndarray[float]) -> float:
     return d / l
 
 
-def calculate_distances(repository_handler: RepositoryHandler) -> list[tuple[str, str, PairwiseDistance]]:
+def calculate_distances(repository_handler: RepositoryHandler) -> list[tuple[str, str, int]]:
     '''
-    Calculate the actual distance relation.
-    The returned distance relation of type list[tuple[str, str, PairwiseDistance]] maps a pair
+    Calculate the actual distance relation. 
     of branches to their pairwise distance.
     Note: This function must be symmetrical. For example (A, B) -> 7 implies that (=>) (B, A) -> 7 as well.
     However, sometimes the actual calculation is not symmetrical because of exotic git behaviour.
@@ -64,42 +61,42 @@ def calculate_distances(repository_handler: RepositoryHandler) -> list[tuple[str
     
     print("Calculation distances for " + str(len(branch_pairs)*2) + " branch combinations...")
 
-    distance_relation: list[tuple[str, str, PairwiseDistance]] = list()
+    distance_relation: list[tuple[str, str, int]] = list()
 
     # Add self-distances (0 per definition)
     for branch in branches:
-        distance_relation.append([branch, branch, PairwiseDistance()])
+        distance_relation.append([branch, branch, 0])
 
     progress = 0
     total = len(branch_pairs)
-    repository_handler.create_working_tmp()
     
     for pair in branch_pairs:
         print(str(progress*2) + " out of " + str(total*2), end='\r')
      
         progress += 1
-    
+
+        repository_handler.create_working_tmp()
         distanceA = repository_handler.merge_and_count_conflicts(pair[0], pair[1])
-        repository_handler.reset_working_tmp()
+        repository_handler.clear_working_tmp()
+
+        repository_handler.create_working_tmp()
         distanceB = repository_handler.merge_and_count_conflicts(pair[1], pair[0])
-        repository_handler.reset_working_tmp()
+        repository_handler.clear_working_tmp()
         
-        distanceAVG = distance_avg(distanceA, distanceB)
+        distanceAVG = (distanceA + distanceB) * 0.5 #distance_avg(distanceA, distanceB)
         
         distance_relation.append([pair[0], pair[1], distanceAVG])
         distance_relation.append([pair[1], pair[0], distanceAVG])
         
-    repository_handler.clear_working_tmp()
     repository_handler.clear_reference_tmp()
 
     return distance_relation
 
 
 def calculate_partial_distance_relation(repository_handler: RepositoryHandler, 
-                                        branch_combinations: list[tuple[str, str]]) -> list[tuple[str, str, PairwiseDistance]]:
+                                        branch_combinations: list[tuple[str, str]]) -> list[tuple[str, str, int]]:
     '''
     Calculate the a partial distance relation.
-    The returned distance relation of type list[tuple[str, str, PairwiseDistance]] maps a pair
     of branches to their pairwise distance.
     Note: This function must be symmetrical. For example (A, B) -> 7 implies that (=>) (B, A) -> 7 as well.
     However, sometimes the actual calculation is not symmetrical because of exotic git behaviour.
@@ -110,26 +107,19 @@ def calculate_partial_distance_relation(repository_handler: RepositoryHandler,
     sd  = statement drift = variance(conflicting_lines)
     '''
 
-    distance_relation: list[tuple[str, str, PairwiseDistance]] = list()
+    distance_relation: list[tuple[str, str, int]] = list()
     
     for pair in branch_combinations:
      
         repository_handler.create_working_tmp()
-        repository_handler.sanitize_working_tmp()
-
         distanceA = repository_handler.merge_and_count_conflicts(pair[0], pair[1])
-        
-        repository_handler.reset_working_tmp()
         repository_handler.clear_working_tmp()
         
-        repository_handler.create_working_tmp()
-        repository_handler.sanitize_working_tmp()
+        #repository_handler.create_working_tmp()
+        #distanceB = repository_handler.merge_and_count_conflicts(pair[1], pair[0])
+        #repository_handler.clear_working_tmp()
         
-        distanceB = repository_handler.merge_and_count_conflicts(pair[1], pair[0])
-        repository_handler.reset_working_tmp()
-        repository_handler.clear_working_tmp()
-        
-        distanceAVG = distance_avg(distanceA, distanceB)
+        distanceAVG = distanceA #(distanceA + distanceB) / 2
         
         distance_relation.append([pair[0], pair[1], distanceAVG])
         distance_relation.append([pair[1], pair[0], distanceAVG])
@@ -137,7 +127,7 @@ def calculate_partial_distance_relation(repository_handler: RepositoryHandler,
     return distance_relation
 
 
-def construct_environment(distance_relation: list[tuple[str, str, PairwiseDistance]], branches: list[str]) -> MeasuredEnvironment:
+def construct_environment(distance_relation: list[tuple[str, str, int]], branches: list[str]) -> MeasuredEnvironment:
     '''
     Construct the MeasuredEnvironment from the distance relation.
     This basically transforms the distance relation into a distance matrix.
@@ -154,7 +144,7 @@ def construct_environment(distance_relation: list[tuple[str, str, PairwiseDistan
     for e in distance_relation:
         xi = branches.index(e[0])
         yi = branches.index(e[1])
-        me.line_matrix[xi, yi] = e[2].conflicting_lines
+        me.line_matrix[xi, yi] = e[2]
 
     return me
 
@@ -191,53 +181,77 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf, async_log: list[st
     async_log.append(">>> Starting analyze_with_config")
     
     if number_threads < 2:
+
         print("Number of threads is less than 2. Running in single-thread mode. LIMITED LOG OUTPUT!")
         async_log.append("Number of threads is less than 2. Running in single-thread mode. LIMITED LOG OUTPUT!")
         distance_relation = calculate_distances(repository_handler)
         async_log.extend(repository_handler.log)
+
     else:
-        print("Number of threads is " + str(number_threads) + ". Running in multi-thread mode.")
-        async_log.append("Number of threads is " + str(number_threads) + ". Running in multi-thread mode.")
-        branches = repository_handler.materialize_all_branches_in_reference()
-        # get all pairs
-        # the chars '~' and ':' are forbidden in git branch names, so we can use them as seperators
-        visited_combinations = list()
-        threads = list()
-        for i in range(0, number_threads, 1):
-            threads.append(list())
-        
-        thread_idx = 0
-        for b1 in branches:
-            for b2 in branches:
-                # Only add one-direction combinations and no identity combinations
-                if b1 == b2:
-                    continue
-                
-                combination_encoding = b1 + "~" + b2
-                reversed_encoding = b2 + "~" + b1
-                
-                if combination_encoding in visited_combinations or reversed_encoding in visited_combinations:
-                    continue
-                
-                visited_combinations.append(combination_encoding)
-                visited_combinations.append(reversed_encoding)
-                
-                threads[thread_idx].append(b1 + "~" + b2)
-                thread_idx += 1
-                thread_idx %= number_threads
-        
-        # Do not start empty threads
+
         non_empty_threads = list()
-        for thread in threads:
-            if len(thread) > 0:
-                non_empty_threads.append(thread)
-        
+
+        try:
+
+            print("Number of threads is " + str(number_threads) + ". Running in multi-thread mode.")
+            async_log.append("Number of threads is " + str(number_threads) + ". Running in multi-thread mode.")
+            
+            branches = repository_handler.materialize_all_branches_in_reference()
+            # get all pairs
+            # the chars '~' and ':' are forbidden in git branch names, so we can use them as seperators
+            visited_combinations = list()
+            threads = list()
+            for i in range(0, number_threads, 1):
+                threads.append(list())
+            
+            thread_idx = 0
+            for b1 in branches:
+                for b2 in branches:
+                    # Only add one-direction combinations and no identity combinations
+                    if b1 == b2:
+                        continue
+                    
+                    combination_encoding = b1 + "~" + b2
+                    reversed_encoding = b2 + "~" + b1
+                    
+                    if combination_encoding in visited_combinations or reversed_encoding in visited_combinations:
+                        continue
+                    
+                    visited_combinations.append(combination_encoding)
+                    visited_combinations.append(reversed_encoding)
+                    
+                    threads[thread_idx].append(b1 + "~" + b2)
+                    thread_idx += 1
+                    thread_idx %= number_threads
+            
+            # Do not start empty threads
+            
+            for thread in threads:
+                if len(thread) > 0:
+                    non_empty_threads.append(thread)
+            
+            
+
+        except Exception as e:
+            async_log.extend(str(e))
+            async_log.extend(repository_handler.log)
+            raise e
+
         #create an independent reference sandbox for each thread
         reference_dirs = list()
+
         for thread in non_empty_threads:
             ref_dir = "./tmp/" + str(uuid.uuid4())
             print("create reference copy " + ref_dir)
+
             copytree(repository_handler._reference_tmp_path, ref_dir, symlinks=True, ignore_dangling_symlinks=True)
+            #copy_dir(repository_handler._reference_tmp_path, ref_dir,)
+
+            ref_file_count = str(count_files(repository_handler._reference_tmp_path))
+            new_file_count = str(count_files(ref_dir))
+            print("FILE COUNT IN WORKING: " + ref_file_count + " -> " + new_file_count)
+            
+
             reference_dirs.append(ref_dir)
             out_user = subprocess.run(["git", "config", "user.name", '"driftool"'], capture_output=True, cwd=ref_dir)
             out_mail = subprocess.run(["git", "config", "user.email", '"analysis@driftool.io"'], capture_output=True, cwd=ref_dir)
@@ -245,6 +259,7 @@ def analyze_with_config(config: ConfigFile, sysconf: SysConf, async_log: list[st
                 print(out_user.stderr.decode("utf-8"))
             print("Reference copy successfully created!")
 
+        repository_handler.clear_reference_tmp()
 
         # start the threads and wait until all results are delivered
         async_log.extend(repository_handler.log)

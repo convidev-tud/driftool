@@ -15,6 +15,8 @@
 import os, os.path
 import re
 import shutil
+import stat
+import subprocess
 
 def purge_blacklist(regex_list: list[str], root_path: str, remove_hidden: bool, log: list[str]):
 
@@ -54,6 +56,9 @@ def keep_whitelist(regex_list: list[str], root_path: str, remove_hidden: bool, l
             patterns.append(pattern)
 
         match_count = 0
+        symlink_count = 0
+
+        os.access(root_path, stat.S_IWUSR)
 
         for root, dirs, files in os.walk(root_path, topdown=True):
 
@@ -61,13 +66,22 @@ def keep_whitelist(regex_list: list[str], root_path: str, remove_hidden: bool, l
                 #print("TRAVERSE: " + str(root) + " " + str(dirs) + " " + str(files))
 
                 for file in files:
+
                     do_purge = True
+                    full_path = os.path.join(root, file)
+
+                    if os.path.islink(full_path):
+                        os.unlink(full_path)
+                        symlink_count += 1
+                        continue
+
                     for pattern in patterns:
                         if pattern.search(file) is not None:
                             do_purge = False
                             break;
+                   
                     if do_purge:
-                        os.remove(os.path.join(root, file))
+                        os.remove(full_path)
                         match_count += 1
 
         if remove_hidden:
@@ -84,7 +98,9 @@ def keep_whitelist(regex_list: list[str], root_path: str, remove_hidden: bool, l
 
 
         print("PURGE " + str(match_count) + " FILES")
+        print("SYMLK " + str(symlink_count) + " FILES")
         log.append("PURGE " + str(match_count))
+        log.append("SYMLK " + str(symlink_count))
 
     except Exception as e:
         log.append("Exception during whitelist processing")
@@ -96,4 +112,10 @@ def count_files(root_path: str) -> int:
     total = 0
     for root, dirs, files in os.walk(root_path):
         total += len(files)
-    return(total)
+    return total
+
+
+def copy_dir(working_dir: str, source: str, target: str):
+    subprocess.run(["mkdir", "-p", "foo/bar/baz"], cwd=working_dir)
+    return subprocess.run(["cp", "-r", source, target], capture_output=True, cwd=working_dir)
+
