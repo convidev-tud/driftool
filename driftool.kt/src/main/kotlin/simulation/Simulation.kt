@@ -16,5 +16,10 @@
 
 package io.driftool.simulation
 
-class Simulation {
+import io.driftool.reporting.DriftReport
+
+abstract class Simulation {
+
+    abstract fun run(): DriftReport
+
 }

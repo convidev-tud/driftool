@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package io.driftool.simulation
+package io.driftool
 
-class MatrixSimulation : Simulation {
+enum class Mode {
+    git, matrix
 }

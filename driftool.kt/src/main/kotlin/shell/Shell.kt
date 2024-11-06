@@ -16,5 +16,20 @@
 
 package io.driftool.shell
 
-class Commandline {
+object Shell {
+
+    private fun exec(command: Array<String>): ShellResult {
+        val cmd = Runtime.getRuntime().exec(command)
+        val inputStream = cmd.inputStream
+        val errorStream = cmd.errorStream
+        val result = cmd.waitFor()
+        val output = inputStream.bufferedReader().readText()
+        val error = errorStream.bufferedReader().readText()
+        return ShellResult(result, output, error)
+    }
+
+    fun mkdir(directory: String): ShellResult {
+        return exec(arrayOf("mkdir", directory))
+    }
+
 }

@@ -16,5 +16,15 @@
 
 package io.driftool.gitmapping
 
-class Repository {
+class Repository(val location: String) {
+
+    companion object {
+
+        fun cloneFromPath(path: String, location: String): Repository {
+            println("Cloning repository from path: $path")
+            //TODO
+            return Repository(location)
+        }
+
+    }
 }

@@ -11,6 +11,12 @@ repositories {
 
 dependencies {
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
+
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.1'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.18.1'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.1'
+
+    implementation 'info.picocli:picocli:4.7.5'
 }
 
 test {

@@ -16,5 +16,13 @@
 
 package io.driftool.simulation
 
-class MainThreadSimulation {
+import io.driftool.data.GitModeConfiguration
+import io.driftool.reporting.DriftReport
+
+class MainThreadSimulation(gitModeConfiguration: GitModeConfiguration) : GitSimulation(gitModeConfiguration) {
+
+        override fun run(): DriftReport {
+            return DriftReport()
+        }
+
 }

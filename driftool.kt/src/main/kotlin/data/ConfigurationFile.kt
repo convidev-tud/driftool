@@ -16,5 +16,24 @@
 
 package io.driftool.data
 
-class ConfigurationFile {
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import java.io.File
+
+class ConfigurationFile(val configPath: String) {
+
+    fun parseGitModeConfig(): GitModeConfiguration {
+        val mapper = ObjectMapper(YAMLFactory()).registerKotlinModule()
+        val text = File(configPath).readText()
+        val configuration = mapper.readValue(text, GitModeConfiguration::class.java)
+
+        assert(configuration.repositoryPath.isNotBlank()) { "repositoryPath must be set" }
+        assert(configuration.reportPath.isNotBlank()) { "reportPath must be set" }
+        assert(configuration.jsonReport || configuration.htmlReport) { "At least one report type must be set" }
+        assert(configuration.timeoutDays >= 0) { "timeoutDays must be greater equal 0" }
+
+        return configuration
+    }
+
 }

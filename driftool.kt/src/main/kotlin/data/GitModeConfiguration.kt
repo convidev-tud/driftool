@@ -14,7 +14,16 @@
  * limitations under the License.
  */
 
-package io.driftool.simulation
+package io.driftool.data
 
-class MatrixSimulation : Simulation {
-}
+data class GitModeConfiguration(
+    val repositoryPath: String,
+    val reportPath: String,
+    val jsonReport: Boolean,
+    val htmlReport: Boolean,
+    val ignoreBranches: List<String>,
+    val fileWhiteList: List<String>,
+    val fileBlackList: List<String>,
+    val timeoutDays: Int,
+    val reportIdentifier: String? = null
+)

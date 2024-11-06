@@ -16,5 +16,15 @@
 
 package io.driftool.simulation
 
-class ReportWriter {
+import io.driftool.DataProvider
+import io.driftool.data.GitModeConfiguration
+import io.driftool.gitmapping.Repository
+
+abstract class GitSimulation(configuration: GitModeConfiguration) : Simulation() {
+
+    val referenceRepository = Repository.cloneFromPath(
+        configuration.repositoryPath,
+        DataProvider.getDirectoryHandler().createTemporalDirectory()
+    )
+
 }

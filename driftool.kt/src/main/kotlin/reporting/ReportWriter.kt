@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.driftool.simulation
+package io.driftool.reporting
 
-class MatrixSimulation : Simulation {
+class ReportWriter {
 }

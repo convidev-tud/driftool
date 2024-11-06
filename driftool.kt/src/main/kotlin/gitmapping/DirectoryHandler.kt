@@ -16,5 +16,43 @@
 
 package io.driftool.gitmapping
 
-class DirectoryHandler {
+import java.util.UUID
+import java.util.concurrent.ConcurrentLinkedQueue
+
+class DirectoryHandler(val rootLocation: String) {
+
+    val temporalDirectories: ConcurrentLinkedQueue<String> = ConcurrentLinkedQueue()
+
+    fun createTemporalDirectory(): String {
+        val directory = "$rootLocation/${getUniqueName()}"
+
+        return ""
+    }
+
+    fun deleteAllTemporalDirectories() {
+        temporalDirectories.forEach { deleteDirectory(it) }
+    }
+
+    fun deleteDirectory(directory: String) {
+        //TODO
+        unregisterTemporalDirectory(directory)
+    }
+
+    fun registerTemporalDirectory(directory: String) {
+        temporalDirectories.add(directory)
+    }
+
+    fun unregisterTemporalDirectory(directory: String) {
+        temporalDirectories.remove(directory)
+    }
+
+
+    companion object {
+
+        fun getUniqueName(): String {
+            return UUID.randomUUID().toString()
+        }
+
+    }
+
 }

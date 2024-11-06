@@ -14,7 +14,20 @@
  * limitations under the License.
  */
 
-package io.driftool.simulation
+package io.driftool
 
-class MatrixSimulation : Simulation {
+import io.driftool.gitmapping.DirectoryHandler
+
+object DataProvider {
+
+    private var directoryHandler: DirectoryHandler? = null
+
+    fun initDirectoryHandler(rootLocation: String) {
+        directoryHandler = DirectoryHandler(rootLocation)
+    }
+
+    fun getDirectoryHandler(): DirectoryHandler {
+        assert(directoryHandler != null) { "DirectoryHandler not initialized" }
+        return directoryHandler!!
+    }
 }
