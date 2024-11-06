@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# $1 is the location of the repository config as 
+
 echo config file: $1
 
 #echo contents of volume/

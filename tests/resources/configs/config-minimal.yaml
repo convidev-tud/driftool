@@ -1,8 +1,0 @@
-input_repository: foo/bar
-fetch_updates: true
-print_plot: true
-html: true
-show_html: true
-branch_ignore: []
-blacklist: []
-whitelist: []
