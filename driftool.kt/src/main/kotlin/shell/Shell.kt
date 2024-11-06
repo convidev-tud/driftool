@@ -16,20 +16,66 @@
 
 package io.driftool.shell
 
+import java.io.File
+
+
+
 object Shell {
 
-    private fun exec(command: Array<String>): ShellResult {
-        val cmd = Runtime.getRuntime().exec(command)
-        val inputStream = cmd.inputStream
-        val errorStream = cmd.errorStream
-        val result = cmd.waitFor()
+    /**
+     * Execute a shell command.
+     * @param command The command to execute.
+     * @param workingDirectory The working directory for the command. If null, the current working directory is used.
+     * @return The result of the command, see [ShellResult].
+     */
+    private fun exec(command: Array<String>, workingDirectory: String?): ShellResult {
+        val processBuilder = ProcessBuilder(command.toList())
+        if (workingDirectory != null) {
+            processBuilder.directory(File(workingDirectory))
+        }
+        val process = processBuilder.start()
+        val inputStream = process.inputStream
+        val errorStream = process.errorStream
+        process.waitFor()
         val output = inputStream.bufferedReader().readText()
         val error = errorStream.bufferedReader().readText()
+        val result = process.exitValue()
         return ShellResult(result, output, error)
     }
 
-    fun mkdir(directory: String): ShellResult {
-        return exec(arrayOf("mkdir", directory))
+    /**
+     * Create a directory. The directory must not yet exist.
+     * @param directory The directory to create.
+     * @param workingDirectory The working directory for the command. If null, the current working directory is used.
+     * @return The result of the command, see [ShellResult].
+     */
+    fun mkdir(directory: String, workingDirectory: String?): ShellResult {
+        return exec(arrayOf("mkdir", directory), workingDirectory)
     }
+
+    /**
+     * Remove a directory and all its contents.
+     * @param directory The directory to remove.
+     * @param workingDirectory The working directory for the command. If null, the current working directory is used.
+     * @return The result of the command, see [ShellResult].
+     */
+    fun rmrf(directory: String, workingDirectory: String?): ShellResult {
+        return exec(arrayOf("rm", "-rf", directory), workingDirectory)
+    }
+
+    /**
+     * Copy a file or directory and its contents recursively.
+     * This operation uses the cp command with the -r flag. No path modification is done.
+     * Check the cp documentation and the companion functions in [DirectoryHandler].
+     * @param source The source file or directory.
+     * @param target The target file or directory.
+     * @param workingDirectory The working directory for the command. If null, the current working directory is used.
+     * @return The result of the command, see [ShellResult].
+     */
+    fun cp(source: String, target: String, workingDirectory: String?): ShellResult {
+        return exec(arrayOf("cp", "-r", source, target), workingDirectory)
+    }
+
+
 
 }

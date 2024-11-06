@@ -19,10 +19,11 @@ package io.driftool.simulation
 import io.driftool.data.GitModeConfiguration
 import io.driftool.reporting.DriftReport
 
-class MultiThreadSimulation(gitModeConfiguration: GitModeConfiguration, threads: Int) : GitSimulation(gitModeConfiguration) {
+class MultiThreadSimulation(gitModeConfiguration: GitModeConfiguration, threads: Int) :
+    GitSimulation(gitModeConfiguration) {
 
     override fun run(): DriftReport {
-        return DriftReport()
+        throw NotImplementedError("Not yet implemented")
     }
 
 }

@@ -21,8 +21,19 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import java.io.File
 
-class ConfigurationFile(val configPath: String) {
+/**
+ * Reads the configuration file and validates the configuration.
+ * The configuration file must be in YAML format.
+ * This class works for all configuration files supported by the parse methods.
+ * @param configPath path to the configuration file
+ */
+class ConfigurationFile(private val configPath: String) {
 
+    /**
+     * Parses the configuration file and returns the configuration as a GitModeConfiguration object.
+     * Asserts that all required fields are set and not out of bounds.
+     * @return GitModeConfiguration object
+     */
     fun parseGitModeConfig(): GitModeConfiguration {
         val mapper = ObjectMapper(YAMLFactory()).registerKotlinModule()
         val text = File(configPath).readText()
@@ -35,5 +46,7 @@ class ConfigurationFile(val configPath: String) {
 
         return configuration
     }
+
+
 
 }

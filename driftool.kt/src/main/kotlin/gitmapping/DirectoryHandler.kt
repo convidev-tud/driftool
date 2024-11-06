@@ -16,17 +16,21 @@
 
 package io.driftool.gitmapping
 
+import io.driftool.shell.Shell
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
 
-class DirectoryHandler(val rootLocation: String) {
+class DirectoryHandler(private val rootLocation: String) {
 
-    val temporalDirectories: ConcurrentLinkedQueue<String> = ConcurrentLinkedQueue()
+    private val temporalDirectories: ConcurrentLinkedQueue<String> = ConcurrentLinkedQueue()
 
     fun createTemporalDirectory(): String {
-        val directory = "$rootLocation/${getUniqueName()}"
-
-        return ""
+        val dirname = "$rootLocation/${getUniqueName()}"
+        val result = Shell.mkdir(dirname, null)
+        if (!result.isSuccessful()){
+            throw RuntimeException("Could not create temporal directory.")
+        }
+        return dirname
     }
 
     fun deleteAllTemporalDirectories() {
@@ -51,6 +55,18 @@ class DirectoryHandler(val rootLocation: String) {
 
         fun getUniqueName(): String {
             return UUID.randomUUID().toString()
+        }
+
+        fun ensureDirectoryPathEnding(path: String): String {
+            return if (path.endsWith("/")) path else "$path/"
+        }
+
+        fun ensureNoDirectoryPathEnding(path: String): String {
+            return if (path.endsWith("/")) path.substring(0, path.length - 1) else path
+        }
+
+        fun ensureDotEnding(path: String): String {
+            return if (path.endsWith(".")) path else "$path."
         }
 
     }

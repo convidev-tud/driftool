@@ -21,13 +21,23 @@ import io.driftool.gitmapping.DirectoryHandler
 object DataProvider {
 
     private var directoryHandler: DirectoryHandler? = null
+    private var workingDirectory: String? = null
 
     fun initDirectoryHandler(rootLocation: String) {
         directoryHandler = DirectoryHandler(rootLocation)
     }
 
+    fun setWorkingDirectory(workingDirectory: String) {
+        this.workingDirectory = workingDirectory
+    }
+
     fun getDirectoryHandler(): DirectoryHandler {
         assert(directoryHandler != null) { "DirectoryHandler not initialized" }
         return directoryHandler!!
+    }
+
+    fun getWorkingDirectory(): String {
+        assert(workingDirectory != null) { "Working directory not set" }
+        return workingDirectory!!
     }
 }

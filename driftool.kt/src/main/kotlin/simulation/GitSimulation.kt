@@ -27,4 +27,24 @@ abstract class GitSimulation(configuration: GitModeConfiguration) : Simulation()
         DataProvider.getDirectoryHandler().createTemporalDirectory()
     )
 
+    var workingRepository: Repository? = null
+
+    fun prepareReferenceRepository() {
+
+        //TODO
+
+    }
+
+    fun executeMerges(branchCombinations: List<Pair<String, String>>): PartialSimulation {
+        throw NotImplementedError("Not yet implemented")
+    }
+
+    fun deleteWorkingRepository() {
+        workingRepository?.deleteRepository()
+    }
+
+    fun deleteReferenceRepository() {
+        referenceRepository.deleteRepository()
+    }
+
 }
