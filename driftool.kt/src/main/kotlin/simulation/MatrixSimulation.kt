@@ -16,5 +16,12 @@
 
 package io.driftool.simulation
 
-class MatrixSimulation : Simulation {
+import io.driftool.reporting.DriftReport
+
+class MatrixSimulation : Simulation() {
+
+    override fun run(): DriftReport {
+        TODO("Not yet implemented")
+    }
+
 }

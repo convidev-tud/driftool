@@ -18,8 +18,12 @@ package io.driftool.shell
 
 import java.io.File
 
-
-
+/**
+ * Provides the set of required shell commands.
+ * The commands are executed using the ProcessBuilder class.
+ * Results are dependent on the underlying operating system.
+ * This class is intended for usage on a Debian based system.
+ */
 object Shell {
 
     /**
@@ -28,7 +32,7 @@ object Shell {
      * @param workingDirectory The working directory for the command. If null, the current working directory is used.
      * @return The result of the command, see [ShellResult].
      */
-    private fun exec(command: Array<String>, workingDirectory: String?): ShellResult {
+    fun exec(command: Array<String>, workingDirectory: String?): ShellResult {
         val processBuilder = ProcessBuilder(command.toList())
         if (workingDirectory != null) {
             processBuilder.directory(File(workingDirectory))

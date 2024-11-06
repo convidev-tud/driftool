@@ -106,7 +106,6 @@ fun runGitSimulation(configuration: GitModeConfiguration, threads: Int): DriftRe
     } else {
         MainThreadSimulation(configuration)
     }
-
     return simulation.run()
 }
 

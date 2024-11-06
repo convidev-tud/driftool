@@ -22,7 +22,8 @@ import io.driftool.reporting.DriftReport
 class MainThreadSimulation(gitModeConfiguration: GitModeConfiguration) : GitSimulation(gitModeConfiguration) {
 
         override fun run(): DriftReport {
-            return DriftReport()
+            super.prepareReferenceRepository()
+            throw NotImplementedError("Not yet implemented")
         }
 
 }

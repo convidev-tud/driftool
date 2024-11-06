@@ -20,19 +20,17 @@ import io.driftool.DataProvider
 import io.driftool.data.GitModeConfiguration
 import io.driftool.gitmapping.Repository
 
-abstract class GitSimulation(configuration: GitModeConfiguration) : Simulation() {
+abstract class GitSimulation(private val configuration: GitModeConfiguration) : Simulation() {
 
-    val referenceRepository = Repository.cloneFromPath(
+    private val referenceRepository = Repository.cloneFromPath(
         configuration.repositoryPath,
         DataProvider.getDirectoryHandler().createTemporalDirectory()
     )
 
-    var workingRepository: Repository? = null
+    private var workingRepository: Repository? = null
 
     fun prepareReferenceRepository() {
-
-        //TODO
-
+        referenceRepository.findAllBranches()
     }
 
     fun executeMerges(branchCombinations: List<Pair<String, String>>): PartialSimulation {

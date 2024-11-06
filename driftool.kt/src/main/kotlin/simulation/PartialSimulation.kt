@@ -16,5 +16,13 @@
 
 package io.driftool.simulation
 
-class PartialSimulation {
+import io.driftool.data.GitModeConfiguration
+import io.driftool.reporting.DriftReport
+
+class PartialSimulation(configuration: GitModeConfiguration) : GitSimulation(configuration) {
+
+    override fun run(): DriftReport {
+        TODO("Not yet implemented")
+    }
+    
 }
