@@ -13,11 +13,14 @@
 
 # $5 is the number of threads to use for the analysis.
 
+# $6 is the mode of analysis.
+
 echo repo path in volume: $1
 echo output path in volume: $2
 echo repo config path in volume: $3
 echo ramdisk size: $4
 echo number of threads: $5
+echo mode: $6
 
 #echo contents of volume/
 cd volume

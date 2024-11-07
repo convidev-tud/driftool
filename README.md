@@ -61,7 +61,7 @@ The **volume root** is the space when you enter the **volume**. If, for example,
 4. Execute ``./build.sh`` with sudo priviledges in the root directory of the driftool repository.
 5. Move the repository under analysis and the repository config into the ``./volume`` directory of the driftool repository
 6. Execute 
-```./run.sh [repo path (in volume)]  [output path (in volume)] [config path (in volume)] [RAM alloc] [threads]``` 
+```./run.sh [repo path (in volume)]  [output path (in volume)] [config path (in volume)] [RAM alloc] [threads] [mode]``` 
 with sudo priviledges.
 7. The analysis results are written to the ``./volume/[output path]``
 
@@ -97,32 +97,79 @@ However, if the container runs in the "no ramdisk" mode, the required space will
 
 Starting the driftool requires a repository-specific config file. All arguments are mandatory.
 
-### Config Parameters
+### ``run.sh`` Arguments
 
-TODO
+```./run.sh [repo path (in volume)]  [output path (in volume)] [config path (in volume)] [RAM alloc] [threads] [mode]``` 
+
+**repo path** is the path to the repository under analysis. It must be located in the volume.
+
+**output path** is the path where the analysis reports are saved. It must be located in the volume. 
+
+**config path** is the path to the configuration .yaml file used for analysis. It must be located in the volume.
+
+**RAM** the RAM size to allocate.
+
+**threads** the number of threads for parallel analysis.
+
+**mode** the analysis mode. Use "git" for default git repository analysis. If you already have a custom distance matrix, you can use mode="matrix". YOu find more information at the end of this document.
+
+#### Example
+
+Assume this directory structure on your system:
+
+* ``/home/
+  * driftool/
+  * your-repo/
+  * your-repo.yaml
+  
+1. Move copy the repository an config to the volume:
+
+* ``/home/
+  * driftool/volume/
+    * your-repo/
+    * your-repo.yaml
+  * ... 
+  
+2. Execute the run.sh in the ``/home/driftool`` directory (cd into it).
+
+Assume 12 threads and 64GB of free RAM:
+
+```./run.sh "your-repo"  "./" "your-repo.yaml" 65 12 "git"``` 
+
+3. After successful execution, you find the reports in the specified directory
+
+* ``/home/
+  * driftool/volume/
+    * your-repo/
+    * your-repo.yaml
+    * report_your-repo.html
+    * report_your-repo.json
+  * ... 
+
+### "git" Mode Configuration .yaml
+
+* ``jsonReport: Boolean`` If true, a JSON report will be generated and saved in the report directory.
+* ``htmlReport: Boolean`` If true, an HTML report will be generated and saved in the report directory.
+* ``ignoreBranches: List<String>`` List of branches that should be ignored. This is useful for branches that are not relevant for the analysis. The branch list can contain Regex patterns for which are searched in the branch name. Important: We use regex search (not regex match) to find the pattern anywhere in the branch name, e.g. the pattern "feature" will match "feature/branch" and "branch/feature". If the list is empty, no branches will be ignored.
+* ``fileWhiteList: List<String>`` List of files that should be analyzed exclusively. This is useful if only particular file types should be included in the analysis. The file whitelist is applied before the file blacklist. The file list can contain Regex patterns for which are searched in the file path. Important: We use regex search (not regex match) to find the pattern anywhere in the file path, e.g. the pattern "test" will match "src/test/file" and "file/test". If the list is empty, no files will be ignored.
+* ``fileBlackList: List<String>``List of files that should be ignored. This is useful if particular file types should be excluded from the analysis. The file blacklist is applied after the file whitelist. The file list can contain Regex patterns for which are searched in the file path. Important: We use regex search (not regex match) to find the pattern anywhere in the file path, e.g. the pattern "test" will match "src/test/file" and "file/test". If the list is empty, no files will be ignored.
+* ``timeoutDays: Int`` The number of days a branch had to be active within to be included in the analysis. For example, if the timeoutDays is set to 30, only branches that were active in the last 30 days will be included. If the timeoutDays is set to 0, all branches will be included. This is useful to exclude dead branches as they might invalidate the analysis.
+* ``reportIdentifier: String`` The identifier (or title) for the report. If unset, a unique default identifier will be generated.
 
 ```YAML
-input_repository: STRING
-output_directory: STRING
-fetch_updates: BOOLEAN
-report_title: STRING
-print_plot: BOOLEAN
-html: BOOLEAN
-show_html: BOOLEAN
-simple_export: BOOLEAN
-csv_file: STRING
-timeout: 90
-branch_ignore:
+jsonReport: STRING
+htmlReport: STRING
+reportIdentifier: STRING
+timeout: INT
+fileWhiteList:
     - STRING
-blacklist: 
+fileBlackList: 
     - STRING
-whitelist:
+ignoreBranches:
     - STRING
 ```
 
 ### Config Examples
-
-The following example is provided as ``config.template.yaml`` as part of this repository.
 
 ```YAML
 input_repository: /Users/.../my-repository
@@ -149,17 +196,40 @@ blacklist:
 whitelist: []
 ```
 
+```YAML
+jsonReport: true
+htmlReport: true
+reportIdentifier: My Report
+timeout: 90
+fileWhiteList: []
+fileBlackList: 
+    - "build\\/"
+    - "dist\\/"
+    - "gen\\/"
+    - "\\.min\\.js"
+    - "\\.lib\\.js"
+    - "node\\-modules\\/"
+    - "\\.pdf"
+    - "javadoc\\/"
+    - "\\.png"
+ignoreBranches:
+    - "^release\\-"
+    - "^v\\.
+```
+
 **Whitelist Example**
 
-The following example only analyses Java files and HTML templates adn ignores all other files.
+The following partial example only analyses Java files and HTML templates adn ignores all other files.
 
 ```YAML
-whitelist:
+fileWhiteList:
     - "\\.java"
     - "\\.template\\.html"
 ```
 
 ## Matrix Only Mode
+
+> Work in progress
 
 You can provide a pre-caluclated distance matrix for calculating drift value and drift plot.
 
@@ -171,63 +241,3 @@ A;B;C
 1;0;1
 7;1;0
 ```
-
-
-# In-Depth Understanding of the Drift Metric and Driftool Plot
-
-## Drift Metric
-
-The driftool calculates the *Drift* measure **sd** (gamma).
-
-* **sd** is the *Statement Drift* := a measure for the merge complexity based on the pair-wise git merge conflict count as a distance
-
-In general, higher numbers indicate a more complex repository management. The most interesting value is the change of the drift metrics over time. Increases the drift rapidely, severe conflicts may have been introduced recently.
-
-Using the above distance measures, the unit of drift is *Lines of Code (LoC)*. But we recommend to use drift as a unit-less measure and interpret its tendencies only.
-
-### Calculation Details
-
-1. We calculate the pairwise distances using a distance metric.
-2. The pairwise distances are used to perform a multidimensional scaling of the set of branches to a 3D pointcloud.
-3. We calculate the *mean absolute deviation around a central point* (mean of distances from the median) of the pointlcoud and their euclidean distances..
-
-For better understanding and transparency, we use provide the core computation:
-```python
-def calculate_median_distance_avg(embeddings: np.ndarray[float]) -> float:
-    '''
-    Input embeddings in the form [[x0, y0, z0], ..., [xi, yi, zi]]
-    '''
-    m = np.median(embeddings, axis=0)
-    l = len(embeddings)
-    d = 0
-
-    for p in embeddings:
-        d += math.sqrt((p[0] - m[0])**2 + (p[1] - m[1])**2 + (p[2] - m[2])**2)
-    
-    return d / l
-```
-
-## Scatter Plot
-
-As explained above in *Calculation Details*, we perform a multidimensional scaling (MDS) into 3D space.
-Each point in the scatterplot visualizes one branch (the latest commit / HEAD of the branch)
-
-The initial dimensionality of the distance (consistency) problem is unknown. 
-The unit of the distance is LoC of merge conflicts. 
-The MDS tries to retain the pairwise distances while embedding the points in the target dimensions. 
-The embedding error is called stress. The MDS algorithm tries to optimize for minimal stress.
-
-**Consequences**
-
-* Distances between points visualize the amount of merge conflicts (inconsistencies).
-* The dimensions of the plot have no relieable unit, they are result of the MDS embedding.
-* Point embeddings are not exact but approximated!
-* Two points with a different locations do not neccessarily have a pair-wise difference, but different differences to a third point.
-
-💡 **We recommend the scatter plot to get a visual and explainable overview of the project. Outlier detection is possible. However, the main indicator is the evolution of the drift metric over time and not size and strucutre of the scatter plot.**
-
----
-
-> https://en.wikipedia.org/wiki/Average_absolute_deviation
-
-> https://en.wikipedia.org/wiki/Multidimensional_scaling
