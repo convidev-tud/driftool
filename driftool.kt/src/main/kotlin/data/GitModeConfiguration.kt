@@ -23,18 +23,6 @@ package io.driftool.data
 data class GitModeConfiguration(
 
     /**
-     * Path to the repository that should be analyzed.
-     * This must be an absolute path to ensure correct behavior.
-     */
-    val repositoryPath: String,
-
-    /**
-     * Path to the report directory.
-     * This must be an absolute path to ensure correct behavior.
-     */
-    val reportPath: String,
-
-    /**
      * If true, a JSON report will be generated and saved in the report directory.
      */
     val jsonReport: Boolean,

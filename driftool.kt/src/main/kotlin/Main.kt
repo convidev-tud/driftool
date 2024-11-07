@@ -29,15 +29,32 @@ import kotlin.system.exitProcess
 @CommandLine.Command(name = "driftool", mixinStandardHelpOptions = true, version = ["v.2.0 (beta)"])
 class Checksum : Callable<Int> {
 
-    @CommandLine.Parameters(index = "0", description = ["configuration path (String)." +
-            "The type of the configuration file that needs to be provided depends on the mode."])
-    var configPath: String = ""
+    @CommandLine.Parameters(index = "0", description = ["absolute input directory path (String)." +
+            "Path to the input directory in which the repository, configuration and report directories are located. " +
+            "The path must be absolute."])
+    var inputRootPath: String = ""
 
     @CommandLine.Parameters(index = "1", description = ["absolute working directory path (String)." +
             "Path to an empty directory used for temporary files during analysis. " +
             "This directory should be on a RAM-disc for performance reasons. " +
             "The path must be absolute."])
     var workingPath: String = ""
+
+    @CommandLine.Parameters(index = "2", description = ["configuration path (String) from the working dir root." +
+            "The type of the configuration file that needs to be provided depends on the mode."])
+    var configPath: String = ""
+
+    @CommandLine.Option(
+        names = ["-i", "--input_repository"],
+        description = ["Path to the input repository. " +
+                "The path must start in the input directory root. "])
+    var inputRepository: String = ""
+
+    @CommandLine.Option(
+        names = ["-o", "--report_location"],
+        description = ["Path to the report directory. " +
+                "The path must start in the input directory root."])
+    var reportPath: String = "out/"
 
     @CommandLine.Option(
         names = ["-m", "--mode"],
@@ -59,7 +76,7 @@ class Checksum : Callable<Int> {
     var threads: Int = 1
 
     override fun call(): Int {
-        runWithConfig(configPath, workingPath, mode, threads)
+        runWithConfig(inputRootPath, workingPath, configPath, inputRepository, reportPath, mode, threads)
         return 0
     }
 }
@@ -68,8 +85,10 @@ fun main(args: Array<String>) {
     exitProcess(CommandLine(Checksum()).execute(*args))
 }
 
-fun runWithConfig(configPath: String, workingPath: String, modeArg: String, threads: Int): DriftReport {
+fun runWithConfig(inputRootPath: String, workingPath: String, configPath: String, inputRepository: String,
+                  reportPath: String, modeArg: String, threads: Int): DriftReport {
 
+    assert(inputRootPath.isNotBlank()) { "inputRootPath must be set" }
     assert(configPath.isNotBlank()) { "configPath must be set" }
     assert(modeArg.isNotBlank()) { "mode must be set" }
     assert(threads > 0) { "threads must be greater than 0" }
@@ -79,6 +98,10 @@ fun runWithConfig(configPath: String, workingPath: String, modeArg: String, thre
     var jsonReport: Boolean = false
     var htmlReport: Boolean = false
     var reportIdentifier: String = ""
+
+    /*
+    TODO: distinct between input DirectoryHandler and WorkingDirectoryHandler
+     */
 
     DataProvider.initDirectoryHandler(workingPath)
     DataProvider.setWorkingDirectory(workingPath)
