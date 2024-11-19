@@ -1,0 +1,3 @@
+[submodule "conflict-example"]
+	path = conflict-example
+	url = https://github.com/convidev-tud/conflict-example.git

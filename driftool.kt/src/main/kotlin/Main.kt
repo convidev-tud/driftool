@@ -16,8 +16,10 @@
 
 package io.driftool
 
-import io.driftool.data.ConfigurationFile
-import io.driftool.data.GitModeConfiguration
+import io.driftool.data.ConfigurationReader
+import io.driftool.data.GenericParameterConfiguration
+import io.driftool.data.GitModeConfigurationFile
+import io.driftool.gitmapping.DirectoryHandler
 import io.driftool.reporting.DriftReport
 import io.driftool.simulation.MainThreadSimulation
 import io.driftool.simulation.MultiThreadSimulation
@@ -76,7 +78,17 @@ class Checksum : Callable<Int> {
     var threads: Int = 1
 
     override fun call(): Int {
-        runWithConfig(inputRootPath, workingPath, configPath, inputRepository, reportPath, mode, threads)
+        workingPath = DirectoryHandler.ensureDirectoryPathEnding(DirectoryHandler.refactorPathUnixStyle(workingPath))
+        inputRootPath = DirectoryHandler.ensureDirectoryPathEnding(DirectoryHandler.refactorPathUnixStyle(inputRootPath))
+        inputRepository = DirectoryHandler.ensureNoSlashBeginning(DirectoryHandler.refactorPathUnixStyle(inputRepository))
+        configPath = DirectoryHandler.ensureNoSlashBeginning(DirectoryHandler.refactorPathUnixStyle(configPath))
+        reportPath = DirectoryHandler.ensureNoSlashBeginning(DirectoryHandler.refactorPathUnixStyle(reportPath))
+        val absoluteConfigPath = inputRootPath + configPath
+        val absoluteInputRepositoryPath = inputRootPath + inputRepository
+        val absoluteReportPath = inputRootPath + reportPath
+        val parameterConfiguration = GenericParameterConfiguration(
+            inputRootPath, workingPath, absoluteInputRepositoryPath, absoluteConfigPath, absoluteReportPath, threads, mode)
+        runWithConfig(parameterConfiguration)
         return 0
     }
 }
@@ -85,30 +97,25 @@ fun main(args: Array<String>) {
     exitProcess(CommandLine(Checksum()).execute(*args))
 }
 
-fun runWithConfig(inputRootPath: String, workingPath: String, configPath: String, inputRepository: String,
-                  reportPath: String, modeArg: String, threads: Int): DriftReport {
+fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
 
-    assert(inputRootPath.isNotBlank()) { "inputRootPath must be set" }
-    assert(configPath.isNotBlank()) { "configPath must be set" }
-    assert(modeArg.isNotBlank()) { "mode must be set" }
-    assert(threads > 0) { "threads must be greater than 0" }
-    assert(modeArg == "git" || modeArg == "matrix") { "mode must be either git or matrix" }
+    assert(parameterConfig.inputRootPath.isNotBlank()) { "inputRootPath must be set" }
+    assert(parameterConfig.absoluteConfigPath.isNotBlank()) { "configPath must be set" }
+    assert(parameterConfig.mode.isNotBlank()) { "mode must be set" }
+    assert(parameterConfig.threads > 0) { "threads must be greater than 0" }
+    assert(parameterConfig.mode == "git" || parameterConfig.mode == "matrix") { "mode must be either git or matrix" }
 
-    val mode = Mode.valueOf(modeArg)
+    val mode = Mode.valueOf(parameterConfig.mode)
     var jsonReport: Boolean = false
     var htmlReport: Boolean = false
     var reportIdentifier: String = ""
 
-    /*
-    TODO: distinct between input DirectoryHandler and WorkingDirectoryHandler
-     */
-
-    DataProvider.initDirectoryHandler(workingPath)
-    DataProvider.setWorkingDirectory(workingPath)
+    DataProvider.initDirectoryHandler(parameterConfig.absoluteWorkingPath)
+    DataProvider.setWorkingDirectory(parameterConfig.absoluteWorkingPath)
 
     val driftReport = when (mode) {
         Mode.git -> {
-            runGitSimulation(ConfigurationFile(configPath).parseGitModeConfig(), threads)
+            runGitSimulation(ConfigurationReader(parameterConfig.absoluteConfigPath).parseGitModeConfig(), parameterConfig.threads)
         }
         Mode.matrix -> {
             runMatrixSimulation()
@@ -123,7 +130,7 @@ fun runWithConfig(inputRootPath: String, workingPath: String, configPath: String
     return driftReport
 }
 
-fun runGitSimulation(configuration: GitModeConfiguration, threads: Int): DriftReport {
+fun runGitSimulation(configuration: GitModeConfigurationFile, threads: Int): DriftReport {
     val simulation: Simulation = if (threads > 1) {
         MultiThreadSimulation(configuration, threads)
     } else {

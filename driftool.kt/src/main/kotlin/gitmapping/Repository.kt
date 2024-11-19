@@ -445,14 +445,14 @@ class Repository(private val location: String) {
          * The target location must be an empty directory that is either already registered by a [DirectoryHandler] or
          * must be registered afterward.
          * Both the path and the location must be absolute paths!
-         * @param path The path to the repository folder that should be copied.
+         * @param absoluteRepositoryPath The path to the repository folder that should be copied.
          * @param location The target location where the repository folder should be copied to.
          * @return The repository object of the new location.
          */
-        fun cloneFromPath(path: String, location: String): Repository {
-            println("Cloning repository from path: $path")
+        fun cloneFromPath(absoluteRepositoryPath: String, location: String): Repository {
+            println("Cloning repository from path: $absoluteRepositoryPath")
             val cpResult = Shell.cp(
-                DirectoryHandler.ensureDotEnding(DirectoryHandler.ensureDirectoryPathEnding(path)),
+                absoluteRepositoryPath,
                 DirectoryHandler.ensureNoDirectoryPathEnding(location), null)
 
             if (! cpResult.isSuccessful()){

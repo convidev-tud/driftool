@@ -24,6 +24,11 @@ class DirectoryHandler(private val rootLocation: String) {
 
     private val temporalDirectories: ConcurrentLinkedQueue<String> = ConcurrentLinkedQueue()
 
+    /**
+     * Creates a temporal directory in the root location.
+     * The directory is created with a unique name.
+     * @return the path to the created directory as absolute path
+     */
     fun createTemporalDirectory(): String {
         val dirname = "$rootLocation/${getUniqueName()}"
         val result = Shell.mkdir(dirname, null)
@@ -67,6 +72,18 @@ class DirectoryHandler(private val rootLocation: String) {
 
         fun ensureDotEnding(path: String): String {
             return if (path.endsWith(".")) path else "$path."
+        }
+
+        fun ensureSlashBeginning(path: String): String {
+            return if (path.startsWith("/")) path else "/$path"
+        }
+
+        fun ensureNoSlashBeginning(path: String): String {
+            return if (path.startsWith("/")) path.substring(1) else path
+        }
+
+        fun refactorPathUnixStyle(path: String): String {
+            return path.replace("\\", "/")
         }
 
     }

@@ -16,10 +16,10 @@
 
 package io.driftool.simulation
 
-import io.driftool.data.GitModeConfiguration
+import io.driftool.data.GitModeConfigurationFile
 import io.driftool.reporting.DriftReport
 
-class MainThreadSimulation(gitModeConfiguration: GitModeConfiguration) : GitSimulation(gitModeConfiguration) {
+class MainThreadSimulation(gitModeConfiguration: GitModeConfigurationFile) : GitSimulation(gitModeConfiguration) {
 
         override fun run(): DriftReport {
             super.prepareReferenceRepository()

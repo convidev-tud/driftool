@@ -20,10 +20,10 @@ import io.driftool.DataProvider
 import io.driftool.data.GitModeConfiguration
 import io.driftool.gitmapping.Repository
 
-abstract class GitSimulation(private val configuration: GitModeConfiguration) : Simulation() {
+abstract class GitSimulation(configuration: GitModeConfiguration) : Simulation() {
 
     private val referenceRepository = Repository.cloneFromPath(
-        configuration.repositoryPath,
+        configuration.pc.absoluteInputRepositoryPath,
         DataProvider.getDirectoryHandler().createTemporalDirectory()
     )
 

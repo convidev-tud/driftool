@@ -27,20 +27,18 @@ import java.io.File
  * This class works for all configuration files supported by the parse methods.
  * @param configPath path to the configuration file
  */
-class ConfigurationFile(private val configPath: String) {
+class ConfigurationReader(private val configPath: String) {
 
     /**
      * Parses the configuration file and returns the configuration as a GitModeConfiguration object.
      * Asserts that all required fields are set and not out of bounds.
      * @return GitModeConfiguration object
      */
-    fun parseGitModeConfig(): GitModeConfiguration {
+    fun parseGitModeConfig(): GitModeConfigurationFile {
         val mapper = ObjectMapper(YAMLFactory()).registerKotlinModule()
         val text = File(configPath).readText()
-        val configuration = mapper.readValue(text, GitModeConfiguration::class.java)
+        val configuration = mapper.readValue(text, GitModeConfigurationFile::class.java)
 
-        assert(configuration.repositoryPath.isNotBlank()) { "repositoryPath must be set" }
-        assert(configuration.reportPath.isNotBlank()) { "reportPath must be set" }
         assert(configuration.jsonReport || configuration.htmlReport) { "At least one report type must be set" }
         assert(configuration.timeoutDays >= 0) { "timeoutDays must be greater equal 0" }
 
