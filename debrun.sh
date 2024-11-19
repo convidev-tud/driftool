@@ -13,7 +13,7 @@
 
 # $5 is the number of threads to use for the analysis.
 
-# $6 is the mode of analysis.
+# $6 is the mode of analysis = git|matrix|....
 
 echo repo path in volume: $1
 echo output path in volume: $2
@@ -43,7 +43,8 @@ mount | tail -n 1
 echo preparing analysis
 ls -l
 
-# java -jar driftool-2.0.0.jar /driftool/volume' /dtmp ...  
-
 # TODO build jar with gradle
 # TODO execute jar (see above)
+
+java -jar driftool-2.0.0.jar /driftool/volume' /dtmp ...  
+

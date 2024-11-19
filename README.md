@@ -78,6 +78,14 @@ Example: ``./run.sh volume/repository.yaml 64 12``: Analyzed the configured repo
 * (``deb_run.sh``) is the entrypoint script of the created container. It prepares the ramdisk and starts the driftool's main method. If you are a driftool user, you do not have execute or touch this file.
 
 
+#### Development Setup
+
+To execute the driftool from sources on you local file system, execute the following command in the directory where the ``build.gradle`` file is located. This assumes you have a current version of gradle (8+) and Java (JDK 21) installed on your system.
+
+```
+gradle run --args="absolute_input absolute_working_dir config.yaml -i repo -m git -t 4"
+```
+
 ### Environment Settings
 
 #### Number of Threads

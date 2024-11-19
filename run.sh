@@ -13,6 +13,6 @@
 
 # $5 is the number of threads to use for the analysis.
 
-# $6 is the mode of analysis.
+# $6 is the mode of analysis = "git|matrix|...".
 
 docker run -it --rm --privileged --name driftool --mount type=bind,source="$(pwd)"/volume,target=/driftool/volume driftool:latest "$1" "$2" "$3" "$4" "$5" "$6"
