@@ -16,5 +16,5 @@
 
 package io.driftool.reporting
 
-class MatrixResult {
+class MatrixResult() {
 }

@@ -22,6 +22,11 @@ import io.driftool.gitmapping.Repository
 
 abstract class GitSimulation(configuration: GitModeConfiguration) : Simulation() {
 
+    /**
+     * The reference repository is the repository that is used as the base for the simulation.
+     * It is cloned from the input repository and is not modified during the simulation.
+     * The reference repository is used to create the working repository for each simulation run.
+     */
     private val referenceRepository = Repository.cloneFromPath(
         configuration.pc.absoluteInputRepositoryPath,
         DataProvider.getDirectoryHandler().createTemporalDirectory()
