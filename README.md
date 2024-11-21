@@ -180,35 +180,10 @@ ignoreBranches:
 ### Config Examples
 
 ```YAML
-input_repository: /Users/.../my-repository
-output_directory: ../
-fetch_updates: false
-report_title: My Report
-print_plot: false
-html: true
-show_html: true
-simple_export: false
-branch_ignore:
-    - "^release\\-"
-    - "^v\\."
-blacklist: 
-    - "build\\/"
-    - "dist\\/"
-    - "gen\\/"
-    - "\\.min\\.js"
-    - "\\.lib\\.js"
-    - "node\\-modules\\/"
-    - "\\.pdf"
-    - "javadoc\\/"
-    - "\\.png"
-whitelist: []
-```
-
-```YAML
-jsonReport: true
-htmlReport: true
-reportIdentifier: My Report
-timeout: 90
+jsonReport: STRING
+htmlReport: STRING
+reportIdentifier: STRING
+timeout: INT
 fileWhiteList: []
 fileBlackList: 
     - "build\\/"
@@ -222,8 +197,7 @@ fileBlackList:
     - "\\.png"
 ignoreBranches:
     - "^release\\-"
-    - "^v\\.
-```
+    - "^v\\."
 
 **Whitelist Example**
 
@@ -237,7 +211,7 @@ fileWhiteList:
 
 ## Matrix Only Mode
 
-> Work in progress
+> Work in progress / Undocumented Feature
 
 You can provide a pre-caluclated distance matrix for calculating drift value and drift plot.
 
