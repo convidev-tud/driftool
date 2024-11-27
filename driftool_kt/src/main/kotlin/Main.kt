@@ -18,6 +18,7 @@ package io.driftool
 
 import io.driftool.data.ConfigurationReader
 import io.driftool.data.GenericParameterConfiguration
+import io.driftool.data.GitModeConfiguration
 import io.driftool.data.GitModeConfigurationFile
 import io.driftool.gitmapping.DirectoryHandler
 import io.driftool.reporting.DriftReport
@@ -115,7 +116,8 @@ fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
 
     val driftReport = when (mode) {
         Mode.git -> {
-            runGitSimulation(ConfigurationReader(parameterConfig.absoluteConfigPath).parseGitModeConfig(), parameterConfig.threads)
+            val gitModeConfiguration = GitModeConfiguration(ConfigurationReader(parameterConfig.absoluteConfigPath).parseGitModeConfig(), parameterConfig)
+            runGitSimulation(gitModeConfiguration)
         }
         Mode.matrix -> {
             runMatrixSimulation()
@@ -130,9 +132,9 @@ fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
     return driftReport
 }
 
-fun runGitSimulation(configuration: GitModeConfigurationFile, threads: Int): DriftReport {
-    val simulation: Simulation = if (threads > 1) {
-        MultiThreadSimulation(configuration, threads)
+fun runGitSimulation(configuration: GitModeConfiguration): DriftReport {
+    val simulation: Simulation = if (configuration.pc.threads > 1) {
+        MultiThreadSimulation(configuration)
     } else {
         MainThreadSimulation(configuration)
     }

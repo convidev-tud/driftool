@@ -16,11 +16,13 @@
 
 package io.driftool.simulation
 
+import io.driftool.data.GitModeConfiguration
 import io.driftool.data.GitModeConfigurationFile
 import io.driftool.reporting.DriftReport
 
-class MultiThreadSimulation(gitModeConfiguration: GitModeConfigurationFile, threads: Int) :
-    GitSimulation(gitModeConfiguration) {
+class MultiThreadSimulation(gitModeConfiguration: GitModeConfiguration) : GitSimulation(gitModeConfiguration) {
+
+    val threadCount = gitModeConfiguration.pc.threads
 
     override fun run(): DriftReport {
         throw NotImplementedError("Not yet implemented")
