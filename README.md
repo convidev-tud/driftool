@@ -165,8 +165,8 @@ Assume 12 threads and 64GB of free RAM:
 * ``reportIdentifier: String`` The identifier (or title) for the report. If unset, a unique default identifier will be generated.
 
 ```YAML
-jsonReport: STRING
-htmlReport: STRING
+jsonReport: BOOL
+htmlReport: BOOL
 reportIdentifier: STRING
 timeout: INT
 fileWhiteList:
@@ -180,10 +180,10 @@ ignoreBranches:
 ### Config Examples
 
 ```YAML
-jsonReport: STRING
-htmlReport: STRING
-reportIdentifier: STRING
-timeout: INT
+jsonReport: true
+htmlReport: true
+reportIdentifier: Example Report
+timeout: 30
 fileWhiteList: []
 fileBlackList: 
     - "build\\/"

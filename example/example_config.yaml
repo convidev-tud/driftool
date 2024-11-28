@@ -1,0 +1,12 @@
+jsonReport: true
+htmlReport: true
+reportIdentifier: Example Report
+timeout: 0
+fileWhiteList: []
+fileBlackList: 
+    - "build\\/"
+    - "\\.md"
+    - "\\.png"
+ignoreBranches:
+    - "^release\\-"
+    - "^v\\."
