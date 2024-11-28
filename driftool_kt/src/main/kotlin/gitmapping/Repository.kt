@@ -452,10 +452,11 @@ class Repository(private val location: String) {
         fun cloneFromPath(absoluteRepositoryPath: String, location: String): Repository {
             println("Cloning repository from path: $absoluteRepositoryPath")
             val cpResult = Shell.cp(
-                absoluteRepositoryPath,
+                DirectoryHandler.ensureDirectoryPathEnding(absoluteRepositoryPath),
                 DirectoryHandler.ensureNoDirectoryPathEnding(location), null)
 
             if (! cpResult.isSuccessful()){
+                println(cpResult.error)
                 throw RuntimeException("Could not copy repository to new temporal location.")
             }
             return Repository(location)
