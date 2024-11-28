@@ -1,7 +1,7 @@
 jsonReport: true
 htmlReport: true
 reportIdentifier: Example Report
-timeout: 0
+timeoutDays: 0
 fileWhiteList: []
 fileBlackList: 
     - "build\\/"

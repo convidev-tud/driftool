@@ -168,7 +168,7 @@ Assume 12 threads and 64GB of free RAM:
 jsonReport: BOOL
 htmlReport: BOOL
 reportIdentifier: STRING
-timeout: INT
+timeoutDays: INT
 fileWhiteList:
     - STRING
 fileBlackList: 
@@ -183,7 +183,7 @@ ignoreBranches:
 jsonReport: true
 htmlReport: true
 reportIdentifier: Example Report
-timeout: 30
+timeoutDays: 30
 fileWhiteList: []
 fileBlackList: 
     - "build\\/"
