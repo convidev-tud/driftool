@@ -54,7 +54,7 @@ object Shell {
      * @return The result of the command, see [ShellResult].
      */
     fun mkdir(directory: String, workingDirectory: String?): ShellResult {
-        return exec(arrayOf("mkdir", directory), workingDirectory)
+        return exec(arrayOf("mkdir", "-p", directory), workingDirectory)
     }
 
     /**

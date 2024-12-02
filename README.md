@@ -4,7 +4,7 @@
 > This repository is part of a research project of the [*Software Technology Group*](https://tu-dresden.de/ing/informatik/smt/st?set_language=en) at *Dresden University of Technology*. Contact Karl Kegel (KKegel) for further information. 
 
 The driftool calculates the drift analysis for git repositories. 
-It automatically compares all branches, simulates merges and generates both a scalar drift metric, as well as a 3D view of the repository drift.
+It automatically simulates merges in between all branches to find potential conflicts. It generates both a scalar drift metric, as well as a 3D view of the repository drift.
 The pairwise distance is the number of lines of merge conflicts.
 The base measure of the point-cloud is the *mean absolute deviation around a central point*.
 
@@ -14,7 +14,7 @@ The drift is an absolute metric that always has to be interpreted in the context
 A repository with dozens of collaborateurs and branches naturally has more drift as a project with 3 developers working on. 
 However, the evolution of the drift over time gives useful insigts about the project health.
 
-> :zap: Running the driftool without reading this README till the end may cause severe issues.
+> :zap: Running the driftool without reading this README may cause severe problems.
 
 ## Key Metrics
 
@@ -24,7 +24,7 @@ Depending on the calculation strategy, different *Drift Flavours* are possible.
 * *Statement Drift* := a measure for the merge complexity based on the git merge conflict line count
 * *Conflict Drift* := a measure for the merge complexity based on the git merge conflict occurence count
 
-In general, higher numbers indicate a more complex repository management.
+In general, higher numbers (increase over time) indicate a more difficult repository management.
 
 :bulb: Per default, a git merge is a symmetric operation, meaning A into B produces the same conflicts as B into A. However, through certain git operations (resets, force operations, messed-up history) happens that the merge is not symmetric. For example, A into B has 2 conflicing lines, although B into A has 4 conflicting lines. As this is extremely rare, we ignore this issue for performance reasons (2x speedup).
 
@@ -39,11 +39,13 @@ In general, higher numbers indicate a more complex repository management.
 
 There are some important terms to keep in mind while reading the following instructions.
 
-The **driftool repository** is this repository you are currently in (or after cloning it onto your system). The **root** of the dirftool repository is the place this README.md is located.
+The **driftool repository** is this repository you are currently in (or after cloning it onto your system). The **root** of the dirftool repository is the place where this README.md is located.
+
+The **gradle root** is the ``driftool_kt/`` directory within the driftool repository. That's the place where the main implementation is rooted.
 
 The **repository under analysis** is the repository you want to analyze with the driftool in git mode.
 
-The **volume** or **input volume** is a folder called *volume* that contains the input data used by the driftool. This folder is mounted automatically by the driftool docker container.
+The **volume** is a folder called *volume/* that is used as the input directory in docker mode. This folder is mounted automatically by the driftool docker container. The driftool repository comes with a default volume folder. If the driftool is used without docker, the volume folder does not play any role.
 
 The **volume path** is the absolute path to the volume folder on your local system. If you use the default setup, it is the absolute path to the volume folder of the **driftool repository**.
 
@@ -51,7 +53,7 @@ The **volume root** is the space when you enter the **volume**. If, for example,
 
 ## Docker Setup
 
-> The driftool runs as a docker container application. We recommend the docker setup for all user. It is - in theory - possible to run the driftool without docker on a linux system directly. If you wish to do so, please read the code documentation.
+> The driftool runs as a docker container application. We recommend the docker setup for all user. It is - in theory - possible to run the driftool without docker on a linux system directly. If you wish to do so, please read the code documentation and have a look at the ``driftool_kt/testrun.sh`` script that starts a local run on a unix system based on example input.
 
 ### Quick Setup
 
@@ -73,18 +75,40 @@ with sudo priviledges.
 
 * ``build.sh`` is the buildscript of the docker image. Execute ``./build.sh`` to generate the docker image. If you want to configure the image creation, e.g., name, tag or location, you can modify the build command defined in the file. **You must execute this command only in the source root directory of this repository!**
 * ``run.sh`` is the entry script to start the driftool container from the image. Beforehand, the ``build.sh`` must be executed once. If the ``build.sh`` was executed without modifications, the ``run.sh`` works out of the box. Otherwise, the script must be modified accordingly. The run script takes thre positional parameters (have a look into the run.sh file or the quick setup instructions above)  Output reports are placed in the ``./volume`` directory. The container is destroyed after each run.
-Example: ``./run.sh volume/repository.yaml 64 12``: Analyzed the configured repository on 12 threads using max. 64 GB of RAM. **You must execute this command only in the source root directory of this repository!** (If you know what you are doing, you may execute the run script in any location where a matching volume directory is located as well.)
 * (``dockerfile``) is the standard entry point for ``docker build`` and describes the composition of the docker image. If you are a driftool user, you do not have to execute or touch this file.
 * (``deb_run.sh``) is the entrypoint script of the created container. It prepares the ramdisk and starts the driftool's main method. If you are a driftool user, you do not have execute or touch this file.
+
+#### ``run.sh`` Arguments
+
+```./run.sh [repo path (in volume)]  [output path (in volume)] [config path (in volume)] [RAM alloc] [threads] [mode]``` 
+
+**repo path** is the path to the repository under analysis. It must be located in the volume.
+
+**output path** is the path where the analysis reports are saved. It must be located in the volume. 
+
+**config path** is the path to the configuration .yaml file used for analysis. It must be located in the volume.
+
+**RAM** the RAM size to allocate.
+
+**threads** the number of threads for parallel analysis.
+
+**mode** the analysis mode. Use "git" for default git repository analysis. If you already have a custom distance matrix, you can use mode="matrix". **Right now, only git mode is supported!**
 
 
 #### Development Setup
 
-To execute the driftool from sources on you local file system, execute the following command in the directory where the ``build.gradle`` file is located. This assumes you have a current version of gradle (8+) and Java (JDK 21) installed on your system.
+To execute the driftool from sources on you local file system, execute the following command in the directory where the ``build.gradle`` file is located. This assumes you have a current version of gradle (8+) and Java (JDK 17+) installed on your system.
 
 ```
-gradle run --args="absolute_input absolute_working_dir config.yaml -i repo -m git -t 4"
+gradle run --args="..."
 ```
+
+Please take the argument order and descriptions from the ``Main.kt`` file located in the driftool sources or just run the command without arguments and look at the error messages.
+
+A somewhat easier way is to use the already prepared ``testrun.sh`` script within the ``driftool_kt`` folder.
+
+For meaningful repository tests, we provide an example repository with documented merge conflicts in https://github.com/convidev-tud/conflict-example
+The best way for testing is to clone the example repository into the volume folder and adjust the config template (Not that the example must not be added as a submodule!).
 
 ### Environment Settings
 
@@ -104,22 +128,6 @@ However, if the container runs in the "no ramdisk" mode, the required space will
 ### Configuration
 
 Starting the driftool requires a repository-specific config file. All arguments are mandatory.
-
-### ``run.sh`` Arguments
-
-```./run.sh [repo path (in volume)]  [output path (in volume)] [config path (in volume)] [RAM alloc] [threads] [mode]``` 
-
-**repo path** is the path to the repository under analysis. It must be located in the volume.
-
-**output path** is the path where the analysis reports are saved. It must be located in the volume. 
-
-**config path** is the path to the configuration .yaml file used for analysis. It must be located in the volume.
-
-**RAM** the RAM size to allocate.
-
-**threads** the number of threads for parallel analysis.
-
-**mode** the analysis mode. Use "git" for default git repository analysis. If you already have a custom distance matrix, you can use mode="matrix". YOu find more information at the end of this document.
 
 #### Example
 
@@ -207,19 +215,4 @@ The following partial example only analyses Java files and HTML templates adn ig
 fileWhiteList:
     - "\\.java"
     - "\\.template\\.html"
-```
-
-## Matrix Only Mode
-
-> Work in progress / Undocumented Feature
-
-You can provide a pre-caluclated distance matrix for calculating drift value and drift plot.
-
-The CSV file must look like this. The top horizontal row denotes the branch names. The same branch ordering applies to the vertical dimension. The body contains the pairwise distances. The matrix must be symmetric.
-
-```CSV
-A;B;C
-0;1;7
-1;0;1
-7;1;0
 ```

@@ -43,7 +43,7 @@ class Checksum : Callable<Int> {
             "The path must be absolute."])
     var workingPath: String = ""
 
-    @CommandLine.Parameters(index = "2", description = ["configuration path (String) from the working dir root." +
+    @CommandLine.Parameters(index = "2", description = ["configuration path (String) from the input dir root." +
             "The type of the configuration file that needs to be provided depends on the mode."])
     var configPath: String = ""
 

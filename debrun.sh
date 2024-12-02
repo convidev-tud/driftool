@@ -43,8 +43,5 @@ mount | tail -n 1
 echo preparing analysis
 ls -l
 
-# TODO build jar with gradle
-# TODO execute jar (see above)
-
-java -jar driftool-2.0.0.jar /driftool/volume' /dtmp ...  
+sudo ./driftool_kt-1.0-SNAPSHOT/bin/driftool_kt '/driftool/volume' '/dtmp' $3  -i $1 -o $2 -m $6 -t $5
 

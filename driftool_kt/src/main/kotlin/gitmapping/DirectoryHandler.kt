@@ -33,6 +33,7 @@ class DirectoryHandler(private val rootLocation: String) {
         val dirname = "$rootLocation/${getUniqueName()}"
         val result = Shell.mkdir(dirname, null)
         if (!result.isSuccessful()){
+            println(result.error)
             throw RuntimeException("Could not create temporal directory.")
         }
         return dirname

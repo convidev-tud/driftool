@@ -1,0 +1,15 @@
+jsonReport: true
+htmlReport: true
+reportIdentifier: Example Report
+timeoutDays: 30
+fileWhiteList: []
+fileBlackList: 
+    - "build\\/"
+    - "dist\\/"
+    - "gen\\/"
+    - "\\.min\\.js"
+    - "\\.lib\\.js"
+    - "\\.pdf"
+ignoreBranches:
+    - "^release\\-"
+    - "^v\\."
