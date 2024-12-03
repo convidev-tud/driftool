@@ -35,7 +35,17 @@ abstract class GitSimulation(configuration: GitModeConfiguration) : Simulation()
     private var workingRepository: Repository? = null
 
     fun prepareReferenceRepository() {
-        referenceRepository.findAllBranches()
+        //NEXT TODO
+        //find all branches
+        val rawBranchList = referenceRepository.findAllBranches()
+        println(rawBranchList.toString())
+        //build list of branches of interest (naming, timing)
+        //checkout interesting branches
+        //apply whitelist then blacklist rules and commit
+    }
+
+    fun createWorkingRepository(): Repository {
+        throw NotImplementedError("Not yet implemented")
     }
 
     fun executeMerges(branchCombinations: List<Pair<String, String>>): PartialSimulation {

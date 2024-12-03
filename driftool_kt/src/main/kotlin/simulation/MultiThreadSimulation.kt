@@ -25,6 +25,13 @@ class MultiThreadSimulation(gitModeConfiguration: GitModeConfiguration) : GitSim
     val threadCount = gitModeConfiguration.pc.threads
 
     override fun run(): DriftReport {
+        super.prepareReferenceRepository()
+        //get all branch combinations
+        //copy to all the threads
+        //run the threads
+        //wait for all threads to finish
+        //merge the results
+        //return the report
         throw NotImplementedError("Not yet implemented")
     }
 
