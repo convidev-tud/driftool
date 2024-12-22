@@ -17,6 +17,7 @@
 package io.driftool.simulation
 
 import io.driftool.DataProvider
+import io.driftool.Log
 import io.driftool.data.GitModeConfiguration
 import io.driftool.gitmapping.Repository
 
@@ -35,11 +36,15 @@ abstract class GitSimulation(configuration: GitModeConfiguration) : Simulation()
     private var workingRepository: Repository? = null
 
     fun prepareReferenceRepository() {
-        //NEXT TODO
         //find all branches
         val rawBranchList = referenceRepository.findAllBranches()
         println(rawBranchList.toString())
+        Log.append(rawBranchList.toString())
+
         //build list of branches of interest (naming, timing)
+        val interestingBranchList = referenceRepository.getBranchesOfInterest()
+
+        //NEXT TODO
         //checkout interesting branches
         //apply whitelist then blacklist rules and commit
     }

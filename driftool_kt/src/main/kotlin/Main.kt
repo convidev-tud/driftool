@@ -95,11 +95,18 @@ class Checksum : Callable<Int> {
 }
 
 fun main(args: Array<String>) {
-    exitProcess(CommandLine(Checksum()).execute(*args))
+    try {
+        exitProcess(CommandLine(Checksum()).execute(*args))
+    } catch (ex: NotImplementedError) {
+        println("NotImplementedError: ${ex.message}")
+        Log.append("NotImplementedError: ${ex.message}")
+        exitProcess(1)
+    }
 }
 
 fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
 
+    Log.append(parameterConfig.toString())
     assert(parameterConfig.inputRootPath.isNotBlank()) { "inputRootPath must be set" }
     assert(parameterConfig.absoluteConfigPath.isNotBlank()) { "configPath must be set" }
     assert(parameterConfig.mode.isNotBlank()) { "mode must be set" }
@@ -111,6 +118,8 @@ fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
     var htmlReport: Boolean = false
     var reportIdentifier: String = ""
 
+    Log.append("Mode: $mode")
+    Log.append("Setup DirectoryHandler")
     DataProvider.initDirectoryHandler(parameterConfig.absoluteWorkingPath)
     DataProvider.setWorkingDirectory(parameterConfig.absoluteWorkingPath)
 
@@ -133,6 +142,7 @@ fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
 }
 
 fun runGitSimulation(configuration: GitModeConfiguration): DriftReport {
+    Log.append("Run Git Simulation")
     val simulation: Simulation = if (configuration.pc.threads > 1) {
         MultiThreadSimulation(configuration)
     } else {

@@ -16,7 +16,13 @@
 
 package io.driftool.gitmapping
 
+import io.driftool.Log
 import io.driftool.shell.Shell
+import java.time.Instant
+import java.time.ZoneOffset
+import kotlin.time.ComparableTimeMark
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 class Repository(private val location: String) {
 
@@ -26,6 +32,11 @@ class Repository(private val location: String) {
 
     fun findAllBranches(): List<String> {
         val listBranchResult = Shell.exec(arrayOf("git", "branch", "--all"), location)
+
+        Log.append("Exciting Shell Command: " + listBranchResult.exitCode)
+        Log.append("Shell Output: " + listBranchResult.output)
+        Log.append("Shell Error: " + listBranchResult.error)
+
         if (! listBranchResult.isSuccessful()){
             println(listBranchResult.error)
             throw RuntimeException("Could not list branches: git branch --all failed in given location")
@@ -39,7 +50,7 @@ class Repository(private val location: String) {
                 .replace("remotes/origin/", "")
                 .replace("*", "")
                 .replace(" ", "")
-            if(cleanedLine.isNotEmpty() && cleanedLine != "HEAD->" && cleanedLine.isNotBlank() && !allBranches.contains(cleanedLine)){
+            if(cleanedLine.isNotEmpty() && !cleanedLine.contains("HEAD->") && cleanedLine.isNotBlank() && !allBranches.contains(cleanedLine)){
                 allBranches.add(cleanedLine)
                 println("added branch : $cleanedLine")
             }
@@ -49,44 +60,62 @@ class Repository(private val location: String) {
         return allBranches
     }
 
-    fun getBranchesOfInterest(): List<String> {
-        /*
-        excludes = list()
-        for rule in self._branch_ignores:
-            excludes.append(re.compile(rule))
+    /**
+     * Returns a list of branches that are not ignored by the repository.
+     * This applies the list of ignored branches.
+     * This also applies the timeout days.
+     * The branches of interest are returned and stored in the [branchesOfInterest] list.
+     * @param timeoutDays The number of days without activity after that a branch is considered to be out of interest.
+     * @param ignoreBranchesPatterns A list of regular expressions that define branches that should be ignored.
+     * @return A list of branches that are not ignored
+     */
+    fun getBranchesOfInterest(timeoutDays: Int, ignoreBranchesPatterns: List<String>): List<String> {
 
-        last_commits = self.get_branch_activity()
-        self.branches = list()
-        all_branches.sort()
 
-        # Check if a branch is ignored because of the regex or the commit-date timeout
-        # checkout every analyzed branch locally
-        for branch in all_branches:
+        //excludes = list()
+        //for rule in self._branch_ignores:
+        //    excludes.append(re.compile(rule))
 
-            ignore = False
+        //last_commits = self.get_branch_activity()
+        //self.branches = list()
+        //all_branches.sort()
+        val lastCommitDatePerBranch: Map<String, Instant> = findModificationDates()
 
-            for expr in excludes:
-                match = expr.search(branch)
-                if match is not None:
-                    ignore = True
+        val todayAtNoonUTC = Instant.now().atZone(ZoneOffset.UTC).withHour(12).withMinute(0).withSecond(0).withNano(0).toInstant()
+        val todayAtNoonUTCMinusTimeout = todayAtNoonUTC.minusSeconds(timeoutDays.toLong() * 24 * 60 * 60)
+
+        //Check if a branch is ignored because of the regex or the commit-date timeout
+        //checkout every analyzed branch locally
+
+        for (branch in allBranches){
+            var ignore = false
+            for (expr in ignoreBranchesPatterns){
+                val match = expr.toRegex().find(branch)
+                if (match != null){
+                    ignore = true
                     break
+                }
+            }
+            if (branch in lastCommitDatePerBranch){
+                if (timeoutDays > 0 && lastCommitDatePerBranch[branch]!!.isBefore(todayAtNoonUTCMinusTimeout) ){
+                    ignore = true
+                }
+            } else {
+                Log.append("PARSING PROBLEM: Branch $branch not found in last_commits")
+                println("PARSING PROBLEM: Branch $branch not found in last_commits")
+                ignore = true
+            }
+            if (!ignore){
+                print("Branch $branch is not ignored")
+                Log.append("Branch $branch is not ignored")
+                branchesOfInterest.add(branch)
+            }else{
+                print("Branch $branch is ignored")
+                Log.append("Branch $branch is ignored")
+            }
+        }
 
-            if branch in last_commits:
-                if self._timeout_days > 0 and last_commits[branch] > self._timeout_days:
-                    ignore = True
-            else:
-                self.log.append("PARSING PROBLEM: Branch " + branch + " not found in last_commits")
-                ignore = True
-
-            # Do not analyse the branch (do also not checkout) if it is ignored to save processing time
-            if ignore:
-                self.log.append("IGNORE branch " + branch)
-                #TODO delete the branch to improve performance
-                continue
-
-            self.branches.append(branch)
-         */
-        throw NotImplementedError()
+        return branchesOfInterest
     }
 
     fun getCurrentBranch(): String {
@@ -97,7 +126,7 @@ class Repository(private val location: String) {
         throw NotImplementedError()
     }
 
-    fun findModificationDates(): Map<String, String> {
+    fun findModificationDates(): Map<String, Instant> {
         /*
         self.log.append(">>> Start get_branch_activity")
         # Get the last commit timestamps for each branch
@@ -108,7 +137,17 @@ class Repository(private val location: String) {
         # 2024-02-26 17:41:57 +0100~origin
         # 2021-04-15 16:10:35 +0200~origin/issue/2713/text-editor-unlink
         # 2021-05-24 16:48:03 +0200~origin/issue/4405/add-menu-link-avatar
+        */
 
+        val gitDateStringsShellResult = Shell.exec(arrayOf("git", "branch", "-a", "--format=\"%(committerdate:short)~%(refname:short)\"", "|", "grep", "-v", "HEAD"), location)
+
+        Log.append("Exciting Shell Command: " + gitDateStringsShellResult.exitCode)
+        Log.append("Shell Output: " + gitDateStringsShellResult.output)
+        Log.append("Shell Error: " + gitDateStringsShellResult.error)
+
+        println(gitDateStringsShellResult.output)
+
+        /*
         datestrings = subprocess.run('git branch -a --format="%(committerdate:short)~%(refname:short)" | grep -v HEAD',
                                      capture_output=True, shell=True, cwd=self._reference_tmp_path).stdout.decode("utf-8").split("\n")
         last_commits: dict = {}
@@ -451,12 +490,18 @@ class Repository(private val location: String) {
          */
         fun cloneFromPath(absoluteRepositoryPath: String, location: String): Repository {
             println("Cloning repository from path: $absoluteRepositoryPath")
+            Log.append("Cloning repository from path: $absoluteRepositoryPath")
             val cpResult = Shell.cp(
                 DirectoryHandler.ensureDirectoryPathEnding(absoluteRepositoryPath),
                 DirectoryHandler.ensureNoDirectoryPathEnding(location), null)
 
+            Log.append("Exciting Shell Command: " + cpResult.exitCode)
+            Log.append("Shell Output: " + cpResult.output)
+            Log.append("Shell Error: " + cpResult.error)
+
             if (! cpResult.isSuccessful()){
                 println(cpResult.error)
+                Log.append(cpResult.error)
                 throw RuntimeException("Could not copy repository to new temporal location.")
             }
             return Repository(location)
