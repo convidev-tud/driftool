@@ -21,7 +21,7 @@ import io.driftool.Log
 import io.driftool.data.GitModeConfiguration
 import io.driftool.gitmapping.Repository
 
-abstract class GitSimulation(configuration: GitModeConfiguration) : Simulation() {
+abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulation() {
 
     /**
      * The reference repository is the repository that is used as the base for the simulation.
@@ -42,7 +42,7 @@ abstract class GitSimulation(configuration: GitModeConfiguration) : Simulation()
         Log.append(rawBranchList.toString())
 
         //build list of branches of interest (naming, timing)
-        val interestingBranchList = referenceRepository.getBranchesOfInterest()
+        val interestingBranchList = referenceRepository.getBranchesOfInterest(configuration.fc.timeoutDays, configuration.fc.ignoreBranches)
 
         //NEXT TODO
         //checkout interesting branches

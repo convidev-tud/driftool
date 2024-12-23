@@ -71,6 +71,7 @@ class Repository(private val location: String) {
      */
     fun getBranchesOfInterest(timeoutDays: Int, ignoreBranchesPatterns: List<String>): List<String> {
 
+        println(">>> Start getBranchesOfInterest")
 
         //excludes = list()
         //for rule in self._branch_ignores:
@@ -137,14 +138,24 @@ class Repository(private val location: String) {
         # 2024-02-26 17:41:57 +0100~origin
         # 2021-04-15 16:10:35 +0200~origin/issue/2713/text-editor-unlink
         # 2021-05-24 16:48:03 +0200~origin/issue/4405/add-menu-link-avatar
+
+        On Mac:
+        2024-11-20~main
+        2024-11-20~origin
+        2024-11-20~origin/feature/a
+        2024-11-20~origin/feature/b
+        2024-11-20~origin/feature/c
+        2024-11-20~origin/main
         */
 
-        val gitDateStringsShellResult = Shell.exec(arrayOf("git", "branch", "-a", "--format=\"%(committerdate:short)~%(refname:short)\"", "|", "grep", "-v", "HEAD"), location)
+        val gitDateStringsShellResult = Shell.execComplexCommand("git branch -a --format=\"%(committerdate:short)~%(refname:short)\" | grep -v HEAD", location)
 
         Log.append("Exciting Shell Command: " + gitDateStringsShellResult.exitCode)
         Log.append("Shell Output: " + gitDateStringsShellResult.output)
         Log.append("Shell Error: " + gitDateStringsShellResult.error)
 
+
+        println(gitDateStringsShellResult.error)
         println(gitDateStringsShellResult.output)
 
         /*

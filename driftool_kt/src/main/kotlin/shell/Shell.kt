@@ -17,6 +17,7 @@
 package io.driftool.shell
 
 import java.io.File
+import java.util.UUID
 
 /**
  * Provides the set of required shell commands.
@@ -46,6 +47,19 @@ object Shell {
         val result = process.exitValue()
         return ShellResult(result, output, error)
     }
+
+    fun execComplexCommand(command: String, workingDirectory: String): ShellResult {
+        val randomKey = UUID.randomUUID().toString()
+        val commandFileName = "command_$randomKey"
+        val commandFile = File.createTempFile(commandFileName, ".sh", File(workingDirectory))
+        commandFile.writeText("#!/bin/bash\n$command")
+        commandFile.deleteOnExit()
+        val result = exec(arrayOf("sh", commandFile.absolutePath), workingDirectory)
+        commandFile.delete()
+        return result
+    }
+
+
 
     /**
      * Create a directory. The directory must not yet exist.
