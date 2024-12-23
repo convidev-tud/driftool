@@ -129,17 +129,7 @@ class Repository(private val location: String) {
 
     fun findModificationDates(): Map<String, Instant> {
         /*
-        self.log.append(">>> Start get_branch_activity")
-        # Get the last commit timestamps for each branch
-        # git branch -l --format="%(committerdate:iso8601)~%(refname:short)" | grep -v HEAD
-        # EXAMPLES:
-        # 2024-03-02 20:52:47 +0100~12-dockerization
-        # 2024-02-26 17:41:57 +0100~main
-        # 2024-02-26 17:41:57 +0100~origin
-        # 2021-04-15 16:10:35 +0200~origin/issue/2713/text-editor-unlink
-        # 2021-05-24 16:48:03 +0200~origin/issue/4405/add-menu-link-avatar
-
-        On Mac:
+        Get the last commit timestamps for each branch:
         2024-11-20~main
         2024-11-20~origin
         2024-11-20~origin/feature/a
@@ -147,42 +137,40 @@ class Repository(private val location: String) {
         2024-11-20~origin/feature/c
         2024-11-20~origin/main
         */
+        val lastCommitDates: MutableMap<String, Instant> = mutableMapOf()
 
         val gitDateStringsShellResult = Shell.execComplexCommand("git branch -a --format=\"%(committerdate:short)~%(refname:short)\" | grep -v HEAD", location)
 
         Log.append("Exciting Shell Command: " + gitDateStringsShellResult.exitCode)
         Log.append("Shell Output: " + gitDateStringsShellResult.output)
         Log.append("Shell Error: " + gitDateStringsShellResult.error)
-
-
         println(gitDateStringsShellResult.error)
         println(gitDateStringsShellResult.output)
 
-        /*
-        datestrings = subprocess.run('git branch -a --format="%(committerdate:short)~%(refname:short)" | grep -v HEAD',
-                                     capture_output=True, shell=True, cwd=self._reference_tmp_path).stdout.decode("utf-8").split("\n")
-        last_commits: dict = {}
-        for datestring in datestrings:
-            if not datestring:
+        if(!gitDateStringsShellResult.isSuccessful()){
+            throw RuntimeException("Could not get last commit timestamps for each branch")
+        }
+        val gitDateStrings = gitDateStringsShellResult.output.split("\n")
+
+        for(dateString in gitDateStrings){
+            if(! dateString.contains("~")){
                 continue
-            split = datestring.split("~")
-            commit_date = datetime.fromisoformat(split[0])
-            commit_date = commit_date.replace(tzinfo=pytz.UTC).replace(hour=12, minute=0, second=0, microsecond=0)
-            branch = split[1]
-            if branch.startswith("origin/"):
+            }
+            val split = dateString.split("~")
+            // Setting the timeout time to always 12:00 avoids timout problems depending on the analysis time.
+            // Consequently, all analysis runs of the same day will lead to the same results.
+            val commitDate: Instant = Instant.parse(split[0]).atZone(ZoneOffset.UTC).withHour(12).withMinute(0).withSecond(0).withNano(0).toInstant()
+
+            var branch = split[1]
+            if(branch.startsWith("origin/")){
                 branch = branch.replace("origin/", "")
+            }
+            lastCommitDates.put(branch, commitDate)
+            Log.append("RAW: $dateString")
+            Log.append("Branch $branch last commit: $commitDate")
+        }
 
-            # Setting the timeout time to always 12:00 avoids timout problems depending on the analysis time.
-            # Consequently, all analysis runs of the same day will lead to the same results.
-            today = datetime.now(timezone.utc).replace(hour=12, minute=0, second=0, microsecond=0)
-            last_commits[branch] = (today - commit_date).days
-            self.log.append("RAW: " + datestring)
-            self.log.append("Branch " + branch + " last commit: " + str(commit_date))
-
-        self.log.append("<<< End get_branch_activity")
-        return last_commits
-         */
-        throw NotImplementedError()
+        return lastCommitDates
     }
 
     fun applyWhiteList(whiteList: List<String>) {
