@@ -98,7 +98,6 @@ fun main(args: Array<String>) {
     try {
         exitProcess(CommandLine(Checksum()).execute(*args))
     } catch (ex: NotImplementedError) {
-        println("NotImplementedError: ${ex.message}")
         Log.append("NotImplementedError: ${ex.message}")
         exitProcess(1)
     }

@@ -16,6 +16,7 @@
 
 package io.driftool.gitmapping
 
+import io.driftool.Log
 import io.driftool.shell.Shell
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -33,7 +34,7 @@ class DirectoryHandler(private val rootLocation: String) {
         val dirname = "$rootLocation/${getUniqueName()}"
         val result = Shell.mkdir(dirname, null)
         if (!result.isSuccessful()){
-            println(result.error)
+            Log.append("Could not create temporal directory.")
             throw RuntimeException("Could not create temporal directory.")
         }
         return dirname

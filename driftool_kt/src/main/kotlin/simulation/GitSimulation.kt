@@ -38,15 +38,24 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
     fun prepareReferenceRepository() {
         //find all branches
         val rawBranchList = referenceRepository.findAllBranches()
-        println(rawBranchList.toString())
         Log.append(rawBranchList.toString())
 
         //build list of branches of interest (naming, timing)
         val interestingBranchList = referenceRepository.getBranchesOfInterest(configuration.fc.timeoutDays, configuration.fc.ignoreBranches)
 
-        //NEXT TODO
-        //checkout interesting branches
-        //apply whitelist then blacklist rules and commit
+        referenceRepository.initializeCurrentBranch()
+
+        for(branch in interestingBranchList){
+            Log.append("Preparing branch $branch")
+            referenceRepository.sanitize()
+            referenceRepository.checkoutBranch(branch)
+            referenceRepository.sanitize()
+            referenceRepository.applyWhiteList(configuration.fc.fileWhiteList)
+            referenceRepository.commitChanges("Apply whitelist")
+            referenceRepository.applyBlackList(configuration.fc.fileBlackList)
+            referenceRepository.commitChanges("Apply blacklist")
+            Log.append(">>> Branch $branch prepared")
+        }
     }
 
     fun createWorkingRepository(): Repository {

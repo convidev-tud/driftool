@@ -8,7 +8,14 @@ object Log {
 
     private val log: Map<String, String> = ConcurrentHashMap<String, String>()
 
+    private var print: Boolean = true
+
+    fun setPrint(value: Boolean){
+        print = value
+    }
+
     fun append(elem: String){
+        if (print) println("LOG <<< $elem")
         val currentTimeStamp = TimeSource.Monotonic.markNow().toString()
         val randomPart = Random.nextInt().toString()
         log.plus(Pair(currentTimeStamp + "_" + randomPart, elem))

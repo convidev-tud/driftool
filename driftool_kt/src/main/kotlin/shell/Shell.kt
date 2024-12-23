@@ -16,6 +16,7 @@
 
 package io.driftool.shell
 
+import io.driftool.Log
 import java.io.File
 import java.util.UUID
 
@@ -26,6 +27,8 @@ import java.util.UUID
  * This class is intended for usage on a Debian based system.
  */
 object Shell {
+
+    var withLogging = true
 
     /**
      * Execute a shell command.
@@ -45,6 +48,11 @@ object Shell {
         val output = inputStream.bufferedReader().readText()
         val error = errorStream.bufferedReader().readText()
         val result = process.exitValue()
+
+        Log.append("Exciting Shell Command: $result")
+        Log.append("Shell Output: $output")
+        Log.append("Shell Error: $error")
+
         return ShellResult(result, output, error)
     }
 

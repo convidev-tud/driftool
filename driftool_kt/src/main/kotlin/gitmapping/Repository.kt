@@ -18,8 +18,14 @@ package io.driftool.gitmapping
 
 import io.driftool.Log
 import io.driftool.shell.Shell
+import java.nio.file.Path
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneOffset
+import kotlin.io.path.Path
+import kotlin.io.path.deleteIfExists
+import kotlin.io.path.isDirectory
+import kotlin.io.path.listDirectoryEntries
 import kotlin.time.ComparableTimeMark
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
@@ -28,21 +34,15 @@ class Repository(private val location: String) {
 
     private val allBranches: MutableList<String> = mutableListOf()
     private val branchesOfInterest: MutableList<String> = mutableListOf()
-    private val currentBranch: String? = null
+    private var currentBranch: String? = null
 
     fun findAllBranches(): List<String> {
         val listBranchResult = Shell.exec(arrayOf("git", "branch", "--all"), location)
 
-        Log.append("Exciting Shell Command: " + listBranchResult.exitCode)
-        Log.append("Shell Output: " + listBranchResult.output)
-        Log.append("Shell Error: " + listBranchResult.error)
-
         if (! listBranchResult.isSuccessful()){
-            println(listBranchResult.error)
             throw RuntimeException("Could not list branches: git branch --all failed in given location")
         }
         val stdout = listBranchResult.output
-        println(stdout)
         val allBranches: MutableList<String> = mutableListOf()
 
         for (line in stdout.split("\n")){
@@ -73,15 +73,7 @@ class Repository(private val location: String) {
 
         println(">>> Start getBranchesOfInterest")
 
-        //excludes = list()
-        //for rule in self._branch_ignores:
-        //    excludes.append(re.compile(rule))
-
-        //last_commits = self.get_branch_activity()
-        //self.branches = list()
-        //all_branches.sort()
         val lastCommitDatePerBranch: Map<String, Instant> = findModificationDates()
-
         val todayAtNoonUTC = Instant.now().atZone(ZoneOffset.UTC).withHour(12).withMinute(0).withSecond(0).withNano(0).toInstant()
         val todayAtNoonUTCMinusTimeout = todayAtNoonUTC.minusSeconds(timeoutDays.toLong() * 24 * 60 * 60)
 
@@ -103,15 +95,12 @@ class Repository(private val location: String) {
                 }
             } else {
                 Log.append("PARSING PROBLEM: Branch $branch not found in last_commits")
-                println("PARSING PROBLEM: Branch $branch not found in last_commits")
                 ignore = true
             }
             if (!ignore){
-                print("Branch $branch is not ignored")
                 Log.append("Branch $branch is not ignored")
                 branchesOfInterest.add(branch)
             }else{
-                print("Branch $branch is ignored")
                 Log.append("Branch $branch is ignored")
             }
         }
@@ -120,11 +109,11 @@ class Repository(private val location: String) {
     }
 
     fun getCurrentBranch(): String {
-        throw NotImplementedError()
+        return currentBranch ?: throw RuntimeException("Current branch is not set")
     }
 
     fun getAllBranches(): List<String> {
-        throw NotImplementedError()
+        return allBranches
     }
 
     fun findModificationDates(): Map<String, Instant> {
@@ -138,14 +127,7 @@ class Repository(private val location: String) {
         2024-11-20~origin/main
         */
         val lastCommitDates: MutableMap<String, Instant> = mutableMapOf()
-
         val gitDateStringsShellResult = Shell.execComplexCommand("git branch -a --format=\"%(committerdate:short)~%(refname:short)\" | grep -v HEAD", location)
-
-        Log.append("Exciting Shell Command: " + gitDateStringsShellResult.exitCode)
-        Log.append("Shell Output: " + gitDateStringsShellResult.output)
-        Log.append("Shell Error: " + gitDateStringsShellResult.error)
-        println(gitDateStringsShellResult.error)
-        println(gitDateStringsShellResult.output)
 
         if(!gitDateStringsShellResult.isSuccessful()){
             throw RuntimeException("Could not get last commit timestamps for each branch")
@@ -159,7 +141,7 @@ class Repository(private val location: String) {
             val split = dateString.split("~")
             // Setting the timeout time to always 12:00 avoids timout problems depending on the analysis time.
             // Consequently, all analysis runs of the same day will lead to the same results.
-            val commitDate: Instant = Instant.parse(split[0]).atZone(ZoneOffset.UTC).withHour(12).withMinute(0).withSecond(0).withNano(0).toInstant()
+            val commitDate: Instant = LocalDate.parse(split[0]).atStartOfDay(ZoneOffset.UTC).withHour(12).withMinute(0).withSecond(0).withNano(0).toInstant()
 
             var branch = split[1]
             if(branch.startsWith("origin/")){
@@ -174,6 +156,7 @@ class Repository(private val location: String) {
     }
 
     fun applyWhiteList(whiteList: List<String>) {
+        //TODO
         /*
         def keep_whitelist(regex_list: list[str], root_path: str, remove_hidden: bool, log: list[str]):
 
@@ -240,7 +223,38 @@ class Repository(private val location: String) {
         throw NotImplementedError()
     }
 
-    fun applyBlackList(blackList: List<String>) {
+    /**
+     * FIXME: TO BE TESTED INTENSIVELY
+     */
+    fun applyBlackList(blackList: List<String>, rootLocation: String? = null) {
+        Log.append("Applying blacklist to branch $currentBranch")
+
+        val workingLocation = rootLocation ?: location
+        val gitPattern = Regex("\\.git")
+        val gitignorePattern = Regex("\\.gitignore")
+        val blackListPatterns = blackList.map { it.toRegex() }
+
+        val allFilesInLocation: List<Path> = Path(workingLocation).listDirectoryEntries()
+
+        for(elem in allFilesInLocation){
+            if(gitPattern.find(elem.fileName.toString()) != null || gitignorePattern.find(elem.fileName.toString()) != null){
+                continue
+            }
+            if(elem.isDirectory()){
+                applyBlackList(blackList, elem.toString())
+                continue
+            }
+            for(pattern in blackListPatterns){
+                if(pattern.find(elem.fileName.toString()) != null){
+                    val delete = elem.deleteIfExists()
+                    if(!delete){
+                        throw RuntimeException("Could not delete file: ${elem.fileName}")
+                    }
+                }
+            }
+        }
+
+        //TODO
         /*
         def purge_blacklist(regex_list: list[str], root_path: str, remove_hidden: bool, log: list[str]):
 
@@ -271,75 +285,55 @@ class Repository(private val location: String) {
     }
 
     fun commitChanges(message: String) {
-        /*
-         out1 = subprocess.run(["git", "add", "--all"], capture_output=True, cwd=self._reference_tmp_path)
+        Log.append("Committing changes to branch $currentBranch with message: $message")
+        Log.append("Adding all files")
 
-            if out1.returncode != 0:
-                self.log.append(str(out1.stderr.decode("utf-8")))
-                raise Exception("Failed to add selected files")
+        val addResult = Shell.exec(arrayOf("git", "add", "--all"), location)
+        if (! addResult.isSuccessful()){
+            throw RuntimeException("Could not add all files to git")
+        }
+        val commitResult = Shell.exec(arrayOf("git", "commit", "-m", message), location)
+        if (! commitResult.isSuccessful()){
+            throw RuntimeException("Could not commit changes to git")
+        }
+    }
 
-            out2 = subprocess.run(["git", "commit", "-m", '"close setup (driftool)"'], capture_output=True, cwd=self._reference_tmp_path)
-            if out2.returncode != 0:
-                self.log.append(str(out2.stderr.decode("utf-8")))
-                raise Exception("Failed to commit file selectors")
-         */
-        throw NotImplementedError()
+    fun initializeCurrentBranch() {
+        Log.append("Initializing current branch")
+        val branchShellResult = Shell.exec(arrayOf("git", "branch", "--show-current"), location)
+        if (! branchShellResult.isSuccessful()){
+            throw RuntimeException("Could not get current branch")
+        }
+        currentBranch = branchShellResult.output.trim()
     }
 
     fun checkoutBranch(branch: String) {
-        /*
-        #self.reset_hard(path, self.log)
-            #self.clean_f_d_x(path, self.log)
-
-            res_checkout = subprocess.run(["git", "checkout", branch], capture_output=True, cwd=path)
-
-            self.reset_hard(path, self.log)
-            self.clean_f_d_x(path, self.log)
-
-            if res_checkout.returncode != 0:
-                self.log.append(str(res_checkout.stderr.decode("utf-8")))
-                raise Exception("Failed to materialize branches of interest")
-         */
-        throw NotImplementedError()
+        Log.append("Checking out from $currentBranch into $branch")
+        val result = Shell.exec(arrayOf("git", "checkout", branch), location)
+        if (! result.isSuccessful()){
+            throw RuntimeException("Could not checkout from $currentBranch into $branch")
+        }
+        currentBranch = branch
     }
 
     fun resetHard() {
-        /*
-         reset = subprocess.run(["git", "reset", "--hard"], capture_output=True, cwd=path)
-        if log is not None:
-            log.append(str(reset.stdout.decode("utf-8")))
-        if reset.returncode != 0:
-            if log is not None:
-                self.log.append(str(reset.stderr.decode("utf-8")))
-            raise Exception("Failed to reset base branch")
-         */
-        throw NotImplementedError()
-    }
-
-    fun resetHardToHead() {
-        throw NotImplementedError()
-    }
-
-    fun getHeadHash(): String {
-        throw NotImplementedError()
+        Log.append("Resetting current branch $currentBranch")
+        val result = Shell.exec(arrayOf("git", "reset", "--hard"), location)
+        if (! result.isSuccessful()){
+            throw RuntimeException("Could not reset current branch $currentBranch")
+        }
     }
 
     fun cleanFDX() {
-        /*
-         if log is not None:
-            log.append("Clean branch")
-        res_clean = subprocess.run(["git", "clean", "-f", "-d", "-x"], capture_output=True, cwd=path)
-        if log is not None:
-            self.log.append(str(res_clean.stdout.decode("utf-8")))
-            if res_clean.returncode != 0:
-                self.log.append(str(res_clean.stderr.decode("utf-8")))
-        if res_clean.returncode != 0:
-            raise Exception("Failed to materialize branches of interest")
-         */
-        throw NotImplementedError()
+        Log.append("Cleaning (-fdx) current branch $currentBranch")
+        val result = Shell.exec(arrayOf("git", "clean", "-fdx"), location)
+        if (! result.isSuccessful()){
+            throw RuntimeException("Could not clean current branch $currentBranch")
+        }
     }
 
     fun sanitize() {
+        Log.append("Sanitizing current branch $currentBranch")
         resetHard()
         cleanFDX()
     }
