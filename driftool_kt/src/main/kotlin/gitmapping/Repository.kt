@@ -25,12 +25,10 @@ import java.time.ZoneOffset
 import kotlin.io.path.Path
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.isDirectory
+import kotlin.io.path.isSymbolicLink
 import kotlin.io.path.listDirectoryEntries
-import kotlin.time.ComparableTimeMark
-import kotlin.time.TimeMark
-import kotlin.time.TimeSource
 
-class Repository(private val location: String) {
+class Repository(val location: String) {
 
     private val allBranches: MutableList<String> = mutableListOf()
     private val branchesOfInterest: MutableList<String> = mutableListOf()
@@ -155,133 +153,63 @@ class Repository(private val location: String) {
         return lastCommitDates
     }
 
-    fun applyWhiteList(whiteList: List<String>) {
-        //TODO
-        /*
-        def keep_whitelist(regex_list: list[str], root_path: str, remove_hidden: bool, log: list[str]):
+    fun applyWhiteList(whiteList: List<String>, rootLocation: String? = null) {
+        Log.append("Applying whitelist to branch $currentBranch")
+        val workingLocation = rootLocation ?: location
+        applyPathList(whiteList, workingLocation, true)
+    }
 
-    try:
-        git_pattern = re.compile("\.git")
-        patterns = list()
-
-        for regex in regex_list:
-            pattern = re.compile(regex)
-            patterns.append(pattern)
-
-        match_count = 0
-        symlink_count = 0
-
-        os.access(root_path, stat.S_IWUSR)
-
-        for root, dirs, files in os.walk(root_path, topdown=True):
-
-            if git_pattern.search(str(root)) is None:
-                #print("TRAVERSE: " + str(root) + " " + str(dirs) + " " + str(files))
-
-                for file in files:
-
-                    do_purge = True
-                    full_path = os.path.join(root, file)
-
-                    if os.path.islink(full_path):
-                        os.unlink(full_path)
-                        symlink_count += 1
-                        continue
-
-                    for pattern in patterns:
-                        if pattern.search(file) is not None:
-                            do_purge = False
-                            break;
-
-                    if do_purge:
-                        os.remove(full_path)
-                        match_count += 1
-
-        if remove_hidden:
-            log.append("Attempt delete hidden files")
-            items = os.listdir(root_path)
-            for item in items:
-                item_path = os.path.join(root_path, item)
-                if item.startswith('.') and not item == ".git" :
-                    log.append("REMOVE HIDDEN: " + item)
-                    if os.path.isdir(item_path):
-                        shutil.rmtree(item_path)
-                    else:
-                        os.remove(item_path)
-
-
-        print("PURGE " + str(match_count) + " FILES")
-        print("SYMLK " + str(symlink_count) + " FILES")
-        log.append("PURGE " + str(match_count))
-        log.append("SYMLK " + str(symlink_count))
-
-    except Exception as e:
-        log.append("Exception during whitelist processing")
-        log.append(str(e))
-        raise e
-         */
-        throw NotImplementedError()
+    fun applyBlackList(blackList: List<String>, rootLocation: String? = null) {
+        Log.append("Applying blacklist to branch $currentBranch")
+        val workingLocation = rootLocation ?: location
+        applyPathList(blackList, workingLocation, false)
     }
 
     /**
      * FIXME: TO BE TESTED INTENSIVELY
      */
-    fun applyBlackList(blackList: List<String>, rootLocation: String? = null) {
-        Log.append("Applying blacklist to branch $currentBranch")
-
-        val workingLocation = rootLocation ?: location
+    private fun applyPathList(list: List<String>, rootLocation: String, keepMatches: Boolean){
         val gitPattern = Regex("\\.git")
-        val gitignorePattern = Regex("\\.gitignore")
-        val blackListPatterns = blackList.map { it.toRegex() }
-
-        val allFilesInLocation: List<Path> = Path(workingLocation).listDirectoryEntries()
+        val patterns = list.map { it.toRegex() }
+        val locationSuffix = rootLocation.removePrefix(location)
+        val allFilesInLocation: List<Path> = Path(rootLocation).listDirectoryEntries()
 
         for(elem in allFilesInLocation){
-            if(gitPattern.find(elem.fileName.toString()) != null || gitignorePattern.find(elem.fileName.toString()) != null){
+            if(gitPattern.find(locationSuffix.toString()) != null){
+                //Skip everything related to the git repository itself (.git/.gitignore/.gitkeep/...
+                continue
+            }
+            if(elem.isSymbolicLink()){
+                Log.append("Symbolic link found: ${elem.fileName} -> deleting")
+                delete(elem)
                 continue
             }
             if(elem.isDirectory()){
-                applyBlackList(blackList, elem.toString())
+                applyBlackList(list, elem.toString())
                 continue
             }
-            for(pattern in blackListPatterns){
-                if(pattern.find(elem.fileName.toString()) != null){
-                    val delete = elem.deleteIfExists()
-                    if(!delete){
-                        throw RuntimeException("Could not delete file: ${elem.fileName}")
-                    }
+            for(pattern in patterns){
+                val elemSuffix = elem.toString().removePrefix(Path(location).toString())
+                val isMatch = pattern.find(elemSuffix) != null
+
+                //case applying the blacklist and file is in the blacklist
+                if(isMatch && !keepMatches) {
+                    delete(elem)
+                }
+
+                //case applying the whitelist and file is not in the whitelist
+                if(!isMatch && keepMatches){
+                    delete(elem)
                 }
             }
         }
+    }
 
-        //TODO
-        /*
-        def purge_blacklist(regex_list: list[str], root_path: str, remove_hidden: bool, log: list[str]):
-
-    git_pattern = re.compile("\.git")
-
-    for regex in regex_list:
-        pattern = re.compile(regex)
-        for root, dirs, files in os.walk(root_path):
-
-            if git_pattern.search(str(root)) is None:
-                #print("TRAVERSE: " + str(root) + " " + str(dirs) + " " + str(files))
-
-                for file in files:
-                    if pattern.search(root + file) is not None:
-                        os.remove(os.path.join(root, file))
-
-    if remove_hidden:
-        items = os.listdir(root_path)
-        for item in items:
-            item_path = os.path.join(root_path, item)
-            if item.startswith('.') and git_pattern.search(str(item_path)) is None :
-                if os.path.isdir(item_path):
-                    shutil.rmtree(item_path)
-                else:
-                    os.remove(item_path)
-         */
-        throw NotImplementedError()
+    private fun delete(elem: Path){
+        val delete = elem.deleteIfExists()
+        if(!delete){
+            throw RuntimeException("Could not delete file: ${elem.fileName}")
+        }
     }
 
     fun commitChanges(message: String) {
@@ -466,7 +394,11 @@ class Repository(private val location: String) {
     }
 
     fun deleteRepository() {
-        throw NotImplementedError()
+        Log.append("Deleting repository at $location")
+        val result = Shell.rmrf(location, null)
+        if (! result.isSuccessful()){
+            throw RuntimeException("Could not delete repository at $location")
+        }
     }
 
     companion object {

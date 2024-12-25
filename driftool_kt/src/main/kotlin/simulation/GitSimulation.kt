@@ -33,8 +33,6 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
         DataProvider.getDirectoryHandler().createTemporalDirectory()
     )
 
-    private var workingRepository: Repository? = null
-
     fun prepareReferenceRepository() {
         //find all branches
         val rawBranchList = referenceRepository.findAllBranches()
@@ -59,15 +57,15 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
     }
 
     fun createWorkingRepository(): Repository {
-        throw NotImplementedError("Not yet implemented")
+        val workingRepository = Repository.cloneFromPath(
+            referenceRepository.location,
+            DataProvider.getDirectoryHandler().createTemporalDirectory()
+        )
+        return workingRepository
     }
 
     fun executeMerges(branchCombinations: List<Pair<String, String>>): PartialSimulation {
         throw NotImplementedError("Not yet implemented")
-    }
-
-    fun deleteWorkingRepository() {
-        workingRepository?.deleteRepository()
     }
 
     fun deleteReferenceRepository() {

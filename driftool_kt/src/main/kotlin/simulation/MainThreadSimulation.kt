@@ -24,6 +24,8 @@ class MainThreadSimulation(gitModeConfiguration: GitModeConfiguration) : GitSimu
 
         override fun run(): DriftReport {
             super.prepareReferenceRepository()
+            super.createWorkingRepository()
+            //TODO
             throw NotImplementedError("Not yet implemented")
         }
 

@@ -27,11 +27,23 @@ class MultiThreadSimulation(gitModeConfiguration: GitModeConfiguration) : GitSim
     override fun run(): DriftReport {
         super.prepareReferenceRepository()
         //get all branch combinations
+        //TODO
         //copy to all the threads
+        //TODO
         //run the threads
+        //TODO
         //wait for all threads to finish
+        //TODO
         //merge the results
+        //TODO
         //return the report
+        //TODO
+        throw NotImplementedError("Not yet implemented")
+    }
+
+    private fun getBranchCombinations(): List<Pair<String, String>> {
+        val branchCombinations = mutableListOf<Pair<String, String>>()
+
         throw NotImplementedError("Not yet implemented")
     }
 
