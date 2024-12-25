@@ -49,10 +49,13 @@ object Shell {
         val error = errorStream.bufferedReader().readText()
         val result = process.exitValue()
 
-        Log.append("Exciting Shell Command: $result")
-        Log.append("Shell Output: $output")
-        Log.append("Shell Error: $error")
-
+        if (withLogging) {
+            val commandString = command.joinToString(" ")
+            Log.append("Exciting Shell Command: $commandString")
+            Log.append("Exciting Shell Command: $result")
+            if(output.isNotEmpty()) Log.append("Shell Output: $output")
+            if(error.isNotEmpty()) Log.append("Shell Error: $error")
+        }
         return ShellResult(result, output, error)
     }
 

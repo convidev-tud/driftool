@@ -31,7 +31,8 @@ class DirectoryHandler(private val rootLocation: String) {
      * @return the path to the created directory as absolute path
      */
     fun createTemporalDirectory(): String {
-        val dirname = "$rootLocation/${getUniqueName()}"
+        val trunk = ensureNoDirectoryPathEnding(rootLocation)
+        val dirname = "$trunk/${getUniqueName()}"
         val result = Shell.mkdir(dirname, null)
         if (!result.isSuccessful()){
             Log.append("Could not create temporal directory.")

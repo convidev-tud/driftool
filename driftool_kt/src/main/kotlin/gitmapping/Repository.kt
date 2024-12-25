@@ -50,7 +50,7 @@ class Repository(val location: String) {
                 .replace(" ", "")
             if(cleanedLine.isNotEmpty() && !cleanedLine.contains("HEAD->") && cleanedLine.isNotBlank() && !allBranches.contains(cleanedLine)){
                 allBranches.add(cleanedLine)
-                println("added branch : $cleanedLine")
+                Log.append("added branch : $cleanedLine")
             }
         }
         this.allBranches.clear()
@@ -68,8 +68,7 @@ class Repository(val location: String) {
      * @return A list of branches that are not ignored
      */
     fun getBranchesOfInterest(timeoutDays: Int, ignoreBranchesPatterns: List<String>): List<String> {
-
-        println(">>> Start getBranchesOfInterest")
+        Log.append(">>> Start getBranchesOfInterest")
 
         val lastCommitDatePerBranch: Map<String, Instant> = findModificationDates()
         val todayAtNoonUTC = Instant.now().atZone(ZoneOffset.UTC).withHour(12).withMinute(0).withSecond(0).withNano(0).toInstant()
@@ -154,13 +153,13 @@ class Repository(val location: String) {
     }
 
     fun applyWhiteList(whiteList: List<String>, rootLocation: String? = null) {
-        Log.append("Applying whitelist to branch $currentBranch")
+        Log.append("Applying whitelist to branch $currentBranch in location $location")
         val workingLocation = rootLocation ?: location
         applyPathList(whiteList, workingLocation, true)
     }
 
     fun applyBlackList(blackList: List<String>, rootLocation: String? = null) {
-        Log.append("Applying blacklist to branch $currentBranch")
+        Log.append("Applying blacklist to branch $currentBranch in location $location")
         val workingLocation = rootLocation ?: location
         applyPathList(blackList, workingLocation, false)
     }
@@ -172,31 +171,39 @@ class Repository(val location: String) {
         val gitPattern = Regex("\\.git")
         val patterns = list.map { it.toRegex() }
         val locationSuffix = rootLocation.removePrefix(location)
+        Log.append("Applying list to locationSuffix: $locationSuffix")
         val allFilesInLocation: List<Path> = Path(rootLocation).listDirectoryEntries()
 
         for(elem in allFilesInLocation){
-            if(gitPattern.find(locationSuffix.toString()) != null){
+            Log.append("Checking file: ${elem.fileName} /// $elem")
+            if(gitPattern.find(elem.toString()) != null){
                 //Skip everything related to the git repository itself (.git/.gitignore/.gitkeep/...
+                Log.append("--skip (git related)")
                 continue
             }
             if(elem.isSymbolicLink()){
                 Log.append("Symbolic link found: ${elem.fileName} -> deleting")
                 delete(elem)
+                Log.append("--delete")
                 continue
             }
             if(elem.isDirectory()){
-                applyBlackList(list, elem.toString())
+                Log.append("--traverse")
+                if(keepMatches){
+                    applyPathList(list, elem.toString(), true)
+                }else{
+                    applyPathList(list, elem.toString(), false)
+                }
                 continue
             }
+            Log.append("--check file")
             for(pattern in patterns){
-                val elemSuffix = elem.toString().removePrefix(Path(location).toString())
+                val elemSuffix = elem.fileName.toString()
                 val isMatch = pattern.find(elemSuffix) != null
-
                 //case applying the blacklist and file is in the blacklist
                 if(isMatch && !keepMatches) {
                     delete(elem)
                 }
-
                 //case applying the whitelist and file is not in the whitelist
                 if(!isMatch && keepMatches){
                     delete(elem)
@@ -221,9 +228,9 @@ class Repository(val location: String) {
             throw RuntimeException("Could not add all files to git")
         }
         val commitResult = Shell.exec(arrayOf("git", "commit", "-m", message), location)
-        if (! commitResult.isSuccessful()){
-            throw RuntimeException("Could not commit changes to git")
-        }
+        //if (! commitResult.isSuccessful()){
+        //    throw RuntimeException("Could not commit changes to git")
+        //}
     }
 
     fun initializeCurrentBranch() {
@@ -238,9 +245,9 @@ class Repository(val location: String) {
     fun checkoutBranch(branch: String) {
         Log.append("Checking out from $currentBranch into $branch")
         val result = Shell.exec(arrayOf("git", "checkout", branch), location)
-        if (! result.isSuccessful()){
-            throw RuntimeException("Could not checkout from $currentBranch into $branch")
-        }
+        //if (! result.isSuccessful()){
+        //    throw RuntimeException("Could not checkout from $currentBranch into $branch")
+        //}
         currentBranch = branch
     }
 
@@ -414,8 +421,8 @@ class Repository(val location: String) {
          * @return The repository object of the new location.
          */
         fun cloneFromPath(absoluteRepositoryPath: String, location: String): Repository {
-            println("Cloning repository from path: $absoluteRepositoryPath")
             Log.append("Cloning repository from path: $absoluteRepositoryPath")
+            Log.append("Cloning repository to location: $location")
             val cpResult = Shell.cp(
                 DirectoryHandler.ensureDirectoryPathEnding(absoluteRepositoryPath),
                 DirectoryHandler.ensureNoDirectoryPathEnding(location), null)
@@ -425,7 +432,6 @@ class Repository(val location: String) {
             Log.append("Shell Error: " + cpResult.error)
 
             if (! cpResult.isSuccessful()){
-                println(cpResult.error)
                 Log.append(cpResult.error)
                 throw RuntimeException("Could not copy repository to new temporal location.")
             }
