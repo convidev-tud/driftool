@@ -92,6 +92,10 @@ object Shell {
         return exec(arrayOf("rm", "-rf", directory), workingDirectory)
     }
 
+    fun rm(file: String, workingDirectory: String? = null): ShellResult {
+        return exec(arrayOf("rm", file), workingDirectory)
+    }
+
     /**
      * Copy a file or directory and its contents recursively.
      * This operation uses the cp command with the -r flag. No path modification is done.

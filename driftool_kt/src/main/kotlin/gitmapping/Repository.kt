@@ -23,7 +23,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import kotlin.io.path.Path
-import kotlin.io.path.deleteIfExists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isSymbolicLink
 import kotlin.io.path.listDirectoryEntries
@@ -33,6 +32,7 @@ class Repository(val location: String) {
     private val allBranches: MutableList<String> = mutableListOf()
     private val branchesOfInterest: MutableList<String> = mutableListOf()
     private var currentBranch: String? = null
+    var defaultBranch: String? = null
 
     fun findAllBranches(): List<String> {
         val listBranchResult = Shell.exec(arrayOf("git", "branch", "--all"), location)
@@ -67,7 +67,7 @@ class Repository(val location: String) {
      * @param ignoreBranchesPatterns A list of regular expressions that define branches that should be ignored.
      * @return A list of branches that are not ignored
      */
-    fun getBranchesOfInterest(timeoutDays: Int, ignoreBranchesPatterns: List<String>): List<String> {
+    fun findBranchesOfInterest(timeoutDays: Int, ignoreBranchesPatterns: List<String>): List<String> {
         Log.append(">>> Start getBranchesOfInterest")
 
         val lastCommitDatePerBranch: Map<String, Instant> = findModificationDates()
@@ -102,6 +102,15 @@ class Repository(val location: String) {
             }
         }
 
+        return branchesOfInterest
+    }
+
+    fun overrideBranchesOfInterest(branches: List<String>){
+        branchesOfInterest.clear()
+        branchesOfInterest.addAll(branches)
+    }
+
+    fun getBranchesOfInterest(): List<String> {
         return branchesOfInterest
     }
 
@@ -196,26 +205,39 @@ class Repository(val location: String) {
                 }
                 continue
             }
-            Log.append("--check file")
+
+            val elemSuffix = elem.toString().removePrefix(location)
+            Log.append("--check file:  + $elemSuffix")
+            val matchList: MutableList<Boolean> = mutableListOf()
             for(pattern in patterns){
-                val elemSuffix = elem.fileName.toString()
                 val isMatch = pattern.find(elemSuffix) != null
-                //case applying the blacklist and file is in the blacklist
-                if(isMatch && !keepMatches) {
-                    delete(elem)
+                matchList.add(isMatch)
+                if(isMatch && !keepMatches){
+                    break
                 }
-                //case applying the whitelist and file is not in the whitelist
-                if(!isMatch && keepMatches){
-                    delete(elem)
-                }
+            }
+            //case applying the blacklist and file is in the blacklist
+            //if there is at least one match, then remove t
+            if(matchList.contains(true) && !keepMatches) {
+                Log.append("--delete")
+                delete(elem)
+                continue
+            }
+            //case applying the whitelist and file is not in the whitelist
+            //delete the file of no match was found, i.e., no pattern to keep the file was specified
+            if(matchList.count { it } == 0  && keepMatches){
+                Log.append("--delete")
+                delete(elem)
+                continue
             }
         }
     }
 
     private fun delete(elem: Path){
-        val delete = elem.deleteIfExists()
-        if(!delete){
-            throw RuntimeException("Could not delete file: ${elem.fileName}")
+        val result = Shell.rm(elem.toString())
+        if(!result.isSuccessful()){
+            Log.append("Could not delete file: ${elem.fileName}")
+            Log.append(result.error)
         }
     }
 

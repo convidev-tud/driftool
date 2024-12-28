@@ -39,9 +39,10 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
         Log.append(rawBranchList.toString())
 
         //build list of branches of interest (naming, timing)
-        val interestingBranchList = referenceRepository.getBranchesOfInterest(configuration.fc.timeoutDays, configuration.fc.ignoreBranches)
+        val interestingBranchList = referenceRepository.findBranchesOfInterest(configuration.fc.timeoutDays, configuration.fc.ignoreBranches)
 
         referenceRepository.initializeCurrentBranch()
+        referenceRepository.defaultBranch = referenceRepository.getCurrentBranch()
 
         for(branch in interestingBranchList){
             Log.append("Preparing branch $branch")
@@ -54,6 +55,7 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
             referenceRepository.commitChanges("Apply blacklist")
             Log.append(">>> Branch $branch prepared")
         }
+        referenceRepository.sanitize()
     }
 
     fun createWorkingRepository(): Repository {
@@ -61,6 +63,9 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
             referenceRepository.location,
             DataProvider.getDirectoryHandler().createTemporalDirectory()
         )
+        workingRepository.defaultBranch = referenceRepository.defaultBranch
+        workingRepository.overrideBranchesOfInterest(referenceRepository.getBranchesOfInterest())
+        workingRepository.checkoutBranch(referenceRepository.defaultBranch!!)
         return workingRepository
     }
 
