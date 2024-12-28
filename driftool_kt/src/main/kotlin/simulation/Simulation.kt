@@ -17,9 +17,19 @@
 package io.driftool.simulation
 
 import io.driftool.reporting.DriftReport
+import io.driftool.reporting.MatrixResult
+import io.driftool.reporting.PointCloud
 
 abstract class Simulation {
 
     abstract fun run(): DriftReport
+
+    fun calculateEmbeddings(matrix: MatrixResult): PointCloud {
+        throw NotImplementedError("Not yet implemented")
+    }
+
+    fun calculateDrift(pointCloud: PointCloud): Float {
+        throw NotImplementedError("Not yet implemented")
+    }
 
 }

@@ -20,16 +20,17 @@ import io.driftool.data.GitModeConfiguration
 import io.driftool.data.GitModeConfigurationFile
 import io.driftool.reporting.DriftReport
 
-class MultiThreadSimulation(gitModeConfiguration: GitModeConfiguration) : GitSimulation(gitModeConfiguration) {
+class MultiThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : GitSimulation(gitModeConfiguration) {
 
     val threadCount = gitModeConfiguration.pc.threads
 
     override fun run(): DriftReport {
         super.prepareReferenceRepository()
         //get all branch combinations
-        //TODO
+        val branchCombinations = super.getBranchCombinations(includeSymmetries = true, includeIdentities = false)
         //copy to all the threads
-        //TODO
+        //create thread job distribution
+        val threadJobs = createThreadJobs(branchCombinations)
         //run the threads
         //TODO
         //wait for all threads to finish
@@ -41,10 +42,18 @@ class MultiThreadSimulation(gitModeConfiguration: GitModeConfiguration) : GitSim
         throw NotImplementedError("Not yet implemented")
     }
 
-    private fun getBranchCombinations(): List<Pair<String, String>> {
-        val branchCombinations = mutableListOf<Pair<String, String>>()
-
-        throw NotImplementedError("Not yet implemented")
+    private fun createThreadJobs(branchCombinations: List<Pair<String, String>>): List<List<Pair<String, String>>> {
+        val threadJobs = mutableListOf<MutableList<Pair<String, String>>>()
+        var threadIndex = 0
+        for(branchCombination in branchCombinations) {
+            if(threadJobs.size <= threadIndex) {
+                threadJobs.add(mutableListOf<Pair<String, String>>())
+            }
+            threadJobs[threadIndex].add(branchCombination)
+            threadIndex = (threadIndex + 1) % threadCount
+        }
     }
+
+
 
 }

@@ -16,14 +16,13 @@
 
 package io.driftool.simulation
 
-import io.driftool.data.GitModeConfiguration
-import io.driftool.data.GitModeConfigurationFile
-import io.driftool.reporting.DriftReport
+import io.driftool.gitmapping.Repository
+import io.driftool.reporting.DistanceRelation
 
-class PartialSimulation(configuration: GitModeConfiguration) : GitSimulation(configuration) {
+class MergeHandler(workingRepository: Repository, idx: String) {
 
-    override fun run(): DriftReport {
-        TODO("Not yet implemented")
+    fun executeMerges(branchCombinations: List<Pair<String, String>>): DistanceRelation {
+        throw NotImplementedError("Not yet implemented")
     }
-    
+
 }

@@ -28,7 +28,7 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
      * It is cloned from the input repository and is not modified during the simulation.
      * The reference repository is used to create the working repository for each simulation run.
      */
-    private val referenceRepository = Repository.cloneFromPath(
+    protected val referenceRepository = Repository.cloneFromPath(
         configuration.pc.absoluteInputRepositoryPath,
         DataProvider.getDirectoryHandler().createTemporalDirectory()
     )
@@ -69,8 +69,27 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
         return workingRepository
     }
 
-    fun executeMerges(branchCombinations: List<Pair<String, String>>): PartialSimulation {
-        throw NotImplementedError("Not yet implemented")
+    protected fun getBranchCombinations(includeSymmetries: Boolean, includeIdentities: Boolean): List<Pair<String, String>> {
+        val branchCombinations = mutableListOf<Pair<String, String>>()
+        val branches = referenceRepository.getBranchesOfInterest()
+        for (a in branches){
+            for (b in branches){
+                if(a == b) {
+                    if (includeIdentities && !branchCombinations.contains(Pair(a, b))){
+                        branchCombinations.add(Pair(a, b))
+                    }else{
+                        continue
+                    }
+                }
+                if(!branchCombinations.contains(Pair(a, b)) && !branchCombinations.contains(Pair(b, a))){
+                    branchCombinations.add(Pair(a, b))
+                    if (includeSymmetries){
+                        branchCombinations.add(Pair(b, a))
+                    }
+                }
+            }
+        }
+        return branchCombinations
     }
 
     fun deleteReferenceRepository() {

@@ -19,14 +19,39 @@ package io.driftool.simulation
 import io.driftool.data.GitModeConfiguration
 import io.driftool.data.GitModeConfigurationFile
 import io.driftool.reporting.DriftReport
+import io.driftool.reporting.MatrixResult
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 
-class MainThreadSimulation(gitModeConfiguration: GitModeConfiguration) : GitSimulation(gitModeConfiguration) {
+class MainThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : GitSimulation(gitModeConfiguration) {
 
         override fun run(): DriftReport {
+            val startingTimestampMillis = System.currentTimeMillis()
+
             super.prepareReferenceRepository()
-            super.createWorkingRepository()
-            //TODO
-            throw NotImplementedError("Not yet implemented")
+            val workingRepository = super.createWorkingRepository()
+            val branchCombinations = super.getBranchCombinations(includeSymmetries = true, includeIdentities = false)
+            val mergeHandler = MergeHandler(workingRepository, "DEFAULT")
+            val distanceRelation = mergeHandler.executeMerges(branchCombinations)
+            val distanceMatrix = MatrixResult.fromDistanceRelation(distanceRelation)
+            val pointCloud = super.calculateEmbeddings(distanceMatrix)
+            val drift = super.calculateDrift(pointCloud)
+
+            val endingTimestampMillis = System.currentTimeMillis()
+            val durationMillis = endingTimestampMillis - startingTimestampMillis
+
+            return DriftReport(
+                reportTitle = gitModeConfiguration.fc.reportIdentifier ?: "Drift Report",
+                analysisTimestamp = LocalDateTime.ofInstant(Instant.ofEpochMilli(startingTimestampMillis), ZoneId.systemDefault()),
+                analysisDurationMillis = durationMillis,
+                numberOfBranchesTotal = referenceRepository.getAllBranches().size,
+                numberOfBranchesAnalyzed = workingRepository.getBranchesOfInterest().size,
+                drift = drift.toDouble(),
+                sortedBranchList = workingRepository.getBranchesOfInterest(),
+                distanceMatrix = distanceMatrix,
+                pointCloud = pointCloud
+            )
         }
 
 }

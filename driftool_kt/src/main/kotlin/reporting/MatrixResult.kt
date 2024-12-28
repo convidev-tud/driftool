@@ -16,5 +16,12 @@
 
 package io.driftool.reporting
 
-class MatrixResult() {
+data class MatrixResult(val matrix: List<List<Float>>) {
+
+    companion object {
+        fun fromDistanceRelation(relation: DistanceRelation): MatrixResult {
+            throw NotImplementedError("Not yet implemented")
+        }
+    }
+
 }
