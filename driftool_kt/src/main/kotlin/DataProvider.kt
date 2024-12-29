@@ -16,19 +16,20 @@
 
 package io.driftool
 
-import io.driftool.gitmapping.DirectoryHandler
+import io.driftool.shell.DirectoryHandler
 
 object DataProvider {
 
     private var directoryHandler: DirectoryHandler? = null
     private var workingDirectory: String? = null
+    private var supportPath: String? = null
 
     fun initDirectoryHandler(rootLocation: String) {
         directoryHandler = DirectoryHandler(rootLocation)
     }
 
-    fun setWorkingDirectory(workingDirectory: String) {
-        this.workingDirectory = workingDirectory
+    fun setSupportPath(supportPath: String) {
+        this.supportPath = supportPath
     }
 
     fun getDirectoryHandler(): DirectoryHandler {
@@ -36,8 +37,8 @@ object DataProvider {
         return directoryHandler!!
     }
 
-    fun getWorkingDirectory(): String {
-        assert(workingDirectory != null) { "Working directory not set" }
-        return workingDirectory!!
+    fun getSupportPath(): String {
+        assert(supportPath != null) { "Support path not set" }
+        return supportPath!!
     }
 }

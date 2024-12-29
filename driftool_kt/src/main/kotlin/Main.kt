@@ -19,8 +19,7 @@ package io.driftool
 import io.driftool.data.ConfigurationReader
 import io.driftool.data.GenericParameterConfiguration
 import io.driftool.data.GitModeConfiguration
-import io.driftool.data.GitModeConfigurationFile
-import io.driftool.gitmapping.DirectoryHandler
+import io.driftool.shell.DirectoryHandler
 import io.driftool.reporting.DriftReport
 import io.driftool.simulation.MainThreadSimulation
 import io.driftool.simulation.MultiThreadSimulation
@@ -46,6 +45,10 @@ class Checksum : Callable<Int> {
     @CommandLine.Parameters(index = "2", description = ["configuration path (String) from the input dir root." +
             "The type of the configuration file that needs to be provided depends on the mode."])
     var configPath: String = ""
+
+    @CommandLine.Parameters(index = "3", description = ["support path (String) absolute" +
+            "The path to the directory from which the support scripts, e.g. math/ and web/ can be accessed"])
+    var supportPath: String = ""
 
     @CommandLine.Option(
         names = ["-i", "--input_repository"],
@@ -120,11 +123,12 @@ fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
     Log.append("Mode: $mode")
     Log.append("Setup DirectoryHandler")
     DataProvider.initDirectoryHandler(parameterConfig.absoluteWorkingPath)
-    DataProvider.setWorkingDirectory(parameterConfig.absoluteWorkingPath)
 
     val driftReport = when (mode) {
         Mode.git -> {
-            val gitModeConfiguration = GitModeConfiguration(ConfigurationReader(parameterConfig.absoluteConfigPath).parseGitModeConfig(), parameterConfig)
+            val gitModeConfiguration = GitModeConfiguration(
+                ConfigurationReader(parameterConfig.absoluteConfigPath).parseGitModeConfig(),
+                parameterConfig)
             runGitSimulation(gitModeConfiguration)
         }
         Mode.matrix -> {

@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package io.driftool.gitmapping
+package io.driftool.shell
 
 import io.driftool.Log
-import io.driftool.shell.Shell
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
 
@@ -43,6 +42,25 @@ class DirectoryHandler(private val rootLocation: String) {
 
     fun deleteAllTemporalDirectories() {
         temporalDirectories.forEach { deleteDirectory(it) }
+    }
+
+    fun createTemporalFile(): String {
+        val trunk = ensureNoDirectoryPathEnding(rootLocation)
+        val filename = "$trunk/${getUniqueName()}.txt"
+        val result = Shell.exec(arrayOf("touch", filename), null)
+        if (!result.isSuccessful()){
+            Log.append("Could not create temporal file.")
+            throw RuntimeException("Could not create temporal file.")
+        }
+        return filename
+    }
+
+    fun deleteTemporaryFile(file: String) {
+        val result = Shell.exec(arrayOf("rm", "-f", file), null)
+        if (!result.isSuccessful()){
+            Log.append("Could not delete file $file.")
+            throw RuntimeException("Could not delete file $file.")
+        }
     }
 
     fun deleteDirectory(directory: String) {

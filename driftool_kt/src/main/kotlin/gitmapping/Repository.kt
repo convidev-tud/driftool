@@ -17,6 +17,7 @@
 package io.driftool.gitmapping
 
 import io.driftool.Log
+import io.driftool.shell.DirectoryHandler
 import io.driftool.shell.Shell
 import java.nio.file.Path
 import java.time.Instant
@@ -435,7 +436,7 @@ class Repository(val location: String) {
         /**
          * Creates a Repository object by copying a given repository folder to a new location.
          * The repository object of the new location is returned.
-         * The target location must be an empty directory that is either already registered by a [DirectoryHandler] or
+         * The target location must be an empty directory that is either already registered by a [io.driftool.shell.DirectoryHandler] or
          * must be registered afterward.
          * Both the path and the location must be absolute paths!
          * @param absoluteRepositoryPath The path to the repository folder that should be copied.
@@ -446,8 +447,8 @@ class Repository(val location: String) {
             Log.append("Cloning repository from path: $absoluteRepositoryPath")
             Log.append("Cloning repository to location: $location")
             val cpResult = Shell.cp(
-                DirectoryHandler.ensureDirectoryPathEnding(absoluteRepositoryPath),
-                DirectoryHandler.ensureNoDirectoryPathEnding(location), null)
+                DirectoryHandler.Companion.ensureDirectoryPathEnding(absoluteRepositoryPath),
+                DirectoryHandler.Companion.ensureNoDirectoryPathEnding(location), null)
 
             Log.append("Exciting Shell Command: " + cpResult.exitCode)
             Log.append("Shell Output: " + cpResult.output)

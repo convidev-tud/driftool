@@ -52,6 +52,7 @@ class MultiThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : Gi
             threadJobs[threadIndex].add(branchCombination)
             threadIndex = (threadIndex + 1) % threadCount
         }
+        return threadJobs
     }
 
 

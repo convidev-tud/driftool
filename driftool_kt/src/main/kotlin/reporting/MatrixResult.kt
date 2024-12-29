@@ -16,7 +16,40 @@
 
 package io.driftool.reporting
 
-data class MatrixResult(val matrix: List<List<Float>>) {
+data class MatrixResult(val data: List<List<Float>>, val sortedBranchList: List<String>) {
+
+    /**
+     * Example:
+     *
+     * {
+     * "0": [1, 2, 3],
+     * "1": [0, 2, 3],
+     * "2": [0, 1, 3]
+     * }
+     *
+     * Returns a JSON representation of the matrix result
+     * @return JSON representation of the matrix result
+     */
+    fun toJsonString(): String {
+        val jsonString = StringBuilder()
+        jsonString.append("{\n")
+        for (line in data) {
+            jsonString.append("$line: [")
+            for (i in line.indices) {
+                jsonString.append(line[i])
+                if (i < line.size - 1) {
+                    jsonString.append(", ")
+                }
+            }
+            if (line != data.last()) {
+                jsonString.append("],\n")
+            } else {
+                jsonString.append("]\n")
+            }
+        }
+        jsonString.append("}")
+        return jsonString.toString()
+    }
 
     companion object {
         fun fromDistanceRelation(relation: DistanceRelation): MatrixResult {

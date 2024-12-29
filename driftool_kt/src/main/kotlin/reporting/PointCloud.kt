@@ -21,5 +21,4 @@ data class PointCloud(val points: MutableList<Triple<Float, Float, Float>>) {
     fun addPoint(x: Float, y: Float, z: Float){
         points.add(Triple(x, y, z))
     }
-
 }

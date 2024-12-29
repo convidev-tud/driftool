@@ -43,5 +43,5 @@ mount | tail -n 1
 echo preparing analysis
 ls -l
 
-sudo ./driftool_kt-1.0-SNAPSHOT/bin/driftool_kt '/driftool/volume' '/dtmp' $3  -i $1 -o $2 -m $6 -t $5
+sudo ./driftool_kt-1.0-SNAPSHOT/bin/driftool_kt '/driftool/volume' '/dtmp' './' $3  -i $1 -o $2 -m $6 -t $5
 

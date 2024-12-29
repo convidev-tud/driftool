@@ -35,8 +35,8 @@ class MainThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : Git
             val mergeHandler = MergeHandler(workingRepository, "DEFAULT")
             val distanceRelation = mergeHandler.executeMerges(branchCombinations)
             val distanceMatrix = MatrixResult.fromDistanceRelation(distanceRelation)
-            val pointCloud = super.calculateEmbeddings(distanceMatrix)
-            val drift = super.calculateDrift(pointCloud)
+            val pointCloud = calculateEmbeddings(distanceMatrix)
+            val drift = calculateDrift(pointCloud)
 
             val endingTimestampMillis = System.currentTimeMillis()
             val durationMillis = endingTimestampMillis - startingTimestampMillis
