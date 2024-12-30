@@ -11,6 +11,7 @@ repodata/
 *.code-workspace
 
 tmp/
+tmp_test/
 env/
 *env/
 volume/*

@@ -31,6 +31,11 @@ abstract class Simulation {
     companion object {
 
         fun calculateEmbeddings(matrix: MatrixResult): PointCloud {
+
+            //FIXME take care of the trivial 0 case. The MDS wont terminate otherwise
+            //includes 0 points
+            //includes 1 & 2 points
+
             Log.append("Calculating embeddings")
             val directoryHandler = DataProvider.getDirectoryHandler()
             val matrixJson = matrix.toJsonString()
@@ -42,12 +47,14 @@ abstract class Simulation {
             outFile.writeText(matrixJson)
 
             val cmd = Shell.exec(
-                arrayOf("python3", "math/embedding.py", inFileName, matrix.data.size.toString(), outFileName),
+                arrayOf("python", "math/embedding.py", outFileName, matrix.data.size.toString(), inFileName),
                 DataProvider.getSupportPath())
             if (cmd.exitCode != 0) {
                 Log.append("Error calculating embeddings, could not call python script")
                 throw Exception("Error calculating embeddings, could not call python script")
             }
+            Log.append("Embeddings calculated!")
+            Log.append(cmd.output)
 
             val inFile = File(inFileName)
             /*
@@ -57,12 +64,12 @@ abstract class Simulation {
             6;0;0.5
              */
             val embeddingsCSV = inFile.readLines().filter { it.isNotBlank() }
-            val embeddedPointCloud = PointCloud(mutableListOf())
+            val embeddedPointCloud = PointCloud(mutableListOf(), matrix.sortedBranchList)
             assert(embeddingsCSV.size == matrix.data.size) { "Embeddings CSV does not match matrix size" }
             for (line in embeddingsCSV) {
                 val parts = line.split(";")
                 assert(parts.size == 3) { "Embeddings CSV line does not have 3 parts" }
-                embeddedPointCloud.addPoint(parts[1].toFloat(), parts[2].toFloat(), parts[3].toFloat())
+                embeddedPointCloud.addPoint(parts[0].toFloat(), parts[1].toFloat(), parts[2].toFloat())
             }
             return embeddedPointCloud
         }

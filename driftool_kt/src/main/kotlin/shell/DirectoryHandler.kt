@@ -20,7 +20,7 @@ import io.driftool.Log
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
 
-class DirectoryHandler(private val rootLocation: String) {
+class DirectoryHandler(val rootLocation: String) {
 
     private val temporalDirectories: ConcurrentLinkedQueue<String> = ConcurrentLinkedQueue()
 

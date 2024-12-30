@@ -16,9 +16,28 @@
 
 package io.driftool.reporting
 
-data class PointCloud(val points: MutableList<Triple<Float, Float, Float>>) {
+import kotlin.math.pow
+import kotlin.math.sqrt
+
+data class PointCloud(val points: MutableList<Triple<Float, Float, Float>>, val sortedBranchList: List<String>) {
 
     fun addPoint(x: Float, y: Float, z: Float){
         points.add(Triple(x, y, z))
     }
+
+    fun reconstructDistances(): List<Triple<String, String, Float>>{
+        val distances = mutableListOf<Triple<String, String, Float>>()
+        for(i in points.indices){
+            for(j in points.indices){
+                val distance = sqrt(
+                    (points[i].first - points[j].first.toDouble()).pow(2.0) +
+                            (points[i].second - points[j].second.toDouble()).pow(2.0) +
+                            (points[i].third - points[j].third.toDouble()).pow(2.0)
+                ).toFloat()
+                distances.add(Triple(sortedBranchList[i], sortedBranchList[j], distance))
+            }
+        }
+        return distances
+    }
+
 }

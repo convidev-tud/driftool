@@ -18,6 +18,7 @@ import io.driftool.DataProvider
 import io.driftool.reporting.MatrixResult
 import io.driftool.shell.Shell
 import io.driftool.simulation.Simulation
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -36,19 +37,25 @@ class EmbeddingTests {
             val fullPath = locationResult.output.trim()
             val rootPath = fullPath.split("driftool_kt")[0]
             val supportPath = rootPath
-            val workingDirectory = supportPath + "tmp_test"
+            val workingDirectory = rootPath + "tmp_test"
 
             Shell.mkdir("tmp_test", rootPath)
             DataProvider.setSupportPath(supportPath)
             DataProvider.initDirectoryHandler(workingDirectory)
         }
 
+        @AfterAll
+        @JvmStatic
+        fun clean(){
+            Shell.exec(arrayOf("rm", "-rf", DataProvider.getDirectoryHandler().rootLocation), null)
+        }
+
     }
 
     val zeroMatrixResult = MatrixResult(listOf(
+        listOf(0.0f, 0.0f, 0.01f),
         listOf(0.0f, 0.0f, 0.0f),
-        listOf(0.0f, 0.0f, 0.0f),
-        listOf(0.0f, 0.0f, 0.0f)),
+        listOf(0.01f, 0.0f, 0.0f)),
         listOf("a", "b", "c"))
 
     val evenSizedTriangleMatrixResult = MatrixResult(listOf(
@@ -63,12 +70,77 @@ class EmbeddingTests {
         listOf(3.0f, 5.0f, 0.0f)),
         listOf("a", "b", "c"))
 
+    val twoElementsMatrixResult = MatrixResult(listOf(
+        listOf(0.0f, 7.0f),
+        listOf(7.0f, 0.0f)),
+        listOf("a", "b"))
+
     @Test
-    fun testCalculateEmbeddings() {
-        val zeroEmbeddings = Simulation.calculateEmbeddings(zeroMatrixResult)
-        assertEquals(zeroEmbeddings.points.size, 3)
-        assertEquals(zeroEmbeddings.points[0], Triple(0.0f, 0.0f, 0.0f))
-        assertEquals(zeroEmbeddings.points[1], Triple(0.0f, 0.0f, 0.0f))
-        assertEquals(zeroEmbeddings.points[2], Triple(0.0f, 0.0f, 0.0f))
+    fun testCalculateEmbeddingsZeroPoints() {
+        val embeddings = Simulation.calculateEmbeddings(zeroMatrixResult)
+        println(embeddings.reconstructDistances().toString())
+        assertEquals(embeddings.points.size, 3)
+
+        assertEquals(embeddings.points[0].first, 0.0f, 0.1f)
+        assertEquals(embeddings.points[0].second, 0.0f, 0.1f)
+        assertEquals(embeddings.points[0].third, 0.0f, 0.1f)
+
+        assertEquals(embeddings.points[1].first, 0.0f, 0.1f)
+        assertEquals(embeddings.points[1].second, 0.0f, 0.1f)
+        assertEquals(embeddings.points[1].third, 0.0f, 0.1f)
+
+        assertEquals(embeddings.points[2].first, 0.0f, 0.1f)
+        assertEquals(embeddings.points[2].second, 0.0f, 0.1f)
+        assertEquals(embeddings.points[2].third, 0.0f, 0.1f)
+    }
+
+    @Test
+    fun testCalculateEmbeddingsTwoElements() {
+        val embeddings = Simulation.calculateEmbeddings(twoElementsMatrixResult)
+        val reconstruction = embeddings.reconstructDistances()
+        println(reconstruction.toString())
+        assertEquals(embeddings.points.size, 2)
+        assertEquals(reconstruction[0].third, 0.0f, 0.1f)
+        assertEquals(reconstruction[1].third, 7.0f, 0.1f)
+        assertEquals(reconstruction[2].third, 7.0f, 0.1f)
+        assertEquals(reconstruction[3].third, 0.0f, 0.1f)
+    }
+
+    @Test
+    fun testCalculateEvenSizedTriangle(){
+        val embeddings = Simulation.calculateEmbeddings(evenSizedTriangleMatrixResult)
+        val reconstruction = embeddings.reconstructDistances()
+        assertEquals(embeddings.points.size, 3)
+
+        assertEquals(reconstruction[0].third, 0.0f, 0.1f)
+        assertEquals(reconstruction[1].third, 2.0f, 0.1f)
+        assertEquals(reconstruction[2].third, 2.0f, 0.1f)
+
+        assertEquals(reconstruction[3].third, 2.0f, 0.1f)
+        assertEquals(reconstruction[4].third, 0.0f, 0.1f)
+        assertEquals(reconstruction[5].third, 2.0f, 0.1f)
+
+        assertEquals(reconstruction[6].third, 2.0f, 0.1f)
+        assertEquals(reconstruction[7].third, 2.0f, 0.1f)
+        assertEquals(reconstruction[8].third, 0.0f, 0.1f)
+    }
+
+    @Test
+    fun testCalculateEmbeddingsRectangularTriangle() {
+        val embeddings = Simulation.calculateEmbeddings(rectangularTriangleMatrixResult)
+        val reconstruction = embeddings.reconstructDistances()
+        assertEquals(embeddings.points.size, 3)
+
+        assertEquals(reconstruction[0].third, 0.0f, 0.1f)
+        assertEquals(reconstruction[1].third, 4.0f, 0.1f)
+        assertEquals(reconstruction[2].third, 3.0f, 0.1f)
+
+        assertEquals(reconstruction[3].third, 4.0f, 0.1f)
+        assertEquals(reconstruction[4].third, 0.0f, 0.1f)
+        assertEquals(reconstruction[5].third, 5.0f, 0.1f)
+
+        assertEquals(reconstruction[6].third, 3.0f, 0.1f)
+        assertEquals(reconstruction[7].third, 5.0f, 0.1f)
+        assertEquals(reconstruction[8].third, 0.0f, 0.1f)
     }
 }

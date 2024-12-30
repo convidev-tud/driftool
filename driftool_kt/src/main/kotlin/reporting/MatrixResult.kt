@@ -33,15 +33,15 @@ data class MatrixResult(val data: List<List<Float>>, val sortedBranchList: List<
     fun toJsonString(): String {
         val jsonString = StringBuilder()
         jsonString.append("{\n")
-        for (line in data) {
-            jsonString.append("$line: [")
+        for ((lineIndex, line) in data.withIndex()) {
+            jsonString.append("\"$lineIndex\": [")
             for (i in line.indices) {
                 jsonString.append(line[i])
                 if (i < line.size - 1) {
                     jsonString.append(", ")
                 }
             }
-            if (line != data.last()) {
+            if (lineIndex < data.size - 1) {
                 jsonString.append("],\n")
             } else {
                 jsonString.append("]\n")
