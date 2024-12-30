@@ -51,8 +51,8 @@ object Shell {
 
         if (withLogging) {
             val commandString = command.joinToString(" ")
-            Log.append("Exciting Shell Command: $commandString")
-            Log.append("Exciting Shell Command: $result")
+            Log.append("Executing Shell Command: $commandString")
+            Log.append("Executing Shell Command: $result")
             if(output.isNotEmpty()) Log.append("Shell Output: $output")
             if(error.isNotEmpty()) Log.append("Shell Error: $error")
         }
