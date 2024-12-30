@@ -23,6 +23,8 @@ import io.driftool.reporting.MatrixResult
 import io.driftool.reporting.PointCloud
 import io.driftool.shell.Shell
 import java.io.File
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 abstract class Simulation {
 
@@ -30,11 +32,27 @@ abstract class Simulation {
 
     companion object {
 
-        fun calculateEmbeddings(matrix: MatrixResult): PointCloud {
+        const val TOLERANCE: Float = 0.001f
 
-            //FIXME take care of the trivial 0 case. The MDS wont terminate otherwise
-            //includes 0 points
-            //includes 1 & 2 points
+        fun calculateEmbeddings(matrix: MatrixResult): PointCloud {
+            if (matrix.data.isEmpty()){
+                Log.append("Matrix is empty, skipping embedding calculation")
+                return PointCloud(mutableListOf(), matrix.sortedBranchList)
+            }
+            if (matrix.data.size == 1){
+                Log.append("Matrix has only one point, skipping embedding calculation")
+                Log.append("Setting point to 0,0,0")
+                return PointCloud(mutableListOf(Triple(0.0f, 0.0f, 0.0f)), matrix.sortedBranchList)
+            }
+            if (matrix.data.flatten().count{ it > TOLERANCE} == 0){
+                Log.append("All values are 0 within TOLERANCE of $TOLERANCE, skipping embedding calculation")
+                Log.append("Setting all points to 0,0,0")
+                val zeroPointCloud = PointCloud(mutableListOf(), matrix.sortedBranchList)
+                for (i in 0 until matrix.data.size){
+                    zeroPointCloud.addPoint(0.0f, 0.0f, 0.0f)
+                }
+                return zeroPointCloud
+            }
 
             Log.append("Calculating embeddings")
             val directoryHandler = DataProvider.getDirectoryHandler()
@@ -74,9 +92,47 @@ abstract class Simulation {
             return embeddedPointCloud
         }
 
+        /**
+         * Calculate the drift of a point cloud.
+         * Uses the average distance of each point to the median point.
+         * This method used the marginal median, which is the median of each axis, i.e., an approximation of the geometric median.
+         * The median point may not be in the point cloud but only virtual.
+         *
+         * @param pointCloud The point cloud to calculate the drift of.
+         */
         fun calculateDrift(pointCloud: PointCloud): Float {
-            //TODO -- easy
-            throw NotImplementedError("Not yet implemented")
+
+            if (pointCloud.points.isEmpty()){
+                Log.append("Point cloud is empty, skipping drift calculation")
+                return 0.0f
+            }
+
+            if(pointCloud.points.size == 1){
+                Log.append("Point cloud has only one point, skipping drift calculation")
+                return 0.0f
+            }
+
+            val points = pointCloud.points
+            val xMedian = median(points.map { it.first })
+            val yMedian = median(points.map { it.second })
+            val zMedian = median(points.map { it.third })
+
+            val l = points.size.toFloat()
+            var d = 0.0f
+            for (p in points) {
+                d += sqrt((p.first - xMedian).pow(2) + (p.second - yMedian).pow(2) + (p.third - zMedian).pow(2))
+            }
+            return d / l
+        }
+
+        fun median(values: List<Float>): Float {
+            val sorted = values.sorted()
+            val size: Int = sorted.size
+            return if (size % 2 == 0) {
+                (sorted[(size / 2).toInt() - 1] + sorted[(size / 2).toInt()]) / 2
+            } else {
+                sorted[(size / 2).toInt()]
+            }
         }
 
     }

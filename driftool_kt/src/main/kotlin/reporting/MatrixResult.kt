@@ -52,8 +52,83 @@ data class MatrixResult(val data: List<List<Float>>, val sortedBranchList: List<
     }
 
     companion object {
-        fun fromDistanceRelation(relation: DistanceRelation): MatrixResult {
-            throw NotImplementedError("Not yet implemented")
+
+        /**
+         * Creates a matrix result from a distance relation.
+         * If the relation is complete, the matrix may be asymmetric.
+         * In this case, setting ensureSymmetry to true will calculate the average of the two values (directions).
+         * If the relation is marked as incomplete, missing values are set to 0. This may lead to asymmetric matrices.
+         * In this case, if ensureSymmetry is set to true, the matrix will be made symmetric by assuming the same
+         * distance value in both directions.
+         *
+         * @param relation The distance relation
+         * @param sortedBranchList The list of branches sorted by name
+         * @param isComplete Whether the relation is complete, i.e. contains all possible branch pairs.
+         * Not complete means missing symmetric values.
+         * @param ensureSymmetry Whether to ensure symmetry of the matrix by calculating averages
+         */
+        fun fromDistanceRelation(relation: DistanceRelation, sortedBranchList: List<String>, isComplete: Boolean,
+                                 ensureSymmetry: Boolean, zeroIdentities: Boolean): MatrixResult {
+            if(zeroIdentities){
+                for(branch in sortedBranchList){
+                    relation.addValue(branch, branch, 0f)
+                }
+            }
+            /*
+            if(isComplete){
+                assert(relation.values.size == sortedBranchList.size * sortedBranchList.size)
+            }else{
+                assert(relation.values.size ==
+                        ((sortedBranchList.size * sortedBranchList.size) - sortedBranchList.size) / 2 + sortedBranchList.size)
+            }
+            */
+            val matrix = MutableList(sortedBranchList.size) { MutableList(sortedBranchList.size) { 0f } }
+
+            for((fromIndex, fromBranch) in sortedBranchList.withIndex()){
+                for((toIndex, toBranch) in sortedBranchList.withIndex()){
+                    val distance: Triple<String, String, Float>? = relation.values.find { it.first == fromBranch && it.second == toBranch }
+                    val distanceReverse: Triple<String, String, Float>? = relation.values.find { it.first == toBranch && it.second == fromBranch }
+                    if(isComplete){
+                        if(distance != null){
+                            if(ensureSymmetry){
+                                if(distanceReverse != null){
+                                    matrix[fromIndex][toIndex] = (distance.third + distanceReverse.third) / 2
+                                } else {
+                                    throw IllegalArgumentException("Complete matrix is missing value for $toBranch -> $fromBranch")
+                                }
+                            } else {
+                                matrix[fromIndex][toIndex] = distance.third
+                            }
+                        } else {
+                            throw IllegalArgumentException("Complete matrix is missing value for $fromBranch -> $toBranch")
+                        }
+                    } else {
+                        if(distance != null || distanceReverse != null){
+                            if(distance != null && distanceReverse != null && fromBranch != toBranch){
+                                throw IllegalArgumentException("Incomplete matrix cannot have both directions!")
+                            }
+                            if(ensureSymmetry){
+                                matrix[fromIndex][toIndex] = distance?.third ?: distanceReverse?.third ?: throw IllegalArgumentException("Unexpected matrix matching error")
+                            } else{
+                                matrix[fromIndex][toIndex] = distance?.third ?: 0f
+                            }
+                        } else {
+                            matrix[fromIndex][toIndex] = 0f
+                        }
+                    }
+                }
+            }
+            return MatrixResult(matrix, sortedBranchList)
+        }
+
+        /**
+         * @see fromDistanceRelation
+         */
+        fun fromPartialDistanceRelations(partialRelations: List<DistanceRelation>, sortedBranchList: List<String>,
+                                         isComplete: Boolean, ensureSymmetry: Boolean, zeroIdentities: Boolean): MatrixResult {
+            val joinedRelation = DistanceRelation(mutableSetOf())
+            partialRelations.forEach { joinedRelation.join(it) }
+            return fromDistanceRelation(joinedRelation, sortedBranchList, isComplete, ensureSymmetry, zeroIdentities)
         }
     }
 

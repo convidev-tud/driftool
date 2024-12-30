@@ -56,6 +56,7 @@ class Repository(val location: String) {
         }
         this.allBranches.clear()
         this.allBranches.addAll(allBranches)
+        allBranches.sort()
         return allBranches
     }
 
@@ -103,15 +104,18 @@ class Repository(val location: String) {
             }
         }
 
+        branchesOfInterest.sort()
         return branchesOfInterest
     }
 
     fun overrideBranchesOfInterest(branches: List<String>){
         branchesOfInterest.clear()
         branchesOfInterest.addAll(branches)
+        branchesOfInterest.sort()
     }
 
     fun getBranchesOfInterest(): List<String> {
+        branchesOfInterest.sort()
         return branchesOfInterest
     }
 
@@ -120,6 +124,7 @@ class Repository(val location: String) {
     }
 
     fun getAllBranches(): List<String> {
+        allBranches.sort()
         return allBranches
     }
 

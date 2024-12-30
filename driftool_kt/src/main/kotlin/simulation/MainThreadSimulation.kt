@@ -34,7 +34,11 @@ class MainThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : Git
             val branchCombinations = super.getBranchCombinations(includeSymmetries = true, includeIdentities = false)
             val mergeHandler = MergeHandler(workingRepository, "DEFAULT")
             val distanceRelation = mergeHandler.executeMerges(branchCombinations)
-            val distanceMatrix = MatrixResult.fromDistanceRelation(distanceRelation)
+            val distanceMatrix = MatrixResult.fromDistanceRelation(distanceRelation,
+                referenceRepository.getBranchesOfInterest(),
+                isComplete = true,
+                ensureSymmetry = true,
+                zeroIdentities = true)
             val pointCloud = calculateEmbeddings(distanceMatrix)
             val drift = calculateDrift(pointCloud)
 

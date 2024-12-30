@@ -16,5 +16,21 @@
 
 package io.driftool.reporting
 
-class DistanceRelation {
+/**
+ * Represents the (partial) distance relation between branches.
+ * The relation is represented as a set of triples, where each triple contains the names of two branches and the distance between them.
+ * Each triple is aware of the direction of the distance, i.e. the order of the branches: From -> To, Distance
+ * @param values The set of triples representing the distance relation
+ */
+data class DistanceRelation(val values: MutableSet<Triple<String, String, Float>>) {
+
+    fun addValue(from: String, to: String, distance: Float): Boolean {
+        return values.add(Triple(from, to, distance))
+    }
+
+    fun join(other: DistanceRelation): DistanceRelation {
+        values.addAll(other.values)
+        return this
+    }
+
 }
