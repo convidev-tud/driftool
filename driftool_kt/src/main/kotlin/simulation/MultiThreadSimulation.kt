@@ -28,9 +28,10 @@ class MultiThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : Gi
         super.prepareReferenceRepository()
         //get all branch combinations
         val branchCombinations = super.getBranchCombinations(includeSymmetries = true, includeIdentities = false)
-        //copy to all the threads
         //create thread job distribution
         val threadJobs = createThreadJobs(branchCombinations)
+        //copy to all the threads
+        //create all working repositories
         //run the threads
         //TODO
         //wait for all threads to finish

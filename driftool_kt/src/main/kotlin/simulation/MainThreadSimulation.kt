@@ -29,37 +29,15 @@ class MainThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : Git
 
         override fun run(): DriftReport {
             val startingTimestampMillis = System.currentTimeMillis()
-
             super.prepareReferenceRepository()
             val workingRepository = super.createWorkingRepository()
             val branchCombinations = super.getBranchCombinations(includeSymmetries = true, includeIdentities = false)
             val mergeHandler = MergeHandler(workingRepository, 0)
             val distanceResult: DistanceResult = mergeHandler.executeMerges(branchCombinations)
-
-            //TODO refactor to use DistanceResult - extend final report
-            val distanceMatrix = MatrixResult.fromDistanceRelation(distanceRelation,
-                referenceRepository.getBranchesOfInterest(),
-                isComplete = true,
-                ensureSymmetry = true,
-                zeroIdentities = true)
-
-            val pointCloud = calculateEmbeddings(distanceMatrix)
-            val drift = calculateDrift(pointCloud)
-
             val endingTimestampMillis = System.currentTimeMillis()
             val durationMillis = endingTimestampMillis - startingTimestampMillis
 
-            return DriftReport(
-                reportTitle = gitModeConfiguration.fc.reportIdentifier ?: "Drift Report",
-                analysisTimestamp = LocalDateTime.ofInstant(Instant.ofEpochMilli(startingTimestampMillis), ZoneId.systemDefault()),
-                analysisDurationMillis = durationMillis,
-                numberOfBranchesTotal = referenceRepository.getAllBranches().size,
-                numberOfBranchesAnalyzed = workingRepository.getBranchesOfInterest().size,
-                drift = drift.toDouble(),
-                sortedBranchList = workingRepository.getBranchesOfInterest(),
-                distanceMatrix = distanceMatrix,
-                pointCloud = pointCloud
-            )
+            return makeReport(distanceResult, durationMillis, startingTimestampMillis)
         }
 
 }

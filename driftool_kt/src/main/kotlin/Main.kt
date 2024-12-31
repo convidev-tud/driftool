@@ -25,6 +25,7 @@ import io.driftool.simulation.MainThreadSimulation
 import io.driftool.simulation.MultiThreadSimulation
 import io.driftool.simulation.Simulation
 import picocli.CommandLine
+import java.io.File
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 
@@ -103,6 +104,10 @@ fun main(args: Array<String>) {
     } catch (ex: NotImplementedError) {
         Log.append("NotImplementedError: ${ex.message}")
         exitProcess(1)
+    } catch (ex: Exception) {
+        Log.mergeAsyncLogs()
+        Log.append("Exception: ${ex.message}")
+        exitProcess(1)
     }
 }
 
@@ -129,6 +134,9 @@ fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
             val gitModeConfiguration = GitModeConfiguration(
                 ConfigurationReader(parameterConfig.absoluteConfigPath).parseGitModeConfig(),
                 parameterConfig)
+            jsonReport = gitModeConfiguration.fc.jsonReport
+            htmlReport = gitModeConfiguration.fc.htmlReport
+            reportIdentifier = gitModeConfiguration.fc.reportIdentifier ?: "UNTITLED"
             runGitSimulation(gitModeConfiguration)
         }
         Mode.matrix -> {
@@ -139,7 +147,14 @@ fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
         }
     }
 
-    //TODO: Write report to file
+    Log.append("Writing drift report")
+    if(jsonReport){
+        val reportJson = driftReport.toJson()
+        val jsonReportPath = DirectoryHandler.ensureDirectoryPathEnding(parameterConfig.absoluteReportPath) +
+                reportIdentifier + ".json"
+        File(jsonReportPath).writeText(reportJson)
+    }
+    //TODO other report types
 
     return driftReport
 }

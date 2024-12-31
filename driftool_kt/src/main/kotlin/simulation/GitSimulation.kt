@@ -20,6 +20,12 @@ import io.driftool.DataProvider
 import io.driftool.Log
 import io.driftool.data.GitModeConfiguration
 import io.driftool.gitmapping.Repository
+import io.driftool.reporting.DistanceResult
+import io.driftool.reporting.DriftReport
+import io.driftool.reporting.MatrixResult
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 
 abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulation() {
 
@@ -94,6 +100,51 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
 
     fun deleteReferenceRepository() {
         referenceRepository.deleteRepository()
+    }
+
+    fun makeReport(distanceResult: DistanceResult, durationMillis: Long, startingTimestampMillis: Long): DriftReport {
+
+        val lineDistanceMatrix = MatrixResult.fromDistanceRelation(distanceResult.lineDistances,
+            referenceRepository.getBranchesOfInterest(),
+            isComplete = true,
+            ensureSymmetry = true,
+            zeroIdentities = true)
+        val linePointCloud = calculateEmbeddings(lineDistanceMatrix)
+        val lineDrift = calculateDrift(linePointCloud)
+
+        val conflictDistanceMatrix = MatrixResult.fromDistanceRelation(distanceResult.conflictDistances,
+            referenceRepository.getBranchesOfInterest(),
+            isComplete = true,
+            ensureSymmetry = true,
+            zeroIdentities = true)
+        val conflictPointCloud = calculateEmbeddings(conflictDistanceMatrix)
+        val conflictDrift = calculateDrift(conflictPointCloud)
+
+        val fileDistanceMatrix = MatrixResult.fromDistanceRelation(distanceResult.fileDistances,
+            referenceRepository.getBranchesOfInterest(),
+            isComplete = true,
+            ensureSymmetry = true,
+            zeroIdentities = true)
+        val filePointCloud = calculateEmbeddings(fileDistanceMatrix)
+        val fileDrift = calculateDrift(filePointCloud)
+
+        return DriftReport(
+            reportTitle = configuration.fc.reportIdentifier ?: "Drift Report",
+            analysisTimestamp = LocalDateTime.ofInstant(Instant.ofEpochMilli(startingTimestampMillis), ZoneId.systemDefault()),
+            analysisDurationMillis = durationMillis,
+            numberOfBranchesTotal = referenceRepository.getAllBranches().size,
+            numberOfBranchesAnalyzed = referenceRepository.getBranchesOfInterest().size,
+            sortedBranchList = referenceRepository.getBranchesOfInterest(),
+            lineDrift = lineDrift.toDouble(),
+            conflictDrift = conflictDrift.toDouble(),
+            fileDrift = fileDrift.toDouble(),
+            lineDistanceMatrix = lineDistanceMatrix,
+            conflictDistanceMatrix = conflictDistanceMatrix,
+            fileDistanceMatrix = fileDistanceMatrix,
+            linePointCloud = linePointCloud,
+            conflictPointCloud = conflictPointCloud,
+            filePointCloud = filePointCloud
+        )
     }
 
 }

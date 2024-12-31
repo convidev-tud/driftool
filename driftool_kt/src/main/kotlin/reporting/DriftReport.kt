@@ -16,6 +16,7 @@
 
 package io.driftool.reporting
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.time.LocalDateTime
 
 data class DriftReport (
@@ -24,10 +25,16 @@ data class DriftReport (
     val analysisDurationMillis: Long,
     val numberOfBranchesTotal: Int,
     val numberOfBranchesAnalyzed: Int,
-    val drift: Double,
     val sortedBranchList: List<String>,
-    val distanceMatrix: MatrixResult,
-    val pointCloud: PointCloud
+    val lineDrift: Double,
+    val conflictDrift: Double,
+    val fileDrift: Double,
+    val lineDistanceMatrix: MatrixResult,
+    val conflictDistanceMatrix: MatrixResult,
+    val fileDistanceMatrix: MatrixResult,
+    val linePointCloud: PointCloud,
+    val conflictPointCloud: PointCloud,
+    val filePointCloud: PointCloud
 ){
     fun printReport() {
         println("Report Title: $reportTitle")
@@ -35,10 +42,16 @@ data class DriftReport (
         println("Analysis Duration: $analysisDurationMillis")
         println("Number of Branches Total: $numberOfBranchesTotal")
         println("Number of Branches Analyzed: $numberOfBranchesAnalyzed")
-        println("Drift: $drift")
         println("Sorted Branch List: $sortedBranchList")
-        println("Distance Matrix: $distanceMatrix")
-        println("Point Cloud: $pointCloud")
+        println("Line Drift: $lineDrift")
+        println("Conflict Drift: $conflictDrift")
+        println("File Drift: $fileDrift")
+    }
+
+    fun toJson(): String {
+        val mapper = jacksonObjectMapper()
+        val json = mapper.writeValueAsString(this)
+        return json
     }
 }
 
