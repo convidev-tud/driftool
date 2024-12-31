@@ -17,12 +17,14 @@
 package io.driftool.gitmapping
 
 import io.driftool.Log
+import io.driftool.reporting.Distance
 import io.driftool.shell.DirectoryHandler
 import io.driftool.shell.Shell
 import java.nio.file.Path
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import kotlin.concurrent.thread
 import kotlin.io.path.Path
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isSymbolicLink
@@ -35,7 +37,7 @@ class Repository(val location: String) {
     private var currentBranch: String? = null
     var defaultBranch: String? = null
 
-    fun findAllBranches(): List<String> {
+    fun findAllBranches(threadIdx: Int? = null): List<String> {
         val listBranchResult = Shell.exec(arrayOf("git", "branch", "--all"), location)
 
         if (! listBranchResult.isSuccessful()){
@@ -51,7 +53,7 @@ class Repository(val location: String) {
                 .replace(" ", "")
             if(cleanedLine.isNotEmpty() && !cleanedLine.contains("HEAD->") && cleanedLine.isNotBlank() && !allBranches.contains(cleanedLine)){
                 allBranches.add(cleanedLine)
-                Log.append("added branch : $cleanedLine")
+                Log.appendAsync(threadIdx, "added branch : $cleanedLine")
             }
         }
         this.allBranches.clear()
@@ -69,10 +71,10 @@ class Repository(val location: String) {
      * @param ignoreBranchesPatterns A list of regular expressions that define branches that should be ignored.
      * @return A list of branches that are not ignored
      */
-    fun findBranchesOfInterest(timeoutDays: Int, ignoreBranchesPatterns: List<String>): List<String> {
-        Log.append(">>> Start getBranchesOfInterest")
+    fun findBranchesOfInterest(timeoutDays: Int, ignoreBranchesPatterns: List<String>, threadIdx: Int? = null): List<String> {
+        Log.appendAsync(threadIdx, ">>> Start getBranchesOfInterest")
 
-        val lastCommitDatePerBranch: Map<String, Instant> = findModificationDates()
+        val lastCommitDatePerBranch: Map<String, Instant> = findModificationDates(threadIdx)
         val todayAtNoonUTC = Instant.now().atZone(ZoneOffset.UTC).withHour(12).withMinute(0).withSecond(0).withNano(0).toInstant()
         val todayAtNoonUTCMinusTimeout = todayAtNoonUTC.minusSeconds(timeoutDays.toLong() * 24 * 60 * 60)
 
@@ -93,14 +95,14 @@ class Repository(val location: String) {
                     ignore = true
                 }
             } else {
-                Log.append("PARSING PROBLEM: Branch $branch not found in last_commits")
+                Log.appendAsync(threadIdx, "PARSING PROBLEM: Branch $branch not found in last_commits")
                 ignore = true
             }
             if (!ignore){
-                Log.append("Branch $branch is not ignored")
+                Log.appendAsync(threadIdx, "Branch $branch is not ignored")
                 branchesOfInterest.add(branch)
             }else{
-                Log.append("Branch $branch is ignored")
+                Log.appendAsync(threadIdx, "Branch $branch is ignored")
             }
         }
 
@@ -128,7 +130,7 @@ class Repository(val location: String) {
         return allBranches
     }
 
-    fun findModificationDates(): Map<String, Instant> {
+    fun findModificationDates(threadIdx: Int? = null): Map<String, Instant> {
         /*
         Get the last commit timestamps for each branch:
         2024-11-20~main
@@ -139,7 +141,7 @@ class Repository(val location: String) {
         2024-11-20~origin/main
         */
         val lastCommitDates: MutableMap<String, Instant> = mutableMapOf()
-        val gitDateStringsShellResult = Shell.execComplexCommand("git branch -a --format=\"%(committerdate:short)~%(refname:short)\" | grep -v HEAD", location)
+        val gitDateStringsShellResult = Shell.execComplexCommand("git branch -a --format=\"%(committerdate:short)~%(refname:short)\" | grep -v HEAD", location, threadIdx)
 
         if(!gitDateStringsShellResult.isSuccessful()){
             throw RuntimeException("Could not get last commit timestamps for each branch")
@@ -160,60 +162,57 @@ class Repository(val location: String) {
                 branch = branch.replace("origin/", "")
             }
             lastCommitDates.put(branch, commitDate)
-            Log.append("RAW: $dateString")
-            Log.append("Branch $branch last commit: $commitDate")
+            Log.appendAsync(threadIdx, "RAW: $dateString")
+            Log.appendAsync(threadIdx, "Branch $branch last commit: $commitDate")
         }
 
         return lastCommitDates
     }
 
-    fun applyWhiteList(whiteList: List<String>, rootLocation: String? = null) {
-        Log.append("Applying whitelist to branch $currentBranch in location $location")
+    fun applyWhiteList(whiteList: List<String>, rootLocation: String? = null, threadIdx: Int? = null) {
+        Log.appendAsync(threadIdx, "Applying whitelist to branch $currentBranch in location $location")
         val workingLocation = rootLocation ?: location
-        applyPathList(whiteList, workingLocation, true)
+        applyPathList(whiteList, workingLocation, true, threadIdx)
     }
 
-    fun applyBlackList(blackList: List<String>, rootLocation: String? = null) {
-        Log.append("Applying blacklist to branch $currentBranch in location $location")
+    fun applyBlackList(blackList: List<String>, rootLocation: String? = null, threadIdx: Int? = null) {
+        Log.appendAsync(threadIdx, "Applying blacklist to branch $currentBranch in location $location")
         val workingLocation = rootLocation ?: location
-        applyPathList(blackList, workingLocation, false)
+        applyPathList(blackList, workingLocation, false, threadIdx)
     }
 
-    /**
-     * FIXME: TO BE TESTED INTENSIVELY
-     */
-    private fun applyPathList(list: List<String>, rootLocation: String, keepMatches: Boolean){
+    private fun applyPathList(list: List<String>, rootLocation: String, keepMatches: Boolean, threadIdx: Int? = null){
         val gitPattern = Regex("\\.git")
         val patterns = list.map { it.toRegex() }
         val locationSuffix = rootLocation.removePrefix(location)
-        Log.append("Applying list to locationSuffix: $locationSuffix")
+        Log.appendAsync(threadIdx, "Applying list to locationSuffix: $locationSuffix")
         val allFilesInLocation: List<Path> = Path(rootLocation).listDirectoryEntries()
 
         for(elem in allFilesInLocation){
-            Log.append("Checking file: ${elem.fileName} /// $elem")
+            Log.appendAsync(threadIdx, "Checking file: ${elem.fileName} /// $elem")
             if(gitPattern.find(elem.toString()) != null){
                 //Skip everything related to the git repository itself (.git/.gitignore/.gitkeep/...
-                Log.append("--skip (git related)")
+                Log.appendAsync(threadIdx, "--skip (git related)")
                 continue
             }
             if(elem.isSymbolicLink()){
-                Log.append("Symbolic link found: ${elem.fileName} -> deleting")
-                delete(elem)
-                Log.append("--delete")
+                Log.appendAsync(threadIdx, "Symbolic link found: ${elem.fileName} -> deleting")
+                delete(elem, threadIdx)
+                Log.appendAsync(threadIdx, "--delete")
                 continue
             }
             if(elem.isDirectory()){
-                Log.append("--traverse")
+                Log.appendAsync(threadIdx, "--traverse")
                 if(keepMatches){
-                    applyPathList(list, elem.toString(), true)
+                    applyPathList(list, elem.toString(), true, threadIdx)
                 }else{
-                    applyPathList(list, elem.toString(), false)
+                    applyPathList(list, elem.toString(), false, threadIdx)
                 }
                 continue
             }
 
             val elemSuffix = elem.toString().removePrefix(location)
-            Log.append("--check file:  + $elemSuffix")
+            Log.appendAsync(threadIdx, "--check file:  + $elemSuffix")
             val matchList: MutableList<Boolean> = mutableListOf()
             for(pattern in patterns){
                 val isMatch = pattern.find(elemSuffix) != null
@@ -225,212 +224,157 @@ class Repository(val location: String) {
             //case applying the blacklist and file is in the blacklist
             //if there is at least one match, then remove t
             if(matchList.contains(true) && !keepMatches) {
-                Log.append("--delete")
-                delete(elem)
+                Log.appendAsync(threadIdx, "--delete")
+                delete(elem, threadIdx)
                 continue
             }
             //case applying the whitelist and file is not in the whitelist
             //delete the file of no match was found, i.e., no pattern to keep the file was specified
             if(matchList.count { it } == 0  && keepMatches){
-                Log.append("--delete")
-                delete(elem)
+                Log.appendAsync(threadIdx, "--delete")
+                delete(elem, threadIdx)
                 continue
             }
         }
     }
 
-    private fun delete(elem: Path){
-        val result = Shell.rm(elem.toString())
+    private fun delete(elem: Path, threadIdx: Int? = null){
+        val result = Shell.rm(elem.toString(), null, threadIdx)
         if(!result.isSuccessful()){
-            Log.append("Could not delete file: ${elem.fileName}")
-            Log.append(result.error)
+            Log.appendAsync(threadIdx, "Could not delete file: ${elem.fileName}")
+            Log.appendAsync(threadIdx, result.error)
         }
     }
 
-    fun commitChanges(message: String) {
-        Log.append("Committing changes to branch $currentBranch with message: $message")
-        Log.append("Adding all files")
+    fun commitChanges(message: String, threadIdx: Int? = null) {
+        Log.appendAsync(threadIdx, "Committing changes to branch $currentBranch with message: $message")
+        Log.appendAsync(threadIdx, "Adding all files")
 
-        val addResult = Shell.exec(arrayOf("git", "add", "--all"), location)
+        val addResult = Shell.exec(arrayOf("git", "add", "--all"), location, threadIdx)
         if (! addResult.isSuccessful()){
             throw RuntimeException("Could not add all files to git")
         }
-        val commitResult = Shell.exec(arrayOf("git", "commit", "-m", message), location)
+        val commitResult = Shell.exec(arrayOf("git", "commit", "-m", message), location, threadIdx)
         //if (! commitResult.isSuccessful()){
         //    throw RuntimeException("Could not commit changes to git")
         //}
     }
 
-    fun initializeCurrentBranch() {
-        Log.append("Initializing current branch")
-        val branchShellResult = Shell.exec(arrayOf("git", "branch", "--show-current"), location)
+    fun initializeCurrentBranch(threadIdx: Int? = null) {
+        Log.appendAsync(threadIdx, "Initializing current branch")
+        val branchShellResult = Shell.exec(arrayOf("git", "branch", "--show-current"), location, threadIdx)
         if (! branchShellResult.isSuccessful()){
             throw RuntimeException("Could not get current branch")
         }
         currentBranch = branchShellResult.output.trim()
     }
 
-    fun checkoutBranch(branch: String) {
-        Log.append("Checking out from $currentBranch into $branch")
-        val result = Shell.exec(arrayOf("git", "checkout", branch), location)
+    fun checkoutBranch(branch: String, threadIdx: Int? = null) {
+        Log.appendAsync(threadIdx, "Checking out from $currentBranch into $branch")
+        val result = Shell.exec(arrayOf("git", "checkout", branch), location, threadIdx)
         //if (! result.isSuccessful()){
         //    throw RuntimeException("Could not checkout from $currentBranch into $branch")
         //}
         currentBranch = branch
     }
 
-    fun resetHard() {
-        Log.append("Resetting current branch $currentBranch")
-        val result = Shell.exec(arrayOf("git", "reset", "--hard"), location)
+    fun resetHard(threadIdx: Int? = null) {
+        Log.appendAsync(threadIdx, "Resetting current branch $currentBranch")
+        val result = Shell.exec(arrayOf("git", "reset", "--hard"), location, threadIdx)
         if (! result.isSuccessful()){
             throw RuntimeException("Could not reset current branch $currentBranch")
         }
     }
 
-    fun cleanFDX() {
-        Log.append("Cleaning (-fdx) current branch $currentBranch")
-        val result = Shell.exec(arrayOf("git", "clean", "-fdx"), location)
+    fun cleanFDX(threadIdx: Int? = null) {
+        Log.appendAsync(threadIdx, "Cleaning (-fdx) current branch $currentBranch")
+        val result = Shell.exec(arrayOf("git", "clean", "-fdx"), location, threadIdx)
         if (! result.isSuccessful()){
             throw RuntimeException("Could not clean current branch $currentBranch")
         }
     }
 
-    fun sanitize() {
-        Log.append("Sanitizing current branch $currentBranch")
+    fun sanitize(threadIdx: Int? = null) {
+        Log.appendAsync(threadIdx, "Sanitizing current branch $currentBranch")
         resetHard()
         cleanFDX()
     }
 
-    fun mergeAndCountConflicts(branch: String): Int {
-        /*
+    fun mergeAndCountConflicts(baseBranch: String, incomingBranch: String, threadIdx: Int? = null): Distance {
+        var numberConflictFiles: Int = 0
+        var numberConflicts: Int = 0
+        var numberConflictLines: Int = 0
+        sanitize(threadIdx)
+        checkoutBranch(baseBranch, threadIdx)
+        //TODO: count files in the branch for reference
+        val mergeResult = Shell.exec(arrayOf("git", "merge", incomingBranch), location, threadIdx)
 
-        os.access(self._working_tmp_path, stat.S_IWUSR)
+        if (! mergeResult.isSuccessful()){
+            Log.appendAsync(threadIdx, "Could not merge $incomingBranch into $baseBranch")
+            Log.appendAsync(threadIdx, "Error:" + mergeResult.error)
+            throw RuntimeException("Could not merge $incomingBranch into $baseBranch")
+        }
+        Log.appendAsync(threadIdx, "STDOUT: " + mergeResult.output)
 
-        self.log.append(">>> Start merge_and_count_conflicts")
-        self.log.append("Merge from " + incoming_branch + " into " + base_branch)
+        val stdoutLines = mergeResult.output.split("\n")
+        val conflictIndicatingLines = mutableListOf<String>()
 
-        # ClEAN WHATEVER RBANCH WE ARE CURRENTLY IN
+        for (line in stdoutLines){
+            if (line.contains("Merge conflict in")){
+                numberConflictFiles++
+                conflictIndicatingLines.add(line)
+                Log.appendAsync(threadIdx, "Conflict in file: $line")
+            }
+        }
 
-        self.reset_hard(self._working_tmp_path, self.log)
-        self.clean_f_d_x(self._working_tmp_path, self.log)
+        if(conflictIndicatingLines.isEmpty()){
+            Log.appendAsync(threadIdx, "No conflicts found")
+            return Distance(lineDistance = numberConflictLines, conflictDistance = numberConflicts, fileDistance = numberConflictFiles)
+        }
 
-        # CHECKOUT AND CLEAN INCOMING BRANCH
+        val conflictingFilePaths = conflictIndicatingLines.map { it.split("Merge conflict in ")[1].replace("\n", "").trim() }
 
-        checkout = subprocess.run(["git", "checkout", incoming_branch], capture_output=True, cwd=self._working_tmp_path)
-        self.log.append("Checkout incoming branch " + incoming_branch)
-        self.log.append(str(checkout.stdout.decode("utf-8")))
+        for(conflictingFilePath in conflictingFilePaths){
+            var localNumberConflicts = 0
+            var localNumberConflictLines = 0
 
-        if checkout.returncode != 0:
-            self.log.append(str(checkout.stderr.decode("utf-8")))
-            raise Exception("Failed to checkout base branch")
+            Log.appendAsync(threadIdx, "Investigating conflicting file: $conflictingFilePath")
+            var fileLines: List<String> = listOf()
+            try {
+                val openedFile = Path("$location/$conflictingFilePath").toFile()
+                fileLines = openedFile.readLines(charset = Charsets.UTF_8)
+            } catch (e: Exception){
+                Log.appendAsync(threadIdx, "Error: cannot open conflicting file: $conflictingFilePath")
+                Log.appendAsync(threadIdx, e.toString())
+                Log.appendAsync(threadIdx, "--> Proceed without action")
+                continue
+            }
 
-        self.reset_hard(self._working_tmp_path, self.log)
-        self.clean_f_d_x(self._working_tmp_path, self.log)
+            var insideConflict = false
+            var conflictStartIndex = 0
 
-        # CHECKOUT AND CLEAN BASE BRANCH
-
-        checkout = subprocess.run(["git", "checkout", base_branch], capture_output=True, cwd=self._working_tmp_path)
-        self.log.append("Checkout base branch " + base_branch)
-        self.log.append(str(checkout.stdout.decode("utf-8")))
-
-        if checkout.returncode != 0:
-            self.log.append(str(checkout.stderr.decode("utf-8")))
-            raise Exception("Failed to checkout base branch")
-
-        self.reset_hard(self._working_tmp_path, self.log)
-        self.clean_f_d_x(self._working_tmp_path, self.log)
-
-        # DO MERGE
-
-        self.log.append("FILE COUNT IN BASE: " + str(count_files(self._working_tmp_path)))
-
-
-        self.log.append("ATTEMPT MERGE")
-        self.log.append("Base branch: " + base_branch)
-        self.log.append("Incoming branch: " + incoming_branch)
-
-        merge_res = subprocess.run(["git", "merge", incoming_branch], capture_output=True, cwd=self._working_tmp_path)
-
-        stdout_merge = merge_res.stdout
-        self.log.append("#### STDOUT ####")
-        self.log.append(str(stdout_merge.decode("utf-8")))
-
-        stderr_merge = merge_res.stderr
-        self.log.append("#### STDERR ####")
-        self.log.append(str(stderr_merge.decode("utf-8")))
-
-        self.log.append("--------lines")
-        stdout_lines: list[str] = list()
-
-        for line in stdout_merge.splitlines():
-            stdout_lines.append(line.decode("utf-8"))
-            self.log.append(line.decode("utf-8") + "\n")
-
-        self.log.append("--------conflict lines")
-        conflict_lines: list[str] = list()
-
-        for line in stdout_lines:
-            if "Merge conflict in" in line:
-                conflict_lines.append(line)
-                self.log.append(line + "\n")
-
-        self.log.append("--------conflict files")
-
-        conflict_files: list[str] = list()
-        for line in conflict_lines:
-            conflict_files.append(line.split("Merge conflict in ")[1].strip())
-            self.log.append(line.split("Merge conflict in ")[1].strip() + "\n")
-
-        self.log.append("--------")
-
-        distance = 0
-
-        if len(conflict_files) > 0:
-
-            for file in conflict_files:
-
-                opened_file = None
-                conflicting_file: list[str] = list()
-
-                try:
-                    opened_file = open(self._working_tmp_path + "/" + file, "r", encoding='utf-8', errors='strict')
-                    conflicting_file = opened_file.readlines()
-                except Exception as e:
-                    self.log.append("Error: cannot open conflicting file: " + file)
-                    self.log.append(str(e))
-                    self.log.append("--> Proceed without action")
-                    opened_file.close()
-                    conflicting_file = list()
-                    continue
-
-                inside_conflict = False
-                conflict_start_line = 0
-                line_index = 0
-
-                for line in conflicting_file:
-
-                    if line.strip().startswith("<<<<<<<") and not inside_conflict:
-                        # merge conflict start
-                        inside_conflict = True
-                        conflict_start_line = line_index
-
-                    if line.strip().startswith(">>>>>>>") and inside_conflict:
-                        # merge conflict end
-                        inside_conflict = False
-                        distance += (line_index - conflict_start_line)
-
-                    line_index += 1
-
-                opened_file.close()
-
-        self.log.append("<<< End merge_and_count_conflicts")
-         */
-        throw NotImplementedError()
+            for((lineIdx, line) in fileLines.withIndex()){
+                if(line.trim().startsWith("<<<<<<<") && !insideConflict){
+                    localNumberConflicts++
+                    insideConflict = true
+                    conflictStartIndex = lineIdx
+                }
+                if(line.trim().startsWith(">>>>>>>") && insideConflict){
+                    insideConflict = false
+                    localNumberConflictLines += (lineIdx - conflictStartIndex)
+                }
+            }
+            numberConflicts += localNumberConflicts
+            numberConflictLines += localNumberConflictLines
+            Log.appendAsync(threadIdx, "File $conflictingFilePath has $localNumberConflicts conflicts and $localNumberConflictLines conflicting lines")
+        }
+        Log.appendAsync(threadIdx, "Total: $numberConflictFiles files with $numberConflicts conflicts and $numberConflictLines conflicting lines")
+        return Distance(lineDistance = numberConflictLines, conflictDistance = numberConflicts, fileDistance = numberConflictFiles)
     }
 
-    fun deleteRepository() {
+    fun deleteRepository(threadIdx: Int? = null) {
         Log.append("Deleting repository at $location")
-        val result = Shell.rmrf(location, null)
+        val result = Shell.rmrf(location, null, threadIdx)
         if (! result.isSuccessful()){
             throw RuntimeException("Could not delete repository at $location")
         }

@@ -16,13 +16,29 @@
 
 package io.driftool.simulation
 
+import io.driftool.Log
 import io.driftool.gitmapping.Repository
 import io.driftool.reporting.DistanceRelation
+import io.driftool.reporting.DistanceResult
 
-class MergeHandler(workingRepository: Repository, idx: String) {
+class MergeHandler(val workingRepository: Repository, val idx: Int) {
 
-    fun executeMerges(branchCombinations: List<Pair<String, String>>): DistanceRelation {
-        throw NotImplementedError("Not yet implemented")
+    fun executeMerges(branchCombinations: List<Pair<String, String>>): DistanceResult {
+        Log.appendAsync(idx, "Merging branches...")
+        val distanceResult = DistanceResult(
+            DistanceRelation(mutableSetOf()),
+            DistanceRelation(mutableSetOf()),
+            DistanceRelation(mutableSetOf()))
+
+        for ((baseBranch, incomingBranch) in branchCombinations) {
+            Log.appendAsync(idx, "Merging $incomingBranch into $baseBranch")
+            val distance = workingRepository.mergeAndCountConflicts(baseBranch, incomingBranch, idx)
+            distanceResult.lineDistances.addValue(baseBranch, incomingBranch, distance.lineDistance.toFloat())
+            distanceResult.conflictDistances.addValue(baseBranch, incomingBranch, distance.conflictDistance.toFloat())
+            distanceResult.fileDistances.addValue(baseBranch, incomingBranch, distance.fileDistance.toFloat())
+        }
+        Log.appendAsync(idx, "Merging complete")
+        return distanceResult
     }
 
 }

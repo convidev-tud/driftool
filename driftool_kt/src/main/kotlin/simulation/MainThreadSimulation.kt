@@ -18,6 +18,7 @@ package io.driftool.simulation
 
 import io.driftool.data.GitModeConfiguration
 import io.driftool.data.GitModeConfigurationFile
+import io.driftool.reporting.DistanceResult
 import io.driftool.reporting.DriftReport
 import io.driftool.reporting.MatrixResult
 import java.time.Instant
@@ -32,13 +33,16 @@ class MainThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : Git
             super.prepareReferenceRepository()
             val workingRepository = super.createWorkingRepository()
             val branchCombinations = super.getBranchCombinations(includeSymmetries = true, includeIdentities = false)
-            val mergeHandler = MergeHandler(workingRepository, "DEFAULT")
-            val distanceRelation = mergeHandler.executeMerges(branchCombinations)
+            val mergeHandler = MergeHandler(workingRepository, 0)
+            val distanceResult: DistanceResult = mergeHandler.executeMerges(branchCombinations)
+
+            //TODO refactor to use DistanceResult - extend final report
             val distanceMatrix = MatrixResult.fromDistanceRelation(distanceRelation,
                 referenceRepository.getBranchesOfInterest(),
                 isComplete = true,
                 ensureSymmetry = true,
                 zeroIdentities = true)
+
             val pointCloud = calculateEmbeddings(distanceMatrix)
             val drift = calculateDrift(pointCloud)
 

@@ -22,7 +22,8 @@ import kotlin.time.TimeSource
 
 object Log {
 
-    private val log: Map<String, String> = ConcurrentHashMap<String, String>()
+    private val log: MutableMap<String, String> = ConcurrentHashMap<String, String>()
+    private val asyncLogs: MutableMap<Int, MutableMap<String, String>> = ConcurrentHashMap<Int, MutableMap<String, String>>()
 
     private var print: Boolean = true
 
@@ -34,7 +35,30 @@ object Log {
         if (print) println("LOG <<< $elem")
         val currentTimeStamp = TimeSource.Monotonic.markNow().toString()
         val randomPart = Random.nextInt().toString()
-        log.plus(Pair(currentTimeStamp + "_" + randomPart, elem))
+        log.put(currentTimeStamp + "_" + randomPart, elem)
+    }
+
+    fun appendAsync(threadIdx: Int?, elem: String){
+        if (threadIdx == null) {
+            append(elem)
+            return
+        }
+        var map = asyncLogs[threadIdx]
+        if (map == null){
+            map = ConcurrentHashMap<String, String>()
+            asyncLogs.put(threadIdx, map)
+        }
+        val currentTimeStamp = TimeSource.Monotonic.markNow().toString()
+        val randomPart = Random.nextInt().toString()
+        map.put(currentTimeStamp + "_" + randomPart, elem)
+    }
+
+    fun mergeAsyncLogs(){
+        asyncLogs.forEach { (logKey, value) -> value.forEach { (key, value) -> {
+            if (print) println("LOG [$logKey] <<< $value")
+            log.put(key, value)
+        } } }
+        asyncLogs.clear()
     }
 
     fun print(){

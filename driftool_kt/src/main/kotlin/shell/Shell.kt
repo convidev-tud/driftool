@@ -36,7 +36,7 @@ object Shell {
      * @param workingDirectory The working directory for the command. If null, the current working directory is used.
      * @return The result of the command, see [ShellResult].
      */
-    fun exec(command: Array<String>, workingDirectory: String?): ShellResult {
+    fun exec(command: Array<String>, workingDirectory: String?, threadIdx: Int? = null): ShellResult {
         val processBuilder = ProcessBuilder(command.toList())
         if (workingDirectory != null) {
             processBuilder.directory(File(workingDirectory))
@@ -51,21 +51,21 @@ object Shell {
 
         if (withLogging) {
             val commandString = command.joinToString(" ")
-            Log.append("Executing Shell Command: $commandString")
-            Log.append("Executing Shell Command: $result")
-            if(output.isNotEmpty()) Log.append("Shell Output: $output")
-            if(error.isNotEmpty()) Log.append("Shell Error: $error")
+            Log.appendAsync(threadIdx, "Executing Shell Command: $commandString")
+            Log.appendAsync(threadIdx, "Executing Shell Command: $result")
+            if(output.isNotEmpty()) Log.appendAsync(threadIdx, "Shell Output: $output")
+            if(error.isNotEmpty()) Log.appendAsync(threadIdx, "Shell Error: $error")
         }
         return ShellResult(result, output, error)
     }
 
-    fun execComplexCommand(command: String, workingDirectory: String): ShellResult {
+    fun execComplexCommand(command: String, workingDirectory: String, threadIdx: Int? = null): ShellResult {
         val randomKey = UUID.randomUUID().toString()
         val commandFileName = "command_$randomKey"
         val commandFile = File.createTempFile(commandFileName, ".sh", File(workingDirectory))
         commandFile.writeText("#!/bin/bash\n$command")
         commandFile.deleteOnExit()
-        val result = exec(arrayOf("sh", commandFile.absolutePath), workingDirectory)
+        val result = exec(arrayOf("sh", commandFile.absolutePath), workingDirectory, threadIdx)
         commandFile.delete()
         return result
     }
@@ -78,8 +78,8 @@ object Shell {
      * @param workingDirectory The working directory for the command. If null, the current working directory is used.
      * @return The result of the command, see [ShellResult].
      */
-    fun mkdir(directory: String, workingDirectory: String?): ShellResult {
-        return exec(arrayOf("mkdir", "-p", directory), workingDirectory)
+    fun mkdir(directory: String, workingDirectory: String?, threadIdx: Int? = null): ShellResult {
+        return exec(arrayOf("mkdir", "-p", directory), workingDirectory, threadIdx)
     }
 
     /**
@@ -88,12 +88,12 @@ object Shell {
      * @param workingDirectory The working directory for the command. If null, the current working directory is used.
      * @return The result of the command, see [ShellResult].
      */
-    fun rmrf(directory: String, workingDirectory: String?): ShellResult {
-        return exec(arrayOf("rm", "-rf", directory), workingDirectory)
+    fun rmrf(directory: String, workingDirectory: String?, threadIdx: Int? = null): ShellResult {
+        return exec(arrayOf("rm", "-rf", directory), workingDirectory, threadIdx)
     }
 
-    fun rm(file: String, workingDirectory: String? = null): ShellResult {
-        return exec(arrayOf("rm", file), workingDirectory)
+    fun rm(file: String, workingDirectory: String? = null, threadIdx: Int? = null): ShellResult {
+        return exec(arrayOf("rm", file), workingDirectory, threadIdx)
     }
 
     /**
@@ -105,8 +105,8 @@ object Shell {
      * @param workingDirectory The working directory for the command. If null, the current working directory is used.
      * @return The result of the command, see [ShellResult].
      */
-    fun cp(source: String, target: String, workingDirectory: String?): ShellResult {
-        return exec(arrayOf("cp", "-r", source, target), workingDirectory)
+    fun cp(source: String, target: String, workingDirectory: String?, threadIdx: Int? = null): ShellResult {
+        return exec(arrayOf("cp", "-r", source, target), workingDirectory, threadIdx)
     }
 
 
