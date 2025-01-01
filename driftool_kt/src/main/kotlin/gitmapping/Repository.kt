@@ -335,6 +335,8 @@ class Repository(val location: String) {
         val stdoutLines = mergeResult.output.split("\n")
         val conflictIndicatingLines = mutableListOf<String>()
 
+        //FIXME: EXAMPLE: CONFLICT (modify/delete): letters.txt deleted in feature/c and modified in HEAD. Version HEAD of letters.txt left in tree.
+
         for (line in stdoutLines){
             if (line.contains("Merge conflict in")){
                 numberConflictFiles++
@@ -343,10 +345,10 @@ class Repository(val location: String) {
             }
         }
 
-        if(conflictIndicatingLines.isEmpty()){
-            Log.appendAsync(threadIdx, "No conflicts found")
-            return Distance(lineDistance = numberConflictLines, conflictDistance = numberConflicts, fileDistance = numberConflictFiles)
-        }
+        //if(conflictIndicatingLines.isEmpty()){
+        //    Log.appendAsync(threadIdx, "No conflicts found")
+        //    return Distance(lineDistance = numberConflictLines, conflictDistance = numberConflicts, fileDistance = numberConflictFiles)
+        //}
 
         val conflictingFilePaths = conflictIndicatingLines.map { it.split("Merge conflict in ")[1].replace("\n", "").trim() }
 
@@ -384,10 +386,10 @@ class Repository(val location: String) {
             numberConflictLines += localNumberConflictLines
             Log.appendAsync(threadIdx, "File $conflictingFilePath has $localNumberConflicts conflicts and $localNumberConflictLines conflicting lines")
         }
-        Log.appendAsync(threadIdx, "Total: $numberConflictFiles files with $numberConflicts conflicts and $numberConflictLines conflicting lines")
 
-        Log.appendAsync(threadIdx, "Resetting to base branch $baseBranch")
+        Log.appendAsync(threadIdx, "Total: $numberConflictFiles files with $numberConflicts conflicts and $numberConflictLines conflicting lines")
         val currentHead = Shell.exec(arrayOf("git", "rev-parse", "HEAD"), location, threadIdx)
+
         if(currentHead.output.trim() == baseBranchCommit.output.trim()) {
             Log.appendAsync(threadIdx, "Aborting merge")
             val abortResult = Shell.exec(arrayOf("git", "merge", "--abort"), location, threadIdx)

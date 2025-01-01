@@ -88,11 +88,14 @@ class Checksum : Callable<Int> {
         inputRepository = DirectoryHandler.ensureNoSlashBeginning(DirectoryHandler.refactorPathUnixStyle(inputRepository))
         configPath = DirectoryHandler.ensureNoSlashBeginning(DirectoryHandler.refactorPathUnixStyle(configPath))
         reportPath = DirectoryHandler.ensureNoSlashBeginning(DirectoryHandler.refactorPathUnixStyle(reportPath))
+        supportPath = DirectoryHandler.ensureDirectoryPathEnding(DirectoryHandler.refactorPathUnixStyle(supportPath))
         val absoluteConfigPath = inputRootPath + configPath
         val absoluteInputRepositoryPath = inputRootPath + inputRepository
         val absoluteReportPath = inputRootPath + reportPath
         val parameterConfiguration = GenericParameterConfiguration(
-            inputRootPath, workingPath, absoluteInputRepositoryPath, absoluteConfigPath, absoluteReportPath, threads, mode)
+            inputRootPath, workingPath, absoluteInputRepositoryPath, absoluteConfigPath, absoluteReportPath, supportPath, threads, mode)
+        Log.append("Starting Driftool")
+        Log.append("Configuration: ${parameterConfiguration.toString()}")
         runWithConfig(parameterConfiguration)
         return 0
     }
@@ -109,6 +112,10 @@ fun main(args: Array<String>) {
         Log.mergeAsyncLogs()
         Log.append("Exception: ${ex.message}")
         exitProcess(1)
+    } catch (ae: AssertionError) {
+        Log.mergeAsyncLogs()
+        Log.append("AssertionError: ${ae.message}")
+        exitProcess(1)
     }
 }
 
@@ -119,6 +126,7 @@ fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
     assert(parameterConfig.mode.isNotBlank()) { "mode must be set" }
     assert(parameterConfig.threads > 0) { "threads must be greater than 0" }
     assert(parameterConfig.mode == "git" || parameterConfig.mode == "matrix") { "mode must be either git or matrix" }
+    assert(parameterConfig.supportPath.isNotBlank()) { "supportPath must be set" }
 
     try {
         val mode = Mode.valueOf(parameterConfig.mode)
@@ -129,6 +137,7 @@ fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
         Log.append("Mode: $mode")
         Log.append("Setup DirectoryHandler")
         DataProvider.initDirectoryHandler(parameterConfig.absoluteWorkingPath)
+        DataProvider.setSupportPath(parameterConfig.supportPath)
 
         val driftReport = when (mode) {
             Mode.git -> {
@@ -165,6 +174,10 @@ fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
     } catch (ex: Exception){
         Log.mergeAsyncLogs()
         Log.append("Exception: ${ex.message}")
+        exitProcess(1)
+    } catch (ae: AssertionError){
+        Log.mergeAsyncLogs()
+        Log.append("AssertionError: ${ae.message}")
         exitProcess(1)
     }
 }

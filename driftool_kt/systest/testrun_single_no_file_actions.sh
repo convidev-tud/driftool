@@ -7,4 +7,4 @@
 # $4 is the relative path to the repository within the input directory.
 # $5 is the relative path to the output directory within the input directory.
 
-./localrun_singlethread.sh ../volume ../tmp example_config.yaml conflict-example out
+./localrun_singlethread.sh ../volume ../tmp example_config.yaml conflict-example ./

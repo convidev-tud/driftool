@@ -16,6 +16,7 @@
 
 package io.driftool.reporting
 
+import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.time.LocalDateTime
 
@@ -50,7 +51,8 @@ data class DriftReport (
 
     fun toJson(): String {
         val mapper = jacksonObjectMapper()
-        val json = mapper.writeValueAsString(this)
+        mapper.enable(SerializationFeature.INDENT_OUTPUT)
+        val json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this)
         return json
     }
 }
