@@ -1,0 +1,39 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '2.0.0'
+    id 'application'
+}
+
+group = 'io.driftool'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.jetbrains.kotlin:kotlin-test'
+
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.1'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin:2.18.1'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1'
+
+    implementation 'info.picocli:picocli:4.7.5'
+}
+
+test {
+    useJUnitPlatform()
+}
+kotlin {
+    jvmToolchain(17)
+}
+
+application {
+    mainClassName = 'io.driftool.MainKt'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'io.driftool.MainKt'
+    }
+}
