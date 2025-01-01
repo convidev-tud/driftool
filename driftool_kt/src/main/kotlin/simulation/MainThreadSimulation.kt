@@ -16,6 +16,7 @@
 
 package io.driftool.simulation
 
+import io.driftool.Log
 import io.driftool.data.GitModeConfiguration
 import io.driftool.data.GitModeConfigurationFile
 import io.driftool.reporting.DistanceResult
@@ -34,6 +35,7 @@ class MainThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : Git
             val branchCombinations = super.getBranchCombinations(includeSymmetries = true, includeIdentities = false)
             val mergeHandler = MergeHandler(workingRepository, 0)
             val distanceResult: DistanceResult = mergeHandler.executeMerges(branchCombinations)
+            Log.mergeAsyncLogs()
             val endingTimestampMillis = System.currentTimeMillis()
             val durationMillis = endingTimestampMillis - startingTimestampMillis
 

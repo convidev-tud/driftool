@@ -21,7 +21,7 @@ import java.time.LocalDateTime
 
 data class DriftReport (
     val reportTitle: String,
-    val analysisTimestamp: LocalDateTime,
+    val analysisTimestamp: String,
     val analysisDurationMillis: Long,
     val numberOfBranchesTotal: Int,
     val numberOfBranchesAnalyzed: Int,

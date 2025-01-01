@@ -130,7 +130,7 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
 
         return DriftReport(
             reportTitle = configuration.fc.reportIdentifier ?: "Drift Report",
-            analysisTimestamp = LocalDateTime.ofInstant(Instant.ofEpochMilli(startingTimestampMillis), ZoneId.systemDefault()),
+            analysisTimestamp = LocalDateTime.ofInstant(Instant.ofEpochMilli(startingTimestampMillis), ZoneId.systemDefault()).toString(),
             analysisDurationMillis = durationMillis,
             numberOfBranchesTotal = referenceRepository.getAllBranches().size,
             numberOfBranchesAnalyzed = referenceRepository.getBranchesOfInterest().size,

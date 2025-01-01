@@ -16,6 +16,7 @@
 
 package io.driftool
 
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
 import kotlin.time.TimeSource
@@ -33,7 +34,7 @@ object Log {
 
     fun append(elem: String){
         if (print) println("LOG <<< $elem")
-        val currentTimeStamp = TimeSource.Monotonic.markNow().toString()
+        val currentTimeStamp = Instant.now().toString()
         val randomPart = Random.nextInt().toString()
         log.put(currentTimeStamp + "_" + randomPart, elem)
     }
@@ -48,16 +49,19 @@ object Log {
             map = ConcurrentHashMap<String, String>()
             asyncLogs.put(threadIdx, map)
         }
-        val currentTimeStamp = TimeSource.Monotonic.markNow().toString()
+        val currentTimeStamp = Instant.now().toString()
         val randomPart = Random.nextInt().toString()
-        map.put(currentTimeStamp + "_" + randomPart, elem)
+        map.put(currentTimeStamp + "_" + randomPart, "[$threadIdx] $elem")
     }
 
     fun mergeAsyncLogs(){
-        asyncLogs.forEach { (logKey, value) -> value.forEach { (key, value) -> {
-            if (print) println("LOG [$logKey] <<< $value")
-            log.put(key, value)
-        } } }
+        asyncLogs.forEach { (logKey, value) ->
+            val sortedEntries = getSorted(value)
+            for (entry in sortedEntries){
+                if (print) println("LOG <<< ${entry.second}")
+                log.put(entry.first, entry.second)
+            }
+        }
         asyncLogs.clear()
     }
 
@@ -65,10 +69,16 @@ object Log {
         log.forEach { (key, value) -> println("$key: $value") }
     }
 
-    private fun getSorted(): List<Pair<String, String>> = log.toList().sortedBy { it -> it.first.split("_")[0] }
+    private fun getSorted(logMap: Map<String, String>): List<Pair<String, String>> {
+        return logMap.toList().sortedBy { it ->
+            it.first.split("_")[0]
+        }
+    }
 
-    fun listValuePairs(): List<Pair<String, String>> = getSorted().map { it -> Pair(it.first.split("_")[0], it.second) }
+    fun listValuePairs(): List<Pair<String, String>> = getSorted(log).map { it -> Pair(it.first.split("_")[0], it.second) }
 
-    fun listValues(): List<String> = getSorted().map { it.second }
+    fun listValues(): List<String> = getSorted(log).map { it.second }
+
+
 
 }

@@ -170,12 +170,20 @@ class Repository(val location: String) {
     }
 
     fun applyWhiteList(whiteList: List<String>, rootLocation: String? = null, threadIdx: Int? = null) {
+        if (whiteList.isEmpty()){
+            Log.appendAsync(threadIdx, "No whitelist to apply")
+            return
+        }
         Log.appendAsync(threadIdx, "Applying whitelist to branch $currentBranch in location $location")
         val workingLocation = rootLocation ?: location
         applyPathList(whiteList, workingLocation, true, threadIdx)
     }
 
     fun applyBlackList(blackList: List<String>, rootLocation: String? = null, threadIdx: Int? = null) {
+        if (blackList.isEmpty()){
+            Log.appendAsync(threadIdx, "No blacklist to apply")
+            return
+        }
         Log.appendAsync(threadIdx, "Applying blacklist to branch $currentBranch in location $location")
         val workingLocation = rootLocation ?: location
         applyPathList(blackList, workingLocation, false, threadIdx)
@@ -296,25 +304,33 @@ class Repository(val location: String) {
 
     fun sanitize(threadIdx: Int? = null) {
         Log.appendAsync(threadIdx, "Sanitizing current branch $currentBranch")
-        resetHard()
-        cleanFDX()
+        resetHard(threadIdx)
+        cleanFDX(threadIdx)
     }
 
     fun mergeAndCountConflicts(baseBranch: String, incomingBranch: String, threadIdx: Int? = null): Distance {
         var numberConflictFiles: Int = 0
         var numberConflicts: Int = 0
         var numberConflictLines: Int = 0
+
         sanitize(threadIdx)
         checkoutBranch(baseBranch, threadIdx)
+        val baseBranchCommit = Shell.exec(arrayOf("git", "rev-parse", "HEAD"), location, threadIdx)
+
+        if (! baseBranchCommit.isSuccessful()){
+            throw RuntimeException("Could not get commit of base branch $baseBranch")
+        }
+        Log.appendAsync(threadIdx, "Base branch $baseBranch is at commit: ${baseBranchCommit.output}")
+
         //TODO: count files in the branch for reference
         val mergeResult = Shell.exec(arrayOf("git", "merge", incomingBranch), location, threadIdx)
 
-        if (! mergeResult.isSuccessful()){
+        if (!mergeResult.isSuccessful() && !mergeResult.output.contains("Merge conflict")){
             Log.appendAsync(threadIdx, "Could not merge $incomingBranch into $baseBranch")
-            Log.appendAsync(threadIdx, "Error:" + mergeResult.error)
+            Log.appendAsync(threadIdx, "STDERR:" + mergeResult.error)
             throw RuntimeException("Could not merge $incomingBranch into $baseBranch")
         }
-        Log.appendAsync(threadIdx, "STDOUT: " + mergeResult.output)
+        //Log.appendAsync(threadIdx, "STDOUT: " + mergeResult.output)
 
         val stdoutLines = mergeResult.output.split("\n")
         val conflictIndicatingLines = mutableListOf<String>()
@@ -369,6 +385,18 @@ class Repository(val location: String) {
             Log.appendAsync(threadIdx, "File $conflictingFilePath has $localNumberConflicts conflicts and $localNumberConflictLines conflicting lines")
         }
         Log.appendAsync(threadIdx, "Total: $numberConflictFiles files with $numberConflicts conflicts and $numberConflictLines conflicting lines")
+
+        Log.appendAsync(threadIdx, "Resetting to base branch $baseBranch")
+        val currentHead = Shell.exec(arrayOf("git", "rev-parse", "HEAD"), location, threadIdx)
+        if(currentHead.output.trim() == baseBranchCommit.output.trim()) {
+            Log.appendAsync(threadIdx, "Aborting merge")
+            val abortResult = Shell.exec(arrayOf("git", "merge", "--abort"), location, threadIdx)
+        }else{
+            Log.appendAsync(threadIdx, "Resetting to base branch $baseBranch")
+            val resetResult = Shell.exec(arrayOf("git", "reset", "--hard", baseBranchCommit.output.trim()), location, threadIdx)
+        }
+        sanitize(threadIdx)
+
         return Distance(lineDistance = numberConflictLines, conflictDistance = numberConflicts, fileDistance = numberConflictFiles)
     }
 

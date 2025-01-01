@@ -61,7 +61,7 @@ class Checksum : Callable<Int> {
         names = ["-o", "--report_location"],
         description = ["Path to the report directory. " +
                 "The path must start in the input directory root."])
-    var reportPath: String = "out/"
+    var reportPath: String = "./"
 
     @CommandLine.Option(
         names = ["-m", "--mode"],
@@ -102,6 +102,7 @@ fun main(args: Array<String>) {
     try {
         exitProcess(CommandLine(Checksum()).execute(*args))
     } catch (ex: NotImplementedError) {
+        Log.mergeAsyncLogs()
         Log.append("NotImplementedError: ${ex.message}")
         exitProcess(1)
     } catch (ex: Exception) {
@@ -112,7 +113,6 @@ fun main(args: Array<String>) {
 }
 
 fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
-
     Log.append(parameterConfig.toString())
     assert(parameterConfig.inputRootPath.isNotBlank()) { "inputRootPath must be set" }
     assert(parameterConfig.absoluteConfigPath.isNotBlank()) { "configPath must be set" }
@@ -120,43 +120,53 @@ fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
     assert(parameterConfig.threads > 0) { "threads must be greater than 0" }
     assert(parameterConfig.mode == "git" || parameterConfig.mode == "matrix") { "mode must be either git or matrix" }
 
-    val mode = Mode.valueOf(parameterConfig.mode)
-    var jsonReport: Boolean = false
-    var htmlReport: Boolean = false
-    var reportIdentifier: String = ""
+    try {
+        val mode = Mode.valueOf(parameterConfig.mode)
+        var jsonReport: Boolean = false
+        var htmlReport: Boolean = false
+        var reportIdentifier: String = ""
 
-    Log.append("Mode: $mode")
-    Log.append("Setup DirectoryHandler")
-    DataProvider.initDirectoryHandler(parameterConfig.absoluteWorkingPath)
+        Log.append("Mode: $mode")
+        Log.append("Setup DirectoryHandler")
+        DataProvider.initDirectoryHandler(parameterConfig.absoluteWorkingPath)
 
-    val driftReport = when (mode) {
-        Mode.git -> {
-            val gitModeConfiguration = GitModeConfiguration(
-                ConfigurationReader(parameterConfig.absoluteConfigPath).parseGitModeConfig(),
-                parameterConfig)
-            jsonReport = gitModeConfiguration.fc.jsonReport
-            htmlReport = gitModeConfiguration.fc.htmlReport
-            reportIdentifier = gitModeConfiguration.fc.reportIdentifier ?: "UNTITLED"
-            runGitSimulation(gitModeConfiguration)
+        val driftReport = when (mode) {
+            Mode.git -> {
+                val gitModeConfiguration = GitModeConfiguration(
+                    ConfigurationReader(parameterConfig.absoluteConfigPath).parseGitModeConfig(),
+                    parameterConfig
+                )
+                jsonReport = gitModeConfiguration.fc.jsonReport
+                htmlReport = gitModeConfiguration.fc.htmlReport
+                reportIdentifier = gitModeConfiguration.fc.reportIdentifier ?: "UNTITLED"
+                runGitSimulation(gitModeConfiguration)
+            }
+
+            Mode.matrix -> {
+                runMatrixSimulation()
+            }
+
+            else -> {
+                throw IllegalArgumentException("Unknown mode: $mode")
+            }
         }
-        Mode.matrix -> {
-            runMatrixSimulation()
+
+        Log.append("Writing drift report")
+        if (jsonReport) {
+            val reportJson = driftReport.toJson()
+            val jsonReportPath = DirectoryHandler.ensureDirectoryPathEnding(parameterConfig.absoluteReportPath) +
+                    reportIdentifier + ".json"
+            File(jsonReportPath).writeText(reportJson)
         }
-        else -> {
-            throw IllegalArgumentException("Unknown mode: $mode")
-        }
+        //TODO other report types
+
+        return driftReport
+
+    } catch (ex: Exception){
+        Log.mergeAsyncLogs()
+        Log.append("Exception: ${ex.message}")
+        exitProcess(1)
     }
-
-    Log.append("Writing drift report")
-    if(jsonReport){
-        val reportJson = driftReport.toJson()
-        val jsonReportPath = DirectoryHandler.ensureDirectoryPathEnding(parameterConfig.absoluteReportPath) +
-                reportIdentifier + ".json"
-        File(jsonReportPath).writeText(reportJson)
-    }
-    //TODO other report types
-
-    return driftReport
 }
 
 fun runGitSimulation(configuration: GitModeConfiguration): DriftReport {
