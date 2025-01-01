@@ -23,6 +23,7 @@ Depending on the calculation strategy, different *Drift Flavours* are possible.
 
 * *Statement Drift* := a measure for the merge complexity based on the git merge conflict line count
 * *Conflict Drift* := a measure for the merge complexity based on the git merge conflict occurence count
+* *File Drift* := a measure for the merge complexity based on the git merge conflicting files count
 
 In general, higher numbers (increase over time) indicate a more difficult repository management.
 
@@ -32,10 +33,9 @@ In general, higher numbers (increase over time) indicate a more difficult reposi
 
 > TODO
 
-
 # Getting Started
 
-#### Terms 
+#### Important Terms 
 
 There are some important terms to keep in mind while reading the following instructions.
 
@@ -97,18 +97,18 @@ with sudo priviledges.
 
 #### Development Setup
 
-To execute the driftool from sources on you local file system, execute the following command in the directory where the ``build.gradle`` file is located. This assumes you have a current version of gradle (8+) and Java (JDK 17+) installed on your system.
+To execute the driftool from sources on you local file system, execute the following command in the directory where the ``build.gradle`` file is located. This assumes you have a current version of gradle (8+) and Java (JDK 17+) installed on your system. In addtion, you need a python3 installation available as ``python`` in the path. The packages *pip* and *scikit-learn* must be globally available in the execution context of the driftool.
 
 ```
 gradle run --args="..."
 ```
 
 Please take the argument order and descriptions from the ``Main.kt`` file located in the driftool sources or just run the command without arguments and look at the error messages.
+A good first step is the execution of the unit testsuite via gradle test or gradle build.
 
-A somewhat easier way is to use the already prepared ``testrun.sh`` script within the ``driftool_kt`` folder.
+A somewhat easier way is to use the already prepared ``testrun.sh`` scripts within the ``driftool_kt`` folder. There are a variety of options available. Before exectuing the testruns, make sure to execute the ``setup.sh`` located in the same place.
 
 For meaningful repository tests, we provide an example repository with documented merge conflicts in https://github.com/convidev-tud/conflict-example
-The best way for testing is to clone the example repository into the volume folder and adjust the config template (Not that the example must not be added as a submodule!).
 
 ### Environment Settings
 

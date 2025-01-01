@@ -21,6 +21,9 @@ RUN apt -y install unzip
 
 RUN apt -y install openjdk-21-jdk
 
+#TODO install python3 as python
+#TODO install required python packages
+
 WORKDIR /driftool/driftool_kt
 RUN ./gradlew clean
 RUN ./gradlew build
