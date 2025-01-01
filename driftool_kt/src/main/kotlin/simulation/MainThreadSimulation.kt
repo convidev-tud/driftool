@@ -39,7 +39,7 @@ class MainThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : Git
             val endingTimestampMillis = System.currentTimeMillis()
             val durationMillis = endingTimestampMillis - startingTimestampMillis
 
-            return makeReport(distanceResult, durationMillis, startingTimestampMillis)
+            return makeReport(distanceResult, durationMillis, startingTimestampMillis, numberThreads = 1)
         }
 
 }

@@ -18,7 +18,6 @@ package io.driftool.reporting
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import java.time.LocalDateTime
 
 data class DriftReport (
     val reportTitle: String,
@@ -26,6 +25,7 @@ data class DriftReport (
     val analysisDurationMillis: Long,
     val numberOfBranchesTotal: Int,
     val numberOfBranchesAnalyzed: Int,
+    val analysisParallelism: Int,
     val sortedBranchList: List<String>,
     val lineDrift: Double,
     val conflictDrift: Double,

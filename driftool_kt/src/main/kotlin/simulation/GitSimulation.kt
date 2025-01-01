@@ -102,7 +102,7 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
         referenceRepository.deleteRepository()
     }
 
-    fun makeReport(distanceResult: DistanceResult, durationMillis: Long, startingTimestampMillis: Long): DriftReport {
+    fun makeReport(distanceResult: DistanceResult, durationMillis: Long, startingTimestampMillis: Long, numberThreads: Int): DriftReport {
 
         val lineDistanceMatrix = MatrixResult.fromDistanceRelation(distanceResult.lineDistances,
             referenceRepository.getBranchesOfInterest(),
@@ -132,6 +132,7 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
             reportTitle = configuration.fc.reportIdentifier ?: "Drift Report",
             analysisTimestamp = LocalDateTime.ofInstant(Instant.ofEpochMilli(startingTimestampMillis), ZoneId.systemDefault()).toString(),
             analysisDurationMillis = durationMillis,
+            analysisParallelism = numberThreads,
             numberOfBranchesTotal = referenceRepository.getAllBranches().size,
             numberOfBranchesAnalyzed = referenceRepository.getBranchesOfInterest().size,
             sortedBranchList = referenceRepository.getBranchesOfInterest(),
