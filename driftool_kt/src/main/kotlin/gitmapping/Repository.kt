@@ -194,24 +194,24 @@ class Repository(val location: String) {
         val gitPattern = Regex("\\.git")
         val patterns = list.map { it.toRegex() }
         val locationSuffix = rootLocation.removePrefix(location)
-        Log.appendAsync(threadIdx, "Applying list to locationSuffix: $locationSuffix")
+        //Log.appendAsync(threadIdx, "Applying list to locationSuffix: $locationSuffix")
         val allFilesInLocation: List<Path> = Path(rootLocation).listDirectoryEntries()
 
         for(elem in allFilesInLocation){
-            Log.appendAsync(threadIdx, "Checking file: ${elem.fileName} /// $elem")
+            //Log.appendAsync(threadIdx, "Checking file: ${elem.fileName} /// $elem")
             if(gitPattern.find(elem.toString()) != null){
                 //Skip everything related to the git repository itself (.git/.gitignore/.gitkeep/...
                 Log.appendAsync(threadIdx, "--skip (git related)")
                 continue
             }
             if(elem.isSymbolicLink()){
-                Log.appendAsync(threadIdx, "Symbolic link found: ${elem.fileName} -> deleting")
+                //Log.appendAsync(threadIdx, "Symbolic link found: ${elem.fileName} -> deleting")
                 delete(elem, threadIdx)
-                Log.appendAsync(threadIdx, "--delete")
+                //Log.appendAsync(threadIdx, "--delete")
                 continue
             }
             if(elem.isDirectory()){
-                Log.appendAsync(threadIdx, "--traverse")
+                //Log.appendAsync(threadIdx, "--traverse")
                 if(keepMatches){
                     applyPathList(list, elem.toString(), true, threadIdx)
                 }else{
@@ -221,7 +221,7 @@ class Repository(val location: String) {
             }
 
             val elemSuffix = elem.toString().removePrefix(location)
-            Log.appendAsync(threadIdx, "--check file:  + $elemSuffix")
+            //Log.appendAsync(threadIdx, "--check file:  + $elemSuffix")
             val matchList: MutableList<Boolean> = mutableListOf()
             for(pattern in patterns){
                 val isMatch = pattern.find(elemSuffix) != null
@@ -233,14 +233,14 @@ class Repository(val location: String) {
             //case applying the blacklist and file is in the blacklist
             //if there is at least one match, then remove t
             if(matchList.contains(true) && !keepMatches) {
-                Log.appendAsync(threadIdx, "--delete")
+                //Log.appendAsync(threadIdx, "--delete")
                 delete(elem, threadIdx)
                 continue
             }
             //case applying the whitelist and file is not in the whitelist
             //delete the file of no match was found, i.e., no pattern to keep the file was specified
             if(matchList.count { it } == 0  && keepMatches){
-                Log.appendAsync(threadIdx, "--delete")
+                //Log.appendAsync(threadIdx, "--delete")
                 delete(elem, threadIdx)
                 continue
             }
@@ -259,11 +259,13 @@ class Repository(val location: String) {
         Log.appendAsync(threadIdx, "Committing changes to branch $currentBranch with message: $message")
         Log.appendAsync(threadIdx, "Adding all files")
 
+        Log.setPrint(false)
         val addResult = Shell.exec(arrayOf("git", "add", "--all"), location, threadIdx)
         if (! addResult.isSuccessful()){
             throw RuntimeException("Could not add all files to git")
         }
-        val commitResult = Shell.exec(arrayOf("git", "commit", "-m", message), location, threadIdx)
+        val commitResult = Shell.exec(arrayOf("git", "commit", "-m", "\"$message\""), location, threadIdx)
+        Log.setPrint(true)
         //if (! commitResult.isSuccessful()){
         //    throw RuntimeException("Could not commit changes to git")
         //}

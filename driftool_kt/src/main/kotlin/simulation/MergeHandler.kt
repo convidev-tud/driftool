@@ -30,7 +30,11 @@ class MergeHandler(val workingRepository: Repository, val idx: Int) {
             DistanceRelation(mutableSetOf()),
             DistanceRelation(mutableSetOf()))
 
+        val batchSize = branchCombinations.size
+        var current = 1
+
         for ((baseBranch, incomingBranch) in branchCombinations) {
+            println("[$idx]Merging $current / $batchSize")
             Log.appendAsync(idx, "Merging $incomingBranch into $baseBranch")
             val distance = workingRepository.mergeAndCountConflicts(baseBranch, incomingBranch, idx)
             distanceResult.lineDistances.addValue(baseBranch, incomingBranch, distance.lineDistance.toFloat())
