@@ -38,6 +38,7 @@ class Repository(val location: String) {
     var defaultBranch: String? = null
 
     fun findAllBranches(threadIdx: Int? = null): List<String> {
+        Log.append("Finding all branches in location $location")
         val listBranchResult = Shell.exec(arrayOf("git", "branch", "--all"), location)
 
         if (! listBranchResult.isSuccessful()){

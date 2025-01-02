@@ -52,7 +52,7 @@ object Shell {
         if (withLogging) {
             val commandString = command.joinToString(" ")
             Log.appendAsync(threadIdx, "Executing Shell Command: $commandString")
-            Log.appendAsync(threadIdx, "Executing Shell Command: $result")
+            Log.appendAsync(threadIdx, "Exiting Shell Command: $result")
             if(output.isNotEmpty()) Log.appendAsync(threadIdx, "Shell Output: $output")
             if(error.isNotEmpty()) Log.appendAsync(threadIdx, "Shell Error: $error")
         }
@@ -106,7 +106,9 @@ object Shell {
      * @return The result of the command, see [ShellResult].
      */
     fun cp(source: String, target: String, workingDirectory: String?, threadIdx: Int? = null): ShellResult {
-        return exec(arrayOf("cp", "-r", source, target), workingDirectory, threadIdx)
+        val from = DirectoryHandler.ensureDirectoryPathEnding(source) + "."
+        val to = DirectoryHandler.ensureNoDirectoryPathEnding(target)
+        return exec(arrayOf("cp", "-r", from, to), workingDirectory, threadIdx)
     }
 
 

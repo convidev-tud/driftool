@@ -24,8 +24,8 @@ RUN apt -y install python3-venv
 RUN apt -y install python-is-python3
 RUN apt -y install python3-pip
 
-RUN pip3 install numpy
-RUN pip3 install scikit-learn
+RUN apt -y install python3-numpy
+RUN apt -y install python3-sklearn
 
 WORKDIR /driftool/driftool_kt
 RUN ./gradlew clean
