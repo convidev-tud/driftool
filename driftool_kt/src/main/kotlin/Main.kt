@@ -26,6 +26,7 @@ import io.driftool.simulation.MultiThreadSimulation
 import io.driftool.simulation.Simulation
 import picocli.CommandLine
 import java.io.File
+import java.time.Instant
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 
@@ -167,18 +168,28 @@ fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
                     reportIdentifier + ".json"
             File(jsonReportPath).writeText(reportJson)
         }
-        //TODO other report types
+        writeLog(parameterConfig.absoluteReportPath, reportIdentifier)
 
         return driftReport
 
     } catch (ex: Exception){
         Log.mergeAsyncLogs()
         Log.append("Exception: ${ex.message}")
+        writeLog(parameterConfig.absoluteReportPath, "UNKNOWN")
         exitProcess(1)
     } catch (ae: AssertionError){
         Log.mergeAsyncLogs()
         Log.append("AssertionError: ${ae.message}")
+        writeLog(parameterConfig.absoluteReportPath, "UNKNOWN")
         exitProcess(1)
+    }
+}
+
+fun writeLog(reportPath: String, reportIdentifier: String) {
+    val logFile = DirectoryHandler.ensureDirectoryPathEnding(reportPath) +
+            reportIdentifier + "_" + Instant.now().toEpochMilli().toString() + "_log.txt"
+    File(logFile).writer().use { out ->
+        Log.listValuePairs().forEach { out.write("${it.first}: ${it.second}\n") }
     }
 }
 

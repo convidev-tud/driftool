@@ -76,10 +76,15 @@ class MultiThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : Gi
         workingInstances.forEach { (job, mergeHandler) ->
             launch {
                 thread(start = true) {
-                    println("Starting thread ${mergeHandler.idx}")
-                    val result = mergeHandler.executeMerges(job)
-                    results.put(mergeHandler, result)
-                    println("Thread ${mergeHandler.idx} finished")
+                    try {
+                        println("Starting thread ${mergeHandler.idx}")
+                        val result = mergeHandler.executeMerges(job)
+                        results.put(mergeHandler, result)
+                        println("Thread ${mergeHandler.idx} finished")
+                    } catch (e: Exception) {
+                        println("Thread ${mergeHandler.idx} failed")
+                        e.printStackTrace()
+                    }
                 }.join()
             }
         }

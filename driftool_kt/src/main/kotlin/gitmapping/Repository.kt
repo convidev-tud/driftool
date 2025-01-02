@@ -191,21 +191,22 @@ class Repository(val location: String) {
     }
 
     private fun applyPathList(list: List<String>, rootLocation: String, keepMatches: Boolean, threadIdx: Int? = null){
+
         val gitPattern = Regex("\\.git")
         val patterns = list.map { it.toRegex() }
         val locationSuffix = rootLocation.removePrefix(location)
-        //Log.appendAsync(threadIdx, "Applying list to locationSuffix: $locationSuffix")
+        Log.appendAsync(threadIdx, "Applying list to locationSuffix: $locationSuffix")
         val allFilesInLocation: List<Path> = Path(rootLocation).listDirectoryEntries()
 
         for(elem in allFilesInLocation){
             //Log.appendAsync(threadIdx, "Checking file: ${elem.fileName} /// $elem")
-            if(gitPattern.find(elem.toString()) != null){
+            if(gitPattern.find(elem.toString().removePrefix(location)) != null){
                 //Skip everything related to the git repository itself (.git/.gitignore/.gitkeep/...
-                Log.appendAsync(threadIdx, "--skip (git related)")
+                //Log.appendAsync(threadIdx, "--skip (git related)")
                 continue
             }
             if(elem.isSymbolicLink()){
-                //Log.appendAsync(threadIdx, "Symbolic link found: ${elem.fileName} -> deleting")
+                Log.appendAsync(threadIdx, "Symbolic link found: ${elem.fileName} -> deleting")
                 delete(elem, threadIdx)
                 //Log.appendAsync(threadIdx, "--delete")
                 continue
@@ -259,13 +260,11 @@ class Repository(val location: String) {
         Log.appendAsync(threadIdx, "Committing changes to branch $currentBranch with message: $message")
         Log.appendAsync(threadIdx, "Adding all files")
 
-        Log.setPrint(false)
         val addResult = Shell.exec(arrayOf("git", "add", "--all"), location, threadIdx)
         if (! addResult.isSuccessful()){
             throw RuntimeException("Could not add all files to git")
         }
         val commitResult = Shell.exec(arrayOf("git", "commit", "-m", "\"$message\""), location, threadIdx)
-        Log.setPrint(true)
         //if (! commitResult.isSuccessful()){
         //    throw RuntimeException("Could not commit changes to git")
         //}
@@ -328,7 +327,7 @@ class Repository(val location: String) {
         //TODO: count files in the branch for reference
         val mergeResult = Shell.exec(arrayOf("git", "merge", incomingBranch), location, threadIdx)
 
-        if (!mergeResult.isSuccessful() && !mergeResult.output.contains("Merge conflict")){
+        if (!mergeResult.isSuccessful() && !mergeResult.output.contains("Merge conflict") && !mergeResult.output.contains("fix conflicts and then commit the result")){
             Log.appendAsync(threadIdx, "Could not merge $incomingBranch into $baseBranch")
             Log.appendAsync(threadIdx, "STDERR:" + mergeResult.error)
             throw RuntimeException("Could not merge $incomingBranch into $baseBranch")
@@ -338,13 +337,17 @@ class Repository(val location: String) {
         val stdoutLines = mergeResult.output.split("\n")
         val conflictIndicatingLines = mutableListOf<String>()
 
-        //FIXME: EXAMPLE: CONFLICT (modify/delete): letters.txt deleted in feature/c and modified in HEAD. Version HEAD of letters.txt left in tree.
+
 
         for (line in stdoutLines){
             if (line.contains("Merge conflict in")){
                 numberConflictFiles++
                 conflictIndicatingLines.add(line)
                 Log.appendAsync(threadIdx, "Conflict in file: $line")
+            }else if (line.trim().startsWith("CONFLICT (")){
+                //EXAMPLE: CONFLICT (modify/delete): letters.txt deleted in feature/c and modified in HEAD. Version HEAD of letters.txt left in tree.
+                numberConflictFiles++
+                Log.appendAsync(threadIdx, "(x/delete) conflict in file: $line")
             }
         }
 

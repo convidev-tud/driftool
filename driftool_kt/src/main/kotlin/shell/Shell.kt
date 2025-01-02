@@ -19,6 +19,7 @@ package io.driftool.shell
 import io.driftool.Log
 import java.io.File
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 /**
  * Provides the set of required shell commands.
@@ -44,7 +45,7 @@ object Shell {
         val process = processBuilder.start()
         val inputStream = process.inputStream
         val errorStream = process.errorStream
-        process.waitFor()
+        process.waitFor(60 , TimeUnit.SECONDS)
         val output = inputStream.bufferedReader().readText()
         val error = errorStream.bufferedReader().readText()
         val result = process.exitValue()

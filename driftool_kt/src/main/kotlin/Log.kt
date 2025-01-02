@@ -27,6 +27,7 @@ object Log {
     private val asyncLogs: MutableMap<Int, MutableMap<String, String>> = ConcurrentHashMap<Int, MutableMap<String, String>>()
 
     private var print: Boolean = true
+    private var asyncPrinting: Boolean = true
 
     fun setPrint(value: Boolean){
         print = value
@@ -43,6 +44,9 @@ object Log {
         if (threadIdx == null) {
             append(elem)
             return
+        }
+        if (asyncPrinting){
+            println("LOG [$threadIdx] <<< $elem")
         }
         var map = asyncLogs[threadIdx]
         if (map == null){
