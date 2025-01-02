@@ -9,7 +9,7 @@
 # $4 is the size of the ramdisk the container is allowed to create in GB.
 # The container has a base RAM requirement of around 2GB. 
 # For multithreaded analysis, the RAM requirement is (x + 2x * threads) where x is the size of the repository.
-# FOr example, for a 2GB repository analyzed on 8 threads, the RAM requirement is minimum 18GB. To ensure a smooth run, 24GB would be ideal.
+# For example, for a 2GB repository analyzed on 8 threads, the RAM requirement is minimum 18GB. To ensure a smooth run, 24GB would be ideal.
 
 # $5 is the number of threads to use for the analysis.
 

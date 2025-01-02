@@ -18,11 +18,14 @@ RUN apt-get -y update
 RUN apt-get -y upgrade
 
 RUN apt -y install unzip
-
 RUN apt -y install openjdk-21-jdk
+RUN apt -y install python3
+RUN apt -y install python3-venv
+RUN apt -y install python-is-python3
+RUN apt -y install python3-pip
 
-#TODO install python3 as python
-#TODO install required python packages
+RUN pip3 install numpy
+RUN pip3 install scikit-learn
 
 WORKDIR /driftool/driftool_kt
 RUN ./gradlew clean
