@@ -90,22 +90,41 @@ class Checksum : Callable<Int> {
                 "Default is false."])
     var symmetry: Boolean = false
 
+    @CommandLine.Option(
+        names = ["-p", "--print_log"],
+        description = ["Defines if the logger prints main thread events on the fly" +
+                "Default is true."])
+    var printLog: Boolean = true
+
+    @CommandLine.Option(
+        names = ["-p", "--print_log_async"],
+        description = ["Defines if the logger prints async thread events on the fly." +
+                "Events are printed FIFO without taking care of their parent thread id." +
+                "Default is false."])
+    var printLogAsync: Boolean = false
+
     override fun call(): Int {
+        Log.setPrint(printLog)
+        Log.setAsyncPrinting(printLogAsync)
+
         workingPath = DirectoryHandler.ensureDirectoryPathEnding(DirectoryHandler.refactorPathUnixStyle(workingPath))
         inputRootPath = DirectoryHandler.ensureDirectoryPathEnding(DirectoryHandler.refactorPathUnixStyle(inputRootPath))
         inputRepository = DirectoryHandler.ensureNoSlashBeginning(DirectoryHandler.refactorPathUnixStyle(inputRepository))
         configPath = DirectoryHandler.ensureNoSlashBeginning(DirectoryHandler.refactorPathUnixStyle(configPath))
         reportPath = DirectoryHandler.ensureNoSlashBeginning(DirectoryHandler.refactorPathUnixStyle(reportPath))
         supportPath = DirectoryHandler.ensureDirectoryPathEnding(DirectoryHandler.refactorPathUnixStyle(supportPath))
+
         val absoluteConfigPath = inputRootPath + configPath
         val absoluteInputRepositoryPath = inputRootPath + inputRepository
         val absoluteReportPath = inputRootPath + reportPath
         val parameterConfiguration = GenericParameterConfiguration(
             inputRootPath, workingPath, absoluteInputRepositoryPath, absoluteConfigPath,
             absoluteReportPath, supportPath, threads, mode, symmetry)
+
         Log.append("Starting Driftool")
         Log.append("Configuration: ${parameterConfiguration.toString()}")
         runWithConfig(parameterConfiguration)
+
         return 0
     }
 }
@@ -114,15 +133,12 @@ fun main(args: Array<String>) {
     try {
         exitProcess(CommandLine(Checksum()).execute(*args))
     } catch (ex: NotImplementedError) {
-        Log.mergeAsyncLogs()
         Log.append("NotImplementedError: ${ex.message}")
         exitProcess(1)
     } catch (ex: Exception) {
-        Log.mergeAsyncLogs()
         Log.append("Exception: ${ex.message}")
         exitProcess(1)
     } catch (ae: AssertionError) {
-        Log.mergeAsyncLogs()
         Log.append("AssertionError: ${ae.message}")
         exitProcess(1)
     }
@@ -182,12 +198,10 @@ fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
         return driftReport
 
     } catch (ex: Exception){
-        Log.mergeAsyncLogs()
         Log.append("Exception: ${ex.message}")
         writeLog(parameterConfig.absoluteReportPath, reportIdentifier)
         exitProcess(1)
     } catch (ae: AssertionError){
-        Log.mergeAsyncLogs()
         Log.append("AssertionError: ${ae.message}")
         writeLog(parameterConfig.absoluteReportPath, reportIdentifier)
         exitProcess(1)

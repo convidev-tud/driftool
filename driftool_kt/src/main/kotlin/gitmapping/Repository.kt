@@ -268,9 +268,8 @@ class Repository(val location: String) {
             }
 
         } catch (e: Exception) {
-            if()
-            Log.appendAsync("Abort list branch recursion because of malformed input")
-            Log.appendAsync(e.toString())
+            Log.appendAsync(threadIdx, "Abort list branch recursion because of malformed input")
+            Log.appendAsync(threadIdx, e.toString())
         }
     }
 

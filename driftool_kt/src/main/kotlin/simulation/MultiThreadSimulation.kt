@@ -54,7 +54,6 @@ class MultiThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : Gi
             runAllThreads(workingInstances, results)
         }
         println("All threads finished")
-        Log.mergeAsyncLogs()
 
         val joinedResult = DistanceResult(
             DistanceRelation(mutableSetOf()),

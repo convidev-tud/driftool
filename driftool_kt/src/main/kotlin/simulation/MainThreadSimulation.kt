@@ -37,7 +37,6 @@ class MainThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : Git
                 includeIdentities = false)
             val mergeHandler = MergeHandler(workingRepository, 0)
             val distanceResult: DistanceResult = mergeHandler.executeMerges(branchCombinations)
-            Log.mergeAsyncLogs()
             val endingTimestampMillis = System.currentTimeMillis()
             val durationMillis = endingTimestampMillis - startingTimestampMillis
 
