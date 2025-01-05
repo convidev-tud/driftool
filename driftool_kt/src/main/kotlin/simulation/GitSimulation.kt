@@ -41,6 +41,7 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
 
     fun prepareReferenceRepository() {
         //find all branches
+        referenceRepository.initGitUser()
         val rawBranchList = referenceRepository.findAllBranches()
         Log.append(rawBranchList.toString())
 

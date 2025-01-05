@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # FROM debian:bookworm or debian:trixie works as well
-FROM debian:trixie
+FROM ubuntu:22.04
 USER root 
 
 COPY . /driftool
@@ -20,12 +20,11 @@ RUN apt-get -y upgrade
 RUN apt -y install unzip
 RUN apt -y install openjdk-21-jdk
 RUN apt -y install python3
-RUN apt -y install python3-venv
-RUN apt -y install python-is-python3
 RUN apt -y install python3-pip
+RUN apt -y install python-is-python3
 
-RUN apt -y install python3-numpy
-RUN apt -y install python3-sklearn
+RUN pip install numpy
+RUN pip install scikit-learn
 
 WORKDIR /driftool/driftool_kt
 RUN ./gradlew clean
@@ -36,9 +35,5 @@ WORKDIR /driftool
 RUN unzip driftool_kt-1.0-SNAPSHOT.zip
 
 RUN apt -y install git
-
-RUN git config --global user.name "driftool"
-RUN git config --global user.email "analysis@driftool.io"
-
 
 ENTRYPOINT ["sudo", "/driftool/debrun.sh"]

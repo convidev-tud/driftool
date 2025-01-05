@@ -39,16 +39,37 @@ object Shell {
      */
     fun exec(command: Array<String>, workingDirectory: String?, threadIdx: Int? = null): ShellResult {
         val processBuilder = ProcessBuilder(command.toList())
+        val commandString = command.joinToString(" ")
         if (workingDirectory != null) {
             processBuilder.directory(File(workingDirectory))
         }
         val process = processBuilder.start()
         val inputStream = process.inputStream
         val errorStream = process.errorStream
-        process.waitFor(60 , TimeUnit.SECONDS)
         val output = inputStream.bufferedReader().readText()
         val error = errorStream.bufferedReader().readText()
+
+        if (!process.waitFor(60, TimeUnit.SECONDS)) {
+            try {
+                val inputStream = process.inputStream
+                val errorStream = process.errorStream
+                val output = inputStream.bufferedReader().readText()
+                val error = errorStream.bufferedReader().readText()
+                
+                Log.appendAsync(threadIdx, "Executing Shell Command: $commandString")
+                if(output.isNotEmpty()) Log.appendAsync(threadIdx, "Shell Output: $output")
+                if(error.isNotEmpty()) Log.appendAsync(threadIdx, "Shell Error: $error")
+            }catch(e: Exception){
+                Log.appendAsync(threadIdx, "Executing Shell Command: $commandString")
+                Log.appendAsync(threadIdx, "FAILED WITH TIMEOUT WITHOUT MESSAGE!")
+            }
+            
+            process.destroy()
+            throw RuntimeException("execution timed out: $this")
+        }
+        
         val result = process.exitValue()
+        process.destroy()
 
         if (withLogging) {
             val commandString = command.joinToString(" ")
@@ -69,6 +90,10 @@ object Shell {
         val result = exec(arrayOf("sh", commandFile.absolutePath), workingDirectory, threadIdx)
         commandFile.delete()
         return result
+    }
+
+    fun supportGitAdd(workingDirectory: String, supportPath: String, threadIdx: Int? = null): ShellResult {
+        return exec(arrayOf("sh", "./git_add.sh", "$workingDirectory"), supportPath, threadIdx)
     }
 
 

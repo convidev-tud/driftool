@@ -34,6 +34,8 @@ echo create ramdisk with $4 GB size
 mkdir -p ./tmp
 sudo chmod 777 ./
 
+sudo chmod 777 ./cmd/git_add.sh
+
 # Comment the following two lines to disable the ramdisk creation.
 # This reduces the RAM usage but increases the analysis time.
 sudo mkdir /dtmp/
@@ -42,5 +44,8 @@ mount | tail -n 1
 
 echo preparing analysis
 ls -l
+
+git config --global user.name "driftool"
+git config --global user.email "analysis@driftool.io"
 
 sudo ./driftool_kt-1.0-SNAPSHOT/bin/driftool_kt '/driftool/volume' '/dtmp' $3 '/driftool/' -i $1 -o $2 -m $6 -t $5

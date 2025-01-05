@@ -19,6 +19,7 @@ package io.driftool.gitmapping
 import io.driftool.Log
 import io.driftool.reporting.Distance
 import io.driftool.shell.DirectoryHandler
+import io.driftool.DataProvider
 import io.driftool.shell.Shell
 import java.nio.file.Path
 import java.time.Instant
@@ -36,6 +37,22 @@ class Repository(val location: String) {
     private val branchesOfInterest: MutableList<String> = mutableListOf()
     private var currentBranch: String? = null
     var defaultBranch: String? = null
+
+
+    fun initGitUser(){
+        /*
+        git config --global user.name "driftool"
+        git config --global user.email "analysis@driftool.io"
+        */
+        val userResult = Shell.execComplexCommand("git config --local user.name \"driftool\"", location)
+        if (! userResult.isSuccessful()){
+            throw RuntimeException("Could not set local git username")
+        }
+        val emailResult = Shell.execComplexCommand("git config --local user.email \"analysis@driftool.io\"", location)
+        if (! emailResult.isSuccessful()){
+            throw RuntimeException("Could not set local git email")
+        }
+    }
 
     fun findAllBranches(threadIdx: Int? = null): List<String> {
         Log.append("Finding all branches in location $location")
@@ -260,7 +277,8 @@ class Repository(val location: String) {
         Log.appendAsync(threadIdx, "Committing changes to branch $currentBranch with message: $message")
         Log.appendAsync(threadIdx, "Adding all files")
 
-        val addResult = Shell.exec(arrayOf("git", "add", "--all"), location, threadIdx)
+        //val addResult = Shell.supportGitAdd(location, DataProvider.getSupportPath(), threadIdx)
+        val addResult = Shell.exec(arrayOf("git", "add", "-v", "--all"), location, threadIdx)
         if (! addResult.isSuccessful()){
             throw RuntimeException("Could not add all files to git")
         }
