@@ -38,7 +38,7 @@ class MultiThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : Gi
         val startingTimestampMillis = System.currentTimeMillis()
         super.prepareReferenceRepository()
         //get all branch combinations
-        val branchCombinations = super.getBranchCombinations(includeSymmetries = true, includeIdentities = false)
+        val branchCombinations = super.getBranchCombinations(includeSymmetries = gitModeConfiguration.pc.symmetry, includeIdentities = false)
         //create thread job distribution
         val threadJobs = createThreadJobs(branchCombinations)
 
