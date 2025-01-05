@@ -97,7 +97,7 @@ class Checksum : Callable<Int> {
     var printLog: Boolean = true
 
     @CommandLine.Option(
-        names = ["-p", "--print_log_async"],
+        names = ["-a", "--print_log_async"],
         description = ["Defines if the logger prints async thread events on the fly." +
                 "Events are printed FIFO without taking care of their parent thread id." +
                 "Default is false."])
