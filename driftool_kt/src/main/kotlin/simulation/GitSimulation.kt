@@ -107,7 +107,7 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
 
         val lineDistanceMatrix = MatrixResult.fromDistanceRelation(distanceResult.lineDistances,
             referenceRepository.getBranchesOfInterest(),
-            isComplete = true,
+            isComplete = configuration.pc.symmetry,
             ensureSymmetry = true,
             zeroIdentities = true)
         val linePointCloud = calculateEmbeddings(lineDistanceMatrix)
@@ -115,7 +115,7 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
 
         val conflictDistanceMatrix = MatrixResult.fromDistanceRelation(distanceResult.conflictDistances,
             referenceRepository.getBranchesOfInterest(),
-            isComplete = true,
+            isComplete = configuration.pc.symmetry,
             ensureSymmetry = true,
             zeroIdentities = true)
         val conflictPointCloud = calculateEmbeddings(conflictDistanceMatrix)
@@ -123,7 +123,7 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
 
         val fileDistanceMatrix = MatrixResult.fromDistanceRelation(distanceResult.fileDistances,
             referenceRepository.getBranchesOfInterest(),
-            isComplete = true,
+            isComplete = configuration.pc.symmetry,
             ensureSymmetry = true,
             zeroIdentities = true)
         val filePointCloud = calculateEmbeddings(fileDistanceMatrix)

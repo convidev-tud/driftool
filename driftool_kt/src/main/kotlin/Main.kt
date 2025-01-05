@@ -83,6 +83,13 @@ class Checksum : Callable<Int> {
     )
     var threads: Int = 1
 
+    @CommandLine.Option(
+        names = ["-s", "--symmetry"],
+        description = ["Defines whether the merges (git) are executed in both directions (symmetry = true) " +
+                "or just in one direction (symmetry = false). " +
+                "Default is false."])
+    var symmetry: Boolean = false
+
     override fun call(): Int {
         workingPath = DirectoryHandler.ensureDirectoryPathEnding(DirectoryHandler.refactorPathUnixStyle(workingPath))
         inputRootPath = DirectoryHandler.ensureDirectoryPathEnding(DirectoryHandler.refactorPathUnixStyle(inputRootPath))
@@ -94,7 +101,8 @@ class Checksum : Callable<Int> {
         val absoluteInputRepositoryPath = inputRootPath + inputRepository
         val absoluteReportPath = inputRootPath + reportPath
         val parameterConfiguration = GenericParameterConfiguration(
-            inputRootPath, workingPath, absoluteInputRepositoryPath, absoluteConfigPath, absoluteReportPath, supportPath, threads, mode)
+            inputRootPath, workingPath, absoluteInputRepositoryPath, absoluteConfigPath,
+            absoluteReportPath, supportPath, threads, mode, symmetry)
         Log.append("Starting Driftool")
         Log.append("Configuration: ${parameterConfiguration.toString()}")
         runWithConfig(parameterConfiguration)

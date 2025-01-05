@@ -32,7 +32,9 @@ class MainThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : Git
             val startingTimestampMillis = System.currentTimeMillis()
             super.prepareReferenceRepository()
             val workingRepository = super.createWorkingRepository()
-            val branchCombinations = super.getBranchCombinations(includeSymmetries = true, includeIdentities = false)
+            val branchCombinations = super.getBranchCombinations(
+                includeSymmetries = gitModeConfiguration.pc.symmetry,
+                includeIdentities = false)
             val mergeHandler = MergeHandler(workingRepository, 0)
             val distanceResult: DistanceResult = mergeHandler.executeMerges(branchCombinations)
             Log.mergeAsyncLogs()
