@@ -119,7 +119,7 @@ object Shell {
     }
 
     fun rm(file: String, workingDirectory: String? = null, threadIdx: Int? = null): ShellResult {
-        return exec(arrayOf("rm", file), workingDirectory, threadIdx)
+        return exec(arrayOf("rm", "-f", file), workingDirectory, threadIdx)
     }
 
     /**

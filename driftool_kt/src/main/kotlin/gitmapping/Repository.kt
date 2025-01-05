@@ -266,10 +266,14 @@ class Repository(val location: String) {
     }
 
     private fun delete(elem: Path, threadIdx: Int? = null){
-        val result = Shell.rm(elem.toString(), null, threadIdx)
-        if(!result.isSuccessful()){
-            Log.appendAsync(threadIdx, "Could not delete file: ${elem.fileName}")
-            Log.appendAsync(threadIdx, result.error)
+        try{
+            val result = Shell.rm(elem.toString(), null, threadIdx)
+            if(!result.isSuccessful()){
+                Log.appendAsync(threadIdx, "Could not delete file: ${elem.fileName}")
+                Log.appendAsync(threadIdx, result.error)
+            }
+        } catch (e: Exception){
+            Log.appendAsync(threadIdx, e.toString())
         }
     }
 
