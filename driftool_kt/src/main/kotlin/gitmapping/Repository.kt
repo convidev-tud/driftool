@@ -213,55 +213,64 @@ class Repository(val location: String) {
         val patterns = list.map { it.toRegex() }
         val locationSuffix = rootLocation.removePrefix(location)
         Log.appendAsync(threadIdx, "Applying list to locationSuffix: $locationSuffix")
-        val allFilesInLocation: List<Path> = Path(rootLocation).listDirectoryEntries()
 
-        for(elem in allFilesInLocation){
-            //Log.appendAsync(threadIdx, "Checking file: ${elem.fileName} /// $elem")
-            if(gitPattern.find(elem.toString().removePrefix(location)) != null){
-                //Skip everything related to the git repository itself (.git/.gitignore/.gitkeep/...
-                //Log.appendAsync(threadIdx, "--skip (git related)")
-                continue
-            }
-            if(elem.isSymbolicLink()){
-                Log.appendAsync(threadIdx, "Symbolic link found: ${elem.fileName} -> deleting")
-                delete(elem, threadIdx)
-                //Log.appendAsync(threadIdx, "--delete")
-                continue
-            }
-            if(elem.isDirectory()){
-                //Log.appendAsync(threadIdx, "--traverse")
-                if(keepMatches){
-                    applyPathList(list, elem.toString(), true, threadIdx)
-                }else{
-                    applyPathList(list, elem.toString(), false, threadIdx)
+        try {
+
+            val allFilesInLocation: List<Path> = Path(rootLocation).listDirectoryEntries()
+
+            for(elem in allFilesInLocation){
+                //Log.appendAsync(threadIdx, "Checking file: ${elem.fileName} /// $elem")
+                if(gitPattern.find(elem.toString().removePrefix(location)) != null){
+                    //Skip everything related to the git repository itself (.git/.gitignore/.gitkeep/...
+                    //Log.appendAsync(threadIdx, "--skip (git related)")
+                    continue
                 }
-                continue
+                if(elem.isSymbolicLink()){
+                    Log.appendAsync(threadIdx, "Symbolic link found: ${elem.fileName} -> deleting")
+                    delete(elem, threadIdx)
+                    //Log.appendAsync(threadIdx, "--delete")
+                    continue
+                }
+                if(elem.isDirectory()){
+                    //Log.appendAsync(threadIdx, "--traverse")
+                    if(keepMatches){
+                        applyPathList(list, elem.toString(), true, threadIdx)
+                    }else{
+                        applyPathList(list, elem.toString(), false, threadIdx)
+                    }
+                    continue
+                }
+
+                val elemSuffix = elem.toString().removePrefix(location)
+                //Log.appendAsync(threadIdx, "--check file:  + $elemSuffix")
+                val matchList: MutableList<Boolean> = mutableListOf()
+                for(pattern in patterns){
+                    val isMatch = pattern.find(elemSuffix) != null
+                    matchList.add(isMatch)
+                    if(isMatch && !keepMatches){
+                        break
+                    }
+                }
+                //case applying the blacklist and file is in the blacklist
+                //if there is at least one match, then remove t
+                if(matchList.contains(true) && !keepMatches) {
+                    //Log.appendAsync(threadIdx, "--delete")
+                    delete(elem, threadIdx)
+                    continue
+                }
+                //case applying the whitelist and file is not in the whitelist
+                //delete the file of no match was found, i.e., no pattern to keep the file was specified
+                if(matchList.count { it } == 0  && keepMatches){
+                    //Log.appendAsync(threadIdx, "--delete")
+                    delete(elem, threadIdx)
+                    continue
+                }
             }
 
-            val elemSuffix = elem.toString().removePrefix(location)
-            //Log.appendAsync(threadIdx, "--check file:  + $elemSuffix")
-            val matchList: MutableList<Boolean> = mutableListOf()
-            for(pattern in patterns){
-                val isMatch = pattern.find(elemSuffix) != null
-                matchList.add(isMatch)
-                if(isMatch && !keepMatches){
-                    break
-                }
-            }
-            //case applying the blacklist and file is in the blacklist
-            //if there is at least one match, then remove t
-            if(matchList.contains(true) && !keepMatches) {
-                //Log.appendAsync(threadIdx, "--delete")
-                delete(elem, threadIdx)
-                continue
-            }
-            //case applying the whitelist and file is not in the whitelist
-            //delete the file of no match was found, i.e., no pattern to keep the file was specified
-            if(matchList.count { it } == 0  && keepMatches){
-                //Log.appendAsync(threadIdx, "--delete")
-                delete(elem, threadIdx)
-                continue
-            }
+        } catch (e: Exception) {
+            if()
+            Log.appendAsync("Abort list branch recursion because of malformed input")
+            Log.appendAsync(e.toString())
         }
     }
 

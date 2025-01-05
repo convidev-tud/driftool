@@ -137,12 +137,13 @@ fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
     assert(parameterConfig.mode == "git" || parameterConfig.mode == "matrix") { "mode must be either git or matrix" }
     assert(parameterConfig.supportPath.isNotBlank()) { "supportPath must be set" }
 
+    var reportIdentifier: String = ""
+
     try {
         val mode = Mode.valueOf(parameterConfig.mode)
         var jsonReport: Boolean = false
         var htmlReport: Boolean = false
-        var reportIdentifier: String = ""
-
+        
         Log.append("Mode: $mode")
         Log.append("Setup DirectoryHandler")
         DataProvider.initDirectoryHandler(parameterConfig.absoluteWorkingPath)
@@ -183,12 +184,12 @@ fun runWithConfig(parameterConfig: GenericParameterConfiguration): DriftReport {
     } catch (ex: Exception){
         Log.mergeAsyncLogs()
         Log.append("Exception: ${ex.message}")
-        writeLog(parameterConfig.absoluteReportPath, "UNKNOWN")
+        writeLog(parameterConfig.absoluteReportPath, reportIdentifier)
         exitProcess(1)
     } catch (ae: AssertionError){
         Log.mergeAsyncLogs()
         Log.append("AssertionError: ${ae.message}")
-        writeLog(parameterConfig.absoluteReportPath, "UNKNOWN")
+        writeLog(parameterConfig.absoluteReportPath, reportIdentifier)
         exitProcess(1)
     }
 }

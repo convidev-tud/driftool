@@ -60,9 +60,7 @@ object Log {
 
     fun mergeAsyncLogs(){
         asyncLogs.forEach { (logKey, value) ->
-            val sortedEntries = getSorted(value)
             for (entry in sortedEntries){
-                if (print) println("LOG <<< ${entry.second}")
                 log.put(entry.first, entry.second)
             }
         }
@@ -75,7 +73,7 @@ object Log {
 
     private fun getSorted(logMap: Map<String, String>): List<Pair<String, String>> {
         return logMap.toList().sortedBy { it ->
-            it.first.split("_")[0]
+            it.first.split("_")[1]
         }
     }
 
