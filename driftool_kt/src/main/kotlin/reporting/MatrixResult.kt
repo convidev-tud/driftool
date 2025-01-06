@@ -66,28 +66,38 @@ data class MatrixResult(val data: List<List<Float>>, val sortedBranchList: List<
          * @param isComplete Whether the relation is complete, i.e. contains all possible branch pairs.
          * Not complete means missing symmetric values.
          * @param ensureSymmetry Whether to ensure symmetry of the matrix by calculating averages
+         * @param zeroIdentities Whether to set the diagonal to 0
+         * @param trimErrorBranches Whether to remove branches that result in at least one -1 result. The branch introducing
+         * the most errors is reduced first.
          */
-        fun fromDistanceRelation(relation: DistanceRelation, sortedBranchList: List<String>, isComplete: Boolean,
-                                 ensureSymmetry: Boolean, zeroIdentities: Boolean): MatrixResult {
+        fun fromDistanceRelation(relation: DistanceRelation,
+                                 sortedBranchList: List<String>,
+                                 isComplete: Boolean,
+                                 ensureSymmetry: Boolean,
+                                 zeroIdentities: Boolean,
+                                 trimErrorBranches: Boolean): MatrixResult {
             if(zeroIdentities){
                 for(branch in sortedBranchList){
                     relation.addValue(branch, branch, 0f)
                 }
             }
-            /*
-            if(isComplete){
-                assert(relation.values.size == sortedBranchList.size * sortedBranchList.size)
-            }else{
-                assert(relation.values.size ==
-                        ((sortedBranchList.size * sortedBranchList.size) - sortedBranchList.size) / 2 + sortedBranchList.size)
-            }
-            */
-            val matrix = MutableList(sortedBranchList.size) { MutableList(sortedBranchList.size) { 0f } }
 
-            for((fromIndex, fromBranch) in sortedBranchList.withIndex()){
-                for((toIndex, toBranch) in sortedBranchList.withIndex()){
-                    val distance: Triple<String, String, Float>? = relation.values.find { it.first == fromBranch && it.second == toBranch }
-                    val distanceReverse: Triple<String, String, Float>? = relation.values.find { it.first == toBranch && it.second == fromBranch }
+            var trimmedDistanceRelation = relation
+            var reducedSortedBranchList = sortedBranchList
+            if(trimErrorBranches){
+                while (containsNegativeValues(trimmedDistanceRelation)){
+                    trimmedDistanceRelation = trimNegativeValues(trimmedDistanceRelation, reducedSortedBranchList)
+                    reducedSortedBranchList = getSortedBranchList(trimmedDistanceRelation)
+                }
+            }
+            val analysedRelation = trimmedDistanceRelation
+
+            val matrix = MutableList(reducedSortedBranchList.size) { MutableList(reducedSortedBranchList.size) { 0f } }
+
+            for((fromIndex, fromBranch) in reducedSortedBranchList.withIndex()){
+                for((toIndex, toBranch) in reducedSortedBranchList.withIndex()){
+                    val distance: Triple<String, String, Float>? = analysedRelation.values.find { it.first == fromBranch && it.second == toBranch }
+                    val distanceReverse: Triple<String, String, Float>? = analysedRelation.values.find { it.first == toBranch && it.second == fromBranch }
                     if(isComplete){
                         if(distance != null){
                             if(ensureSymmetry){
@@ -118,17 +128,58 @@ data class MatrixResult(val data: List<List<Float>>, val sortedBranchList: List<
                     }
                 }
             }
-            return MatrixResult(matrix, sortedBranchList)
+            return MatrixResult(matrix, reducedSortedBranchList)
         }
 
         /**
          * @see fromDistanceRelation
          */
-        fun fromPartialDistanceRelations(partialRelations: List<DistanceRelation>, sortedBranchList: List<String>,
-                                         isComplete: Boolean, ensureSymmetry: Boolean, zeroIdentities: Boolean): MatrixResult {
+        fun fromPartialDistanceRelations(partialRelations: List<DistanceRelation>,
+                                         sortedBranchList: List<String>,
+                                         isComplete: Boolean,
+                                         ensureSymmetry: Boolean,
+                                         zeroIdentities: Boolean,
+                                         trimErrorBranches: Boolean): MatrixResult {
             val joinedRelation = DistanceRelation(mutableSetOf())
             partialRelations.forEach { joinedRelation.join(it) }
-            return fromDistanceRelation(joinedRelation, sortedBranchList, isComplete, ensureSymmetry, zeroIdentities)
+            return fromDistanceRelation(joinedRelation, sortedBranchList, isComplete, ensureSymmetry, zeroIdentities, trimErrorBranches)
+        }
+
+        fun getSortedBranchList(relation: DistanceRelation): List<String> {
+            val branches = mutableSetOf<String>()
+            for((from, to, _) in relation.values){
+                branches.add(from)
+                branches.add(to)
+            }
+            return branches.sorted()
+        }
+
+        fun containsNegativeValues(relation: DistanceRelation): Boolean {
+            for((_, _, distance) in relation.values){
+                if(distance < -0.5){
+                    return true
+                }
+            }
+            return false
+        }
+
+        fun trimNegativeValues(relation: DistanceRelation, sortedBranchList: List<String>): DistanceRelation {
+            if (!containsNegativeValues(relation)){
+                return relation
+            }
+            val negativeCount = mutableMapOf<String, Int>()
+            for(branch in sortedBranchList){
+                negativeCount[branch] = 0
+            }
+            for((from, to, distance) in relation.values){
+                if(distance < -0.5){
+                    negativeCount[from] = negativeCount[from]!! + 1
+                    negativeCount[to] = negativeCount[to]!! + 1
+                }
+            }
+            val mostNegativeBranch = negativeCount.maxByOrNull { it.value }!!.key
+            val newValues = relation.values.filter { it.first != mostNegativeBranch && it.second != mostNegativeBranch }
+            return DistanceRelation(newValues.toMutableSet())
         }
     }
 

@@ -25,8 +25,10 @@ data class DriftReport (
     val analysisDurationMillis: Long,
     val numberOfBranchesTotal: Int,
     val numberOfBranchesAnalyzed: Int,
+    val numberOfFinalBranches: Int,
     val analysisParallelism: Int,
     val sortedBranchList: List<String>,
+    val sortedFinalBranchList: List<String>,
     val lineDrift: Double,
     val conflictDrift: Double,
     val fileDrift: Double,
@@ -43,7 +45,9 @@ data class DriftReport (
         println("Analysis Duration: $analysisDurationMillis")
         println("Number of Branches Total: $numberOfBranchesTotal")
         println("Number of Branches Analyzed: $numberOfBranchesAnalyzed")
+        println("Number of Final Branches: $numberOfFinalBranches")
         println("Sorted Branch List: $sortedBranchList")
+        println("Sorted Final Branch List: $sortedFinalBranchList")
         println("Line Drift: $lineDrift")
         println("Conflict Drift: $conflictDrift")
         println("File Drift: $fileDrift")

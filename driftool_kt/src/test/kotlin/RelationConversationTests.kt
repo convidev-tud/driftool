@@ -39,7 +39,7 @@ class RelationConversationTests {
     fun testFromDistanceRelationCompleteWithIdentityEnsureNoSymmetry() {
         val matrixResult = MatrixResult.fromDistanceRelation(
             DistanceRelation(relationCompleteWithIdentity),
-            listOf("a", "b", "c"), isComplete = true, ensureSymmetry = false, zeroIdentities = false)
+            listOf("a", "b", "c"), isComplete = true, ensureSymmetry = false, zeroIdentities = false, trimErrorBranches = false)
         assertEquals(listOf(
             listOf(0.0f, 1.0f, 2.0f),
             listOf(3.0f, 0.0f, 4.0f),
@@ -51,7 +51,7 @@ class RelationConversationTests {
     fun testFromDistanceRelationCompleteWithIdentityEnsureSymmetry() {
         val matrixResult = MatrixResult.fromDistanceRelation(
             DistanceRelation(relationCompleteWithIdentity),
-            listOf("a", "b", "c"), isComplete = true, ensureSymmetry = true, zeroIdentities = false)
+            listOf("a", "b", "c"), isComplete = true, ensureSymmetry = true, zeroIdentities = false, trimErrorBranches = false)
         assertEquals(listOf(
             listOf(0.0f, (1.0f+3.0f)/2f, (2.0f+5.0f)/2f),
             listOf((3.0f+1.0f)/2f, 0.0f, (4.0f+6.0f)/2f),
@@ -77,7 +77,7 @@ class RelationConversationTests {
         try {
             val matrixResult = MatrixResult.fromDistanceRelation(
                 DistanceRelation(relationCompleteWithIdentityMissingValue),
-                listOf("a", "b", "c"), isComplete = true, ensureSymmetry = true, zeroIdentities = false)
+                listOf("a", "b", "c"), isComplete = true, ensureSymmetry = true, zeroIdentities = false, trimErrorBranches = false)
             fail("Expected IllegalArgumentException")
         } catch (e: IllegalArgumentException) {
             assertEquals("Complete matrix is missing value for b -> a", e.message)
@@ -102,7 +102,7 @@ class RelationConversationTests {
         try {
             val matrixResult = MatrixResult.fromDistanceRelation(
                 DistanceRelation(relationCompleteWithIdentityMissingValue2),
-                listOf("a", "b", "c"), isComplete = true, ensureSymmetry = false, zeroIdentities = false)
+                listOf("a", "b", "c"), isComplete = true, ensureSymmetry = false, zeroIdentities = false, trimErrorBranches = false)
             fail("Expected IllegalArgumentException")
         } catch (e: IllegalArgumentException) {
             assertEquals("Complete matrix is missing value for c -> a", e.message)
@@ -124,7 +124,7 @@ class RelationConversationTests {
     fun testFromDistanceRelationCompleteWithoutIdentityEnsureNoSymmetry() {
         val matrixResult = MatrixResult.fromDistanceRelation(
             DistanceRelation(relationCompleteWithoutIdentity),
-            listOf("a", "b", "c"), isComplete = true, ensureSymmetry = false, zeroIdentities = true)
+            listOf("a", "b", "c"), isComplete = true, ensureSymmetry = false, zeroIdentities = true, trimErrorBranches = false)
         assertEquals(listOf(
             listOf(0.0f, 1.0f, 2.0f),
             listOf(3.0f, 0.0f, 4.0f),
@@ -137,7 +137,7 @@ class RelationConversationTests {
         try {
             val matrixResult = MatrixResult.fromDistanceRelation(
                 DistanceRelation(relationCompleteWithoutIdentity),
-                listOf("a", "b", "c"), isComplete = true, ensureSymmetry = false, zeroIdentities = false)
+                listOf("a", "b", "c"), isComplete = true, ensureSymmetry = false, zeroIdentities = false, trimErrorBranches = false)
             fail("Expected IllegalArgumentException")
         } catch (e: IllegalArgumentException) {
             assertEquals("Complete matrix is missing value for a -> a", e.message)
@@ -154,7 +154,7 @@ class RelationConversationTests {
     fun testFromDistanceRelationNotCompleteWithoutIdentityEnsureNoSymmetry() {
         val matrixResult = MatrixResult.fromDistanceRelation(
             DistanceRelation(relationNotCompleteWithoutIdentity),
-            listOf("a", "b", "c"), isComplete = false, ensureSymmetry = false, zeroIdentities = true)
+            listOf("a", "b", "c"), isComplete = false, ensureSymmetry = false, zeroIdentities = true, trimErrorBranches = false)
         assertEquals(listOf(
             listOf(0.0f, 1.0f, 2.0f),
             listOf(0.0f, 0.0f, 4.0f),
@@ -166,7 +166,7 @@ class RelationConversationTests {
     fun testFromDistanceRelationNotCompleteWithoutIdentityEnsureSymmetry() {
         val matrixResult = MatrixResult.fromDistanceRelation(
             DistanceRelation(relationNotCompleteWithoutIdentity),
-            listOf("a", "b", "c"), isComplete = false, ensureSymmetry = true, zeroIdentities = true)
+            listOf("a", "b", "c"), isComplete = false, ensureSymmetry = true, zeroIdentities = true, trimErrorBranches = false)
         assertEquals(listOf(
             listOf(0.0f, 1.0f, 2.0f),
             listOf(1.0f, 0.0f, 4.0f),
@@ -186,7 +186,7 @@ class RelationConversationTests {
         try {
             val matrixResult = MatrixResult.fromDistanceRelation(
                 DistanceRelation(relationNotCompleteWithoutIdentityInvalid),
-                listOf("a", "b", "c"), isComplete = false, ensureSymmetry = true, zeroIdentities = true
+                listOf("a", "b", "c"), isComplete = false, ensureSymmetry = true, zeroIdentities = true, trimErrorBranches = false
             )
             fail("Expected IllegalArgumentException")
         } catch (e: IllegalArgumentException){
@@ -203,13 +203,54 @@ class RelationConversationTests {
     fun testFromDistanceRelationNotCompleteWithoutIdentityEnsureSymmetryMissingValue() {
         val matrixResult = MatrixResult.fromDistanceRelation(
             DistanceRelation(relationNotCompleteWithoutIdentityMissingValue),
-            listOf("a", "b", "c"), isComplete = false, ensureSymmetry = true, zeroIdentities = true
+            listOf("a", "b", "c"), isComplete = false, ensureSymmetry = true, zeroIdentities = true, trimErrorBranches = false
         )
         assertEquals(listOf(
             listOf(0.0f, 1.0f, 0.0f),
             listOf(1.0f, 0.0f, 4.0f),
             listOf(0.0f, 4.0f, 0.0f)
         ), matrixResult.data)
+    }
+
+    val relationNotCompleteWithoutIdentityError = mutableSetOf(
+        Triple("a", "b", -1.0f),
+        Triple("a", "c", 2.0f),
+        Triple("b", "c", -1.0f),
+    )
+
+    @Test
+    fun testStripErrorBranchesSingleBranch(){
+        val matrixResult = MatrixResult.fromDistanceRelation(
+            DistanceRelation(relationNotCompleteWithoutIdentityError),
+            listOf("a", "b", "c"), isComplete = false, ensureSymmetry = true, zeroIdentities = true, trimErrorBranches = true
+        )
+        assertEquals(listOf(
+            listOf(0.0f, 2.0f),
+            listOf(2.0f, 0.0f)
+        ), matrixResult.data)
+        assertEquals(listOf("a", "c"), matrixResult.sortedBranchList)
+    }
+
+    val relationNotCompleteWithoutIdentityMultiError = mutableSetOf(
+        Triple("a", "b", -1.0f),
+        Triple("a", "c", 2.0f),
+        Triple("a", "d", -1.0f),
+        Triple("b", "c", -1.0f),
+        Triple("b", "d", -1.0f),
+        Triple("c", "d", 1.0f),
+    )
+
+    @Test
+    fun testStripErrorBranchesMultiBranch(){
+        val matrixResult = MatrixResult.fromDistanceRelation(
+            DistanceRelation(relationNotCompleteWithoutIdentityMultiError),
+            listOf("a", "b", "c", "d"), isComplete = false, ensureSymmetry = true, zeroIdentities = true, trimErrorBranches = true
+        )
+        assertEquals(listOf(
+            listOf(0.0f, 1.0f),
+            listOf(1.0f, 0.0f)
+        ), matrixResult.data)
+        assertEquals(listOf("c", "d"), matrixResult.sortedBranchList)
     }
 
 }

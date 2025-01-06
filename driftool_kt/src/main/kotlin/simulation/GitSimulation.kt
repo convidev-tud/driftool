@@ -109,7 +109,8 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
             referenceRepository.getBranchesOfInterest(),
             isComplete = configuration.pc.symmetry,
             ensureSymmetry = true,
-            zeroIdentities = true)
+            zeroIdentities = true,
+            trimErrorBranches = true)
         val linePointCloud = calculateEmbeddings(lineDistanceMatrix)
         val lineDrift = calculateDrift(linePointCloud)
 
@@ -117,7 +118,8 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
             referenceRepository.getBranchesOfInterest(),
             isComplete = configuration.pc.symmetry,
             ensureSymmetry = true,
-            zeroIdentities = true)
+            zeroIdentities = true,
+            trimErrorBranches = true)
         val conflictPointCloud = calculateEmbeddings(conflictDistanceMatrix)
         val conflictDrift = calculateDrift(conflictPointCloud)
 
@@ -125,7 +127,8 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
             referenceRepository.getBranchesOfInterest(),
             isComplete = configuration.pc.symmetry,
             ensureSymmetry = true,
-            zeroIdentities = true)
+            zeroIdentities = true,
+            trimErrorBranches = true)
         val filePointCloud = calculateEmbeddings(fileDistanceMatrix)
         val fileDrift = calculateDrift(filePointCloud)
 
@@ -136,7 +139,9 @@ abstract class GitSimulation(val configuration: GitModeConfiguration) : Simulati
             analysisParallelism = numberThreads,
             numberOfBranchesTotal = referenceRepository.getAllBranches().size,
             numberOfBranchesAnalyzed = referenceRepository.getBranchesOfInterest().size,
+            numberOfFinalBranches = lineDistanceMatrix.sortedBranchList.size,
             sortedBranchList = referenceRepository.getBranchesOfInterest(),
+            sortedFinalBranchList = lineDistanceMatrix.sortedBranchList,
             lineDrift = lineDrift.toDouble(),
             conflictDrift = conflictDrift.toDouble(),
             fileDrift = fileDrift.toDouble(),
