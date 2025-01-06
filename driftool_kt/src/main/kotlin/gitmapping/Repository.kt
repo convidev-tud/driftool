@@ -360,67 +360,70 @@ class Repository(val location: String) {
         if (!mergeResult.isSuccessful() && !mergeResult.output.contains("Merge conflict") && !mergeResult.output.contains("fix conflicts and then commit the result")){
             Log.appendAsync(threadIdx, "Could not merge $incomingBranch into $baseBranch")
             Log.appendAsync(threadIdx, "STDERR:" + mergeResult.error)
-            throw RuntimeException("Could not merge $incomingBranch into $baseBranch")
-        }
-        //Log.appendAsync(threadIdx, "STDOUT: " + mergeResult.output)
+            numberConflictFiles = -1
+            numberConflicts = -1
+            numberConflictLines = -1
+        } else {
+            //Log.appendAsync(threadIdx, "STDOUT: " + mergeResult.output)
 
-        val stdoutLines = mergeResult.output.split("\n")
-        val conflictIndicatingLines = mutableListOf<String>()
+            val stdoutLines = mergeResult.output.split("\n")
+            val conflictIndicatingLines = mutableListOf<String>()
 
 
 
-        for (line in stdoutLines){
-            if (line.contains("Merge conflict in")){
-                numberConflictFiles++
-                conflictIndicatingLines.add(line)
-                Log.appendAsync(threadIdx, "Conflict in file: $line")
-            }else if (line.trim().startsWith("CONFLICT (")){
-                //EXAMPLE: CONFLICT (modify/delete): letters.txt deleted in feature/c and modified in HEAD. Version HEAD of letters.txt left in tree.
-                numberConflictFiles++
-                Log.appendAsync(threadIdx, "(x/delete) conflict in file: $line")
-            }
-        }
-
-        //if(conflictIndicatingLines.isEmpty()){
-        //    Log.appendAsync(threadIdx, "No conflicts found")
-        //    return Distance(lineDistance = numberConflictLines, conflictDistance = numberConflicts, fileDistance = numberConflictFiles)
-        //}
-
-        val conflictingFilePaths = conflictIndicatingLines.map { it.split("Merge conflict in ")[1].replace("\n", "").trim() }
-
-        for(conflictingFilePath in conflictingFilePaths){
-            var localNumberConflicts = 0
-            var localNumberConflictLines = 0
-
-            Log.appendAsync(threadIdx, "Investigating conflicting file: $conflictingFilePath")
-            var fileLines: List<String> = listOf()
-            try {
-                val openedFile = Path("$location/$conflictingFilePath").toFile()
-                fileLines = openedFile.readLines(charset = Charsets.UTF_8)
-            } catch (e: Exception){
-                Log.appendAsync(threadIdx, "Error: cannot open conflicting file: $conflictingFilePath")
-                Log.appendAsync(threadIdx, e.toString())
-                Log.appendAsync(threadIdx, "--> Proceed without action")
-                continue
-            }
-
-            var insideConflict = false
-            var conflictStartIndex = 0
-
-            for((lineIdx, line) in fileLines.withIndex()){
-                if(line.trim().startsWith("<<<<<<<") && !insideConflict){
-                    localNumberConflicts++
-                    insideConflict = true
-                    conflictStartIndex = lineIdx
-                }
-                if(line.trim().startsWith(">>>>>>>") && insideConflict){
-                    insideConflict = false
-                    localNumberConflictLines += (lineIdx - conflictStartIndex)
+            for (line in stdoutLines){
+                if (line.contains("Merge conflict in")){
+                    numberConflictFiles++
+                    conflictIndicatingLines.add(line)
+                    Log.appendAsync(threadIdx, "Conflict in file: $line")
+                }else if (line.trim().startsWith("CONFLICT (")){
+                    //EXAMPLE: CONFLICT (modify/delete): letters.txt deleted in feature/c and modified in HEAD. Version HEAD of letters.txt left in tree.
+                    numberConflictFiles++
+                    Log.appendAsync(threadIdx, "(x/delete) conflict in file: $line")
                 }
             }
-            numberConflicts += localNumberConflicts
-            numberConflictLines += localNumberConflictLines
-            Log.appendAsync(threadIdx, "File $conflictingFilePath has $localNumberConflicts conflicts and $localNumberConflictLines conflicting lines")
+
+            //if(conflictIndicatingLines.isEmpty()){
+            //    Log.appendAsync(threadIdx, "No conflicts found")
+            //    return Distance(lineDistance = numberConflictLines, conflictDistance = numberConflicts, fileDistance = numberConflictFiles)
+            //}
+
+            val conflictingFilePaths = conflictIndicatingLines.map { it.split("Merge conflict in ")[1].replace("\n", "").trim() }
+
+            for(conflictingFilePath in conflictingFilePaths){
+                var localNumberConflicts = 0
+                var localNumberConflictLines = 0
+
+                Log.appendAsync(threadIdx, "Investigating conflicting file: $conflictingFilePath")
+                var fileLines: List<String> = listOf()
+                try {
+                    val openedFile = Path("$location/$conflictingFilePath").toFile()
+                    fileLines = openedFile.readLines(charset = Charsets.UTF_8)
+                } catch (e: Exception){
+                    Log.appendAsync(threadIdx, "Error: cannot open conflicting file: $conflictingFilePath")
+                    Log.appendAsync(threadIdx, e.toString())
+                    Log.appendAsync(threadIdx, "--> Proceed without action")
+                    continue
+                }
+
+                var insideConflict = false
+                var conflictStartIndex = 0
+
+                for((lineIdx, line) in fileLines.withIndex()){
+                    if(line.trim().startsWith("<<<<<<<") && !insideConflict){
+                        localNumberConflicts++
+                        insideConflict = true
+                        conflictStartIndex = lineIdx
+                    }
+                    if(line.trim().startsWith(">>>>>>>") && insideConflict){
+                        insideConflict = false
+                        localNumberConflictLines += (lineIdx - conflictStartIndex)
+                    }
+                }
+                numberConflicts += localNumberConflicts
+                numberConflictLines += localNumberConflictLines
+                Log.appendAsync(threadIdx, "File $conflictingFilePath has $localNumberConflicts conflicts and $localNumberConflictLines conflicting lines")
+            }
         }
 
         Log.appendAsync(threadIdx, "Total: $numberConflictFiles files with $numberConflicts conflicts and $numberConflictLines conflicting lines")

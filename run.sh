@@ -15,4 +15,6 @@
 
 # $6 is the mode of analysis = "git|matrix|...".
 
-docker run -it --rm --privileged --name driftool --mount type=bind,source="$(pwd)"/volume,target=/driftool/volume driftool:latest "$1" "$2" "$3" "$4" "$5" "$6"
+# $7 runs driftool symmetrically if true
+
+docker run -it --rm --privileged --name driftool --mount type=bind,source="$(pwd)"/volume,target=/driftool/volume driftool:latest "$1" "$2" "$3" "$4" "$5" "$6" "$7"

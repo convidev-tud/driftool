@@ -88,24 +88,24 @@ class Checksum : Callable<Int> {
         description = ["Defines whether the merges (git) are executed in both directions (symmetry = true) " +
                 "or just in one direction (symmetry = false). " +
                 "Default is false."])
-    var symmetry: Boolean = false
+    var symmetry: Int = 0
 
     @CommandLine.Option(
         names = ["-p", "--print_log"],
         description = ["Defines if the logger prints main thread events on the fly" +
                 "Default is true."])
-    var printLog: Boolean = true
+    var printLog: Int = 1
 
     @CommandLine.Option(
         names = ["-a", "--print_log_async"],
         description = ["Defines if the logger prints async thread events on the fly." +
                 "Events are printed FIFO without taking care of their parent thread id." +
                 "Default is false."])
-    var printLogAsync: Boolean = false
+    var printLogAsync: Int = 0
 
     override fun call(): Int {
-        Log.setPrint(printLog)
-        Log.setAsyncPrinting(printLogAsync)
+        Log.setPrint(printLog == 1)
+        Log.setAsyncPrinting(printLogAsync == 1)
 
         workingPath = DirectoryHandler.ensureDirectoryPathEnding(DirectoryHandler.refactorPathUnixStyle(workingPath))
         inputRootPath = DirectoryHandler.ensureDirectoryPathEnding(DirectoryHandler.refactorPathUnixStyle(inputRootPath))
@@ -119,7 +119,7 @@ class Checksum : Callable<Int> {
         val absoluteReportPath = inputRootPath + reportPath
         val parameterConfiguration = GenericParameterConfiguration(
             inputRootPath, workingPath, absoluteInputRepositoryPath, absoluteConfigPath,
-            absoluteReportPath, supportPath, threads, mode, symmetry)
+            absoluteReportPath, supportPath, threads, mode, symmetry == 1)
 
         Log.append("Starting Driftool")
         Log.append("Configuration: ${parameterConfiguration.toString()}")

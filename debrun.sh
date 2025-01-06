@@ -15,12 +15,15 @@
 
 # $6 is the mode of analysis = git|matrix|....
 
+# $7 runs driftool symmetrically if true
+
 echo repo path in volume: $1
 echo output path in volume: $2
 echo repo config path in volume: $3
 echo ramdisk size: $4
 echo number of threads: $5
 echo mode: $6
+echo symmetry: $7
 
 #echo contents of volume/
 cd volume
@@ -48,4 +51,4 @@ ls -l
 git config --global user.name "driftool"
 git config --global user.email "analysis@driftool.io"
 
-sudo ./driftool_kt-1.0-SNAPSHOT/bin/driftool_kt '/driftool/volume' '/dtmp' $3 '/driftool/' -i $1 -o $2 -m $6 -t $5
+sudo ./driftool_kt-1.0-SNAPSHOT/bin/driftool_kt '/driftool/volume' '/dtmp' $3 '/driftool/' -i $1 -o $2 -m $6 -t $5 -s $7
