@@ -21,7 +21,7 @@ However, the evolution of the drift over time gives useful insigts about the pro
 The driftool calculates the *Drift* measure **g** (gamma).
 Depending on the calculation strategy, different *Drift Flavours* are possible.
 
-* *Statement Drift* := a measure for the merge complexity based on the git merge conflict line count
+* *Line Drift* := a measure for the merge complexity based on the git merge conflict line count
 * *Conflict Drift* := a measure for the merge complexity based on the git merge conflict occurence count
 * *File Drift* := a measure for the merge complexity based on the git merge conflicting files count
 
