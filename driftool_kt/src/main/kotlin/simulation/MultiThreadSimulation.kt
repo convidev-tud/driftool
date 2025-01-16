@@ -37,6 +37,8 @@ class MultiThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : Gi
     override fun run(): DriftReport {
         val startingTimestampMillis = System.currentTimeMillis()
         super.prepareReferenceRepository()
+        val endingTimestampCheckoutMillis = System.currentTimeMillis()
+        val checkoutTime = endingTimestampCheckoutMillis - startingTimestampMillis
         //get all branch combinations
         val branchCombinations = super.getBranchCombinations(includeSymmetries = gitModeConfiguration.pc.symmetry, includeIdentities = false)
         //create thread job distribution
@@ -63,10 +65,12 @@ class MultiThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : Gi
             joinedResult.join(result)
         }
 
-        val endingTimestampMillis = System.currentTimeMillis()
-        val durationMillis = endingTimestampMillis - startingTimestampMillis
-
-        return super.makeReport(joinedResult, durationMillis, startingTimestampMillis, threadCount)
+        return super.makeReport(
+            distanceResult = joinedResult,
+            durationMillisCheckout = checkoutTime,
+            startTimeCompare = endingTimestampCheckoutMillis,
+            startingTimestampMillis = startingTimestampMillis,
+            numberThreads = threadCount)
     }
 
     suspend fun runAllThreads(

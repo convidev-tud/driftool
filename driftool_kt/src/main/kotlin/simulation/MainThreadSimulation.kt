@@ -31,16 +31,23 @@ class MainThreadSimulation(val gitModeConfiguration: GitModeConfiguration) : Git
         override fun run(): DriftReport {
             val startingTimestampMillis = System.currentTimeMillis()
             super.prepareReferenceRepository()
+            val endingTimestampCheckoutMillis = System.currentTimeMillis()
+            val checkoutTime = endingTimestampCheckoutMillis - startingTimestampMillis
+
             val workingRepository = super.createWorkingRepository()
             val branchCombinations = super.getBranchCombinations(
                 includeSymmetries = gitModeConfiguration.pc.symmetry,
                 includeIdentities = false)
             val mergeHandler = MergeHandler(workingRepository, 0)
             val distanceResult: DistanceResult = mergeHandler.executeMerges(branchCombinations)
-            val endingTimestampMillis = System.currentTimeMillis()
-            val durationMillis = endingTimestampMillis - startingTimestampMillis
 
-            return makeReport(distanceResult, durationMillis, startingTimestampMillis, numberThreads = 1)
+
+            return makeReport(
+                distanceResult = distanceResult,
+                durationMillisCheckout = checkoutTime,
+                startTimeCompare = endingTimestampCheckoutMillis,
+                startingTimestampMillis = startingTimestampMillis,
+                numberThreads = 1)
         }
 
 }

@@ -22,7 +22,8 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 data class DriftReport (
     val reportTitle: String,
     val analysisTimestamp: String,
-    val analysisDurationMillis: Long,
+    val analysisDurationMillisCheckout: Long,
+    val analysisDurationMillisCompare: Long,
     val numberOfBranchesTotal: Int,
     val numberOfBranchesAnalyzed: Int,
     val numberOfFinalBranches: Int,
@@ -42,7 +43,8 @@ data class DriftReport (
     fun printReport() {
         println("Report Title: $reportTitle")
         println("Analysis Timestamp: $analysisTimestamp")
-        println("Analysis Duration: $analysisDurationMillis")
+        println("Analysis Duration Checkout: $analysisDurationMillisCheckout")
+        println("Analysis Duration Compare: $analysisDurationMillisCompare")
         println("Number of Branches Total: $numberOfBranchesTotal")
         println("Number of Branches Analyzed: $numberOfBranchesAnalyzed")
         println("Number of Final Branches: $numberOfFinalBranches")
